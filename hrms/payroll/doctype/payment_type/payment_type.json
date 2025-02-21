@@ -1,0 +1,53 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:PY-{##}",
+ "creation": "2024-12-26 16:01:53.897868",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "payment_type_section",
+  "payment_type"
+ ],
+ "fields": [
+  {
+   "fieldname": "payment_type_section",
+   "fieldtype": "Section Break",
+   "label": "Payment Type"
+  },
+  {
+   "fieldname": "payment_type",
+   "fieldtype": "Data",
+   "label": "Payment Type"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-12-26 16:19:57.708017",
+ "modified_by": "Administrator",
+ "module": "Payroll",
+ "name": "Payment Type",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "payment_type",
+ "track_changes": 1,
+ "translated_doctype": 1
+}

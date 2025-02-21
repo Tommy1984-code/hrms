@@ -1,0 +1,134 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{LM}-{####}",
+ "creation": "2025-02-11 08:01:20.230387",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "loan_management_section",
+  "employee",
+  "employee_name",
+  "loan_type",
+  "loan_amount",
+  "monthly_deduction",
+  "column_break_ywxd",
+  "remaing_amount",
+  "start_date",
+  "end_date",
+  "status",
+  "section_break_imac",
+  "deductions",
+  "section_break_pdio",
+  "loan_payment_history"
+ ],
+ "fields": [
+  {
+   "fieldname": "loan_management_section",
+   "fieldtype": "Section Break",
+   "label": "Loan Management"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "loan_type",
+   "fieldtype": "Link",
+   "label": "Loan Type",
+   "options": "Loan Type"
+  },
+  {
+   "fieldname": "monthly_deduction",
+   "fieldtype": "Currency",
+   "label": "Monthly Deduction"
+  },
+  {
+   "fieldname": "loan_amount",
+   "fieldtype": "Int",
+   "label": "Loan Amount"
+  },
+  {
+   "fieldname": "remaing_amount",
+   "fieldtype": "Currency",
+   "label": "Remaing Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ywxd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "default": "Ongoing",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Ongoing\nCompleted"
+  },
+  {
+   "fieldname": "section_break_pdio",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "loan_payment_history",
+   "fieldtype": "Table",
+   "label": "Loan Payment History",
+   "options": "Loan Payment History"
+  },
+  {
+   "fieldname": "section_break_imac",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "deductions",
+   "fieldtype": "Table",
+   "label": "Deductions",
+   "options": "Salary Detail"
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Full Name"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-02-11 15:21:52.112161",
+ "modified_by": "Administrator",
+ "module": "Payroll",
+ "name": "Loan Management",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,57 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{LPH}-{####}",
+ "creation": "2025-02-11 08:33:23.093803",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "loan_payment_history_section",
+  "loan_id",
+  "payment_date",
+  "paid_amount",
+  "remaining_amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "loan_payment_history_section",
+   "fieldtype": "Section Break",
+   "label": "Loan Payment History"
+  },
+  {
+   "fieldname": "loan_id",
+   "fieldtype": "Link",
+   "label": "Loan Id",
+   "options": "Loan Management"
+  },
+  {
+   "fieldname": "payment_date",
+   "fieldtype": "Date",
+   "label": "Payment Date"
+  },
+  {
+   "fieldname": "paid_amount",
+   "fieldtype": "Currency",
+   "label": "Paid Amount"
+  },
+  {
+   "fieldname": "remaining_amount",
+   "fieldtype": "Currency",
+   "label": "Remaining Amount"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-02-11 08:43:30.112358",
+ "modified_by": "Administrator",
+ "module": "Payroll",
+ "name": "Loan Payment History",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

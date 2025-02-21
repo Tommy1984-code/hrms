@@ -1,0 +1,132 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:EMP-ABS-{####}",
+ "creation": "2025-01-22 16:14:09.493181",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_u6na",
+  "employee",
+  "payroll_month",
+  "absent_days",
+  "column_break_xixv",
+  "company",
+  "deduct_single_day_amount",
+  "total_deduction",
+  "amended_from",
+  "section_break_mcgf",
+  "deductions"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_u6na",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "absent_days",
+   "fieldtype": "Int",
+   "label": "Absent Days",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_xixv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "deduct_single_day_amount",
+   "fieldtype": "Float",
+   "label": "Deduct Single Day Amount",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_deduction",
+   "fieldtype": "Float",
+   "label": "Total Deduction"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Absent Employee",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "section_break_mcgf",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "deductions",
+   "fieldtype": "Table",
+   "label": "Deductions",
+   "options": "Salary Detail"
+  },
+  {
+   "fetch_from": "employee.company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "payroll_month",
+   "fieldtype": "Date",
+   "label": "Payroll Month",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-01-25 10:32:06.661822",
+ "modified_by": "Administrator",
+ "module": "Payroll",
+ "name": "Absent Employee",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Administrator",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
