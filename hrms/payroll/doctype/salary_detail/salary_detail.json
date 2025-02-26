@@ -12,6 +12,7 @@
   "from_date",
   "to_date",
   "payroll_dates",
+  "prorate",
   "column_break_3",
   "amount",
   "year_to_date",
@@ -112,9 +113,7 @@
    "fieldname": "depends_on_payment_days",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Depends on Payment Days",
-   "print_hide": 1,
-   "read_only": 1
+   "label": "Depends on Payment Days"
   },
   {
    "default": "0",
@@ -260,11 +259,11 @@
    "read_only": 1
   },
   {
-   "default": "default",
+   "default": "Advance Payment",
    "fieldname": "payment_type",
    "fieldtype": "Select",
    "label": "Payment Type",
-   "options": "default\nAdvance Payment\nPerformance Payment"
+   "options": "Advance Payment\nPerformance Payment\nThird Payment\nFourth Payment\nFifth Payment"
   },
   {
    "default": "0",
@@ -292,11 +291,17 @@
    "fieldname": "payroll_dates",
    "fieldtype": "Date",
    "label": "Payroll Dates"
+  },
+  {
+   "fieldname": "prorate",
+   "fieldtype": "Select",
+   "label": "Prorate ",
+   "options": "Full Month\nProrated"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2025-02-03 09:18:51.611020",
+ "modified": "2025-02-25 11:01:21.768084",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Salary Detail",

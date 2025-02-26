@@ -17,6 +17,7 @@ frappe.ui.form.on("Additional Salary", {
 				},
 			};
 		});
+		
 	},
 
 	onload: function (frm) {
@@ -86,12 +87,83 @@ frappe.ui.form.on("Additional Salary", {
 			},
 		});
 	},
-
 	salary_component: function (frm) {
+		frm.trigger("toggle_overtime_fields"); // Toggle fields based on component
+
 		if (!frm.doc.ref_doctype) {
 			frm.trigger("get_salary_component_amount");
 		}
+
+		if (frm.doc.salary_component === "OverTime") {
+			frm.trigger("calculate_overtime");
+		}
 	},
+
+	rate: function (frm) {
+		if (frm.doc.salary_component === "OverTime") {
+			frm.trigger("calculate_overtime");
+		}
+	},
+
+	working_hour: function (frm) {
+		if (frm.doc.salary_component === "OverTime") {
+			frm.trigger("calculate_overtime");
+		}
+	},
+	toggle_overtime_fields: function (frm) {
+		let is_overtime = frm.doc.salary_component === "OverTime";
+
+		// Show fields only if Overtime is selected
+		frm.set_df_property("rate", "hidden", !is_overtime);
+		frm.set_df_property("working_hour", "hidden", !is_overtime);
+
+		// Make them mandatory only for Overtime
+		frm.set_df_property("rate", "reqd", is_overtime);
+		frm.set_df_property("working_hour", "reqd", is_overtime);
+
+		// If not overtime, clear the values
+		if (!is_overtime) {
+			frm.set_value("rate", "");
+			frm.set_value("working_hour", "");
+		}
+	},
+
+	calculate_overtime: function (frm) {
+		if (frm.doc.salary_component !== "OverTime") return;
+
+		if (!frm.doc.rate || !frm.doc.working_hour) {
+			frm.set_value("amount", 0);
+			frm.refresh_field("amount");
+			return;
+		}
+
+		frappe.call({
+			method: "frappe.client.get_value",
+			args: {
+				doctype: "Employee",
+				filters: { name: frm.doc.employee },
+				fieldname: "base",
+			},
+			callback: function (response) {
+				if (response.message && response.message.base) {
+					let base_salary = parseFloat(response.message.base);
+					let working_hour = parseFloat(frm.doc.working_hour);
+					let rate = parseFloat(frm.doc.rate);
+
+					let overtime_amount = (base_salary / 208) * working_hour * rate;
+					frm.set_value("amount", overtime_amount);
+					frm.refresh_field("amount"); // Ensure UI updates
+				}
+			},
+		});
+	},
+
+
+	// salary_component: function (frm) {
+	// 	if (!frm.doc.ref_doctype) {
+	// 		frm.trigger("get_salary_component_amount");
+	// 	}
+	// },
 
 	get_salary_component_amount: function (frm) {
 		frappe.call({
@@ -110,4 +182,5 @@ frappe.ui.form.on("Additional Salary", {
 			},
 		});
 	},
+	
 });

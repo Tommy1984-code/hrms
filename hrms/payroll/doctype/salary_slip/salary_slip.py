@@ -4,7 +4,7 @@
 import frappe
 import unicodedata
 from datetime import date
-from datetime import datetime
+from datetime import datetime,timedelta
 from frappe import _, msgprint
 from frappe.model.naming import make_autoname
 from frappe.query_builder import Order
@@ -504,19 +504,10 @@ class SalarySlip(TransactionBase):
 	#my code to fetch salary components from salary Detail doctype
 	def get_salary_components(self, employee_id, component_type=None):
 
-		Advance_salary_slip_exists = frappe.db.exists(
-			"Salary Slip", {
-				"employee": self.employee,
-				"payment_type": "Advance Payment",
-				"docstatus": 1,
-				"start_date": ("<=", self.get_start_date()),
-				"end_date": (">=", self.get_end_date()),
-			}
-		)
-
-		# Determine the payment type to use based on the existence of the advance salary slip
-
-		payment_type_to_use = "Advance Payment" if not Advance_salary_slip_exists else "Performance Payment"
+		# Define payment types in order
+		payment_types_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+		# Get the index of the selected payment type
+		selected_payment_index = payment_types_order.index(self.payment_type) if self.payment_type in payment_types_order else -1
 
 		"""Fetch the salary components from Salary Detail and add them to the salary structure."""
 		salary_details = frappe.get_all(
@@ -524,17 +515,40 @@ class SalarySlip(TransactionBase):
 			filters={'parent': employee_id},
 			fields=['salary_component', 'amount', 'parentfield',
 		   'condition', 'formula','amount_based_on_formula',
-		   'abbr','payment_type','from_date','to_date','payroll_dates']
+		   'abbr','payment_type','from_date','to_date','payroll_dates','prorate']
 		)
+
+		# Fetch the employee's joining date
+		employee_joining_date = self.joining_date  # Fetch this from Employee record
+		
+
+		# Get the last date of the current month
+		current_date = datetime.today().date()
+		last_day_of_month = (datetime(current_date.year, current_date.month, 1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+		last_day_of_month = last_day_of_month.date()
+		
+
+    	# Check if the employee is new (joined after the payroll period started)
+		is_new_employee = employee_joining_date >= self.actual_start_date
 
 		for detail in salary_details:
 			if component_type is None or detail.parentfield == component_type:
-				# Include components with payment_type "default" or matching payment_type_to_use
-				if detail.payment_type != 'default' and detail.payment_type != payment_type_to_use:
+				
+				
+				if detail.payment_type not in payment_types_order:
 
 					continue # Skip if the payment type doesn't match
 
-				#check if the date range is valid
+				# Get the index of the component's assigned payment type
+				component_payment_index = payment_types_order.index(detail.payment_type)
+
+				# Ensure the component is included if it's assigned to an earlier or same payment type
+				if component_payment_index > selected_payment_index:
+					continue  # Skip if the component's payment type is beyond the selected one
+
+
+				#check if the date range is 
+				
 				is_valid_date_range = self.is_date_range_valid(detail)
 				
 				# check against payroll_dates for single month inclusion
@@ -544,6 +558,30 @@ class SalarySlip(TransactionBase):
 				if self.actual_start_date or self.actual_end_date: #only skip if the date range is invalid
 					if not is_valid_date_range:
 						continue #skip if the date rang is invalid
+
+				# Logic to handle "Full Month" or "Prorated" for new employees
+				if is_new_employee:
+					if detail.get("prorate")  == "Full Month":
+						# Give the full amount for new employees
+						detail.amount = round(detail.amount, 2)
+						
+					elif detail.get("prorate") == "Prorated":
+						# Calculate prorated amount based on working days
+						total_days_in_month = 26  # Fixed hours per month (based on 26 days)
+
+						# Calculate the number of working days from the joining date to the last day of the month
+						payable_days = self.get_working_days_from_joining_to_month_end(employee_joining_date, last_day_of_month)
+						
+						
+						# Calculate prorated amount
+						prorated_amount = (detail.amount / total_days_in_month) * payable_days
+						detail.amount = round(prorated_amount, 2)  # Adjust the amount
+						
+				else:
+					# For existing employees, keep the full amount
+					detail.amount = round(detail.amount, 2)
+					
+				
 
 				detail.condition = sanitize_expression(detail.condition)
 				detail.formula = sanitize_expression(detail.formula)
@@ -558,14 +596,23 @@ class SalarySlip(TransactionBase):
 					'amount_based_on_formula': detail.amount_absed_on_formula,
 					'abbr':detail.abbr,
 					'payment_type': detail.payment_type,  # Include payment type
-                	'payroll_dates': detail.payroll_dates  # Include payroll dates
+                	'payroll_dates': detail.payroll_dates, # Include payroll dates
+					'prorate':detail.prorate,
+					'prorated_amount': detail.amount  # Pass prorated amount 
+					
 				})
+
+				
+
+				
 
 				self.add_structure_component(struct_row, component_type)
 
-		for struct_row in self._employee_salary_structure.get(component_type):
+		for struct_row in self._employee_salary_structure.get(component_type,[]):
 			#only andd struct_row if it matches the payment type and date range
-			if struct_row.payment_type == 'default' or struct_row.payment_type == payment_type_to_use:
+			if struct_row.payment_type in payment_types_order and \
+				payment_types_order.index(struct_row.payment_type) <= selected_payment_index:
+
 				is_valid_date_range = self.is_date_range_valid(struct_row)
 				# check agains payroll_dates for single month inclusion
 				if not self.is_payroll_date_valid(struct_row):
@@ -574,11 +621,27 @@ class SalarySlip(TransactionBase):
 					if not is_valid_date_range:
 						continue #Skip if the date range is invalid
 				self.add_structure_component(struct_row,component_type)
+
+
+	 # Helper function to get the number of working days from the joining date to the last day of the month
+	def get_working_days_from_joining_to_month_end(self, joining_date, last_day_of_month):
+		# Convert dates to datetime objects for calculation
+		current_date = joining_date
+		working_days = 0
+
+		# Loop through all days from the joining date to the last day of the month
+		while current_date <= last_day_of_month:
+			# Check if the current day is a weekday (Monday to saturday)
+			if current_date.weekday() < 6:  # 0: Monday, 1: Tuesday, ..., 4: Friday
+				working_days += 1
+			current_date += timedelta(days=1)
+
+		return working_days
 				
 
 					
 
-		
+	
 
 	def get_absent_salary_component(self,employee_id, component_type=None):
 		"""Fetch the absent salary component from Salary Detail using the employee ID."""
@@ -1160,15 +1223,16 @@ class SalarySlip(TransactionBase):
 
 		# Assign the determined payment type
 		self.payment_type = next_payment_type
-		self.salary_structure = "Advance Salary Structure"
+		# Ensure the selected salary structure is used
+		if self.salary_structure:
+			selected_salary_structure = self.salary_structure
+		else:
+			frappe.throw(_("Please select a salary structure before proceeding"))
 
-		# Map payment types to salary structures
-		# if next_payment_type == "Advance Payment":
-		# 	self.salary_structure = "Advance Salary Structure"
-		# elif next_payment_type == "Performance Payment":
-		# 	self.salary_structure = "Advance Salary Structure"
-		# elif next_payment_type in ["Third Payment", "Fourth Payment", "Fifth Payment"]:
-		# 	self.salary_structure = "Advance Salary Structure"
+		# Assign the selected salary structure to the salary slip
+		self.salary_structure = selected_salary_structure
+
+		# self.salary_structure = "Advance Salary Structure"
 
 		# Validate salary structure assignment
 		self._salary_structure_assignment = frappe.db.get_value(
@@ -1552,7 +1616,7 @@ class SalarySlip(TransactionBase):
 			for row in self._salary_structure_doc.get(table):
 				row.condition = sanitize_expression(row.condition)
 				row.formula = sanitize_expression(row.formula)
-
+    # my code for adding formula and condtion salary components fetched from Employee
 	def set_employee_salary_structure(self) -> None:
 		self._employee_salary_structure = frappe.get_cached_doc("Employee",self.employee)
 		for table in ("earnings", "deductions"):
@@ -1580,7 +1644,19 @@ class SalarySlip(TransactionBase):
 		):
 			return
 
-		amount = self.eval_condition_and_formula(struct_row, self.data)
+			# Fetch prorate value from salary detail
+		prorate = struct_row.get('prorate', None)
+
+		# Check if prorate is defined as "Prorated"
+		if prorate == "Prorated":
+			# Here we assume the prorated amount has been calculated earlier
+			# You can pass the calculated prorated value here (if already computed earlier)
+			amount = struct_row.get('prorated_amount', 0)  # Assuming prorated_amount was set earlier
+		else:
+			# Otherwise, use the default behavior (full month)
+			amount = self.eval_condition_and_formula(struct_row, self.data)
+
+		# amount = self.eval_condition_and_formula(struct_row, self.data)
 		if struct_row.statistical_component:
 			# update statitical component amount in reference data based on payment days
 			# since row for statistical component is not added to salary slip

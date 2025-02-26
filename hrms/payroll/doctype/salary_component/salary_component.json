@@ -78,11 +78,10 @@
    "label": "Is Tax Applicable"
   },
   {
-   "default": "1",
+   "default": "0",
    "fieldname": "depends_on_payment_days",
    "fieldtype": "Check",
-   "label": "Depends on Payment Days",
-   "print_hide": 1
+   "label": "Depends on Payment Days"
   },
   {
    "default": "0",
@@ -268,7 +267,7 @@
  "icon": "fa fa-flag",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-12-26 09:08:38.990541",
+ "modified": "2025-02-21 15:03:07.777414",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Salary Component",
@@ -284,22 +283,26 @@
    "read": 1,
    "report": 1,
    "role": "HR User",
+   "select": 1,
    "share": 1,
    "write": 1
   },
   {
    "read": 1,
-   "role": "Employee"
+   "role": "Employee",
+   "select": 1
   },
   {
    "create": 1,
    "delete": 1,
    "email": 1,
    "export": 1,
+   "if_owner": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Administrator",
+   "select": 1,
    "share": 1,
    "write": 1
   }
