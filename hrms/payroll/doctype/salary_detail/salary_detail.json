@@ -296,12 +296,12 @@
    "fieldname": "prorate",
    "fieldtype": "Select",
    "label": "Prorate ",
-   "options": "Full Month\nProrated"
+   "options": "\nFull Month\nProrated"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2025-02-25 11:01:21.768084",
+ "modified": "2025-02-27 07:53:09.656179",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Salary Detail",

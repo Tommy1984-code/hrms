@@ -22,6 +22,7 @@ from frappe.utils import (
 	get_last_day,
 	get_link_to_form,
 	getdate,
+	today,
 	money_in_words,
 	rounded,
 )
@@ -351,10 +352,6 @@ class SalarySlip(TransactionBase):
 				self.pull_sal_struct()
 				self.add_advance_net_pay_deduction() ## my code to add advance net payment to the deduction
 				
-                
-				
-					
-
 	def set_time_sheet(self):
 		if self.salary_slip_based_on_timesheet:
 			self.set("timesheets", [])
@@ -520,7 +517,12 @@ class SalarySlip(TransactionBase):
 
 		# Fetch the employee's joining date
 		employee_joining_date = self.joining_date  # Fetch this from Employee record
+		actual_start_date = self.actual_start_date
 		
+		if isinstance(self.actual_start_date, str):
+			actual_start_date = datetime.strptime(actual_start_date, "%Y-%m-%d").date()
+		if isinstance(employee_joining_date, str):
+			employee_joining_date = datetime.strptime(employee_joining_date, "%Y-%m-%d").date()
 
 		# Get the last date of the current month
 		current_date = datetime.today().date()
@@ -529,7 +531,7 @@ class SalarySlip(TransactionBase):
 		
 
     	# Check if the employee is new (joined after the payroll period started)
-		is_new_employee = employee_joining_date >= self.actual_start_date
+		is_new_employee = employee_joining_date >= actual_start_date
 
 		for detail in salary_details:
 			if component_type is None or detail.parentfield == component_type:
@@ -576,6 +578,8 @@ class SalarySlip(TransactionBase):
 						# Calculate prorated amount
 						prorated_amount = (detail.amount / total_days_in_month) * payable_days
 						detail.amount = round(prorated_amount, 2)  # Adjust the amount
+
+						
 						
 				else:
 					# For existing employees, keep the full amount
@@ -585,7 +589,6 @@ class SalarySlip(TransactionBase):
 
 				detail.condition = sanitize_expression(detail.condition)
 				detail.formula = sanitize_expression(detail.formula)
-				# Calculate amount if formula exists
 				
 				# Create struct_row with only necessary fields
 				struct_row = frappe._dict({
@@ -601,10 +604,8 @@ class SalarySlip(TransactionBase):
 					'prorated_amount': detail.amount  # Pass prorated amount 
 					
 				})
+				#frappe.msgprint(f"this is the value of the component {struct_row}")
 
-				
-
-				
 
 				self.add_structure_component(struct_row, component_type)
 
@@ -620,8 +621,9 @@ class SalarySlip(TransactionBase):
 				if self.actual_start_date or self.actual_end_date:
 					if not is_valid_date_range:
 						continue #Skip if the date range is invalid
+				
 				self.add_structure_component(struct_row,component_type)
-
+				
 
 	 # Helper function to get the number of working days from the joining date to the last day of the month
 	def get_working_days_from_joining_to_month_end(self, joining_date, last_day_of_month):
@@ -637,11 +639,7 @@ class SalarySlip(TransactionBase):
 			current_date += timedelta(days=1)
 
 		return working_days
-				
-
-					
-
-	
+			
 
 	def get_absent_salary_component(self,employee_id, component_type=None):
 		"""Fetch the absent salary component from Salary Detail using the employee ID."""
@@ -792,7 +790,9 @@ class SalarySlip(TransactionBase):
 		
 
 
-		working_days = date_diff(self.end_date, self.start_date) + 1
+		# working_days = date_diff(self.end_date, self.start_date) + 1
+		# making it fixed woking days that's 26 default working days
+		working_days = 26
 		if for_preview:
 			self.total_working_days = working_days
 			self.payment_days = working_days
@@ -961,30 +961,22 @@ class SalarySlip(TransactionBase):
 		if isinstance(emp_start_date, str) or isinstance(emp_end_date, str):
 			raise ValueError("Start date and end date must be valid date objects.")
 
-
-
-		# if isinstance(emp_joining_date, str):
-		# 	emp_joining_date = datetime.strptime(emp_joining_date,"%Y%m%d").date()
-		# if isinstance(emp_relieving_date,str):
-		# 	emp_relieving_date = datetime.strptime(emp_relieving_date,"%Y%m%d").date()
-		# if isinstance(emp_start_date, str):
-		# 	emp_start_date = datetime.strptime(emp_start_date,"%Y%m%d").date()
-		# if isinstance(emp_end_date,str):
-		# 	emp_end_date = datetime.strptime(emp_end_date,"%Y%m%d").date()
-
-		# Calculate actual working days based on the employee's joining/relieving date
-		# actual_start_date = max(self.start_date,emp_joining_date or emp_start_date)
-		# actual_end_date = min(self.end_date,emp_relieving_date or emp_end_date)
 		worked_days = date_diff(self.actual_end_date,self.actual_start_date) + 1
 
 		# If employee worked full month, set to 26, else prorate
 		payment_days = min(worked_days, 26) 
-		# payment_days = (worked_days / total_working_days) * 26  
-		# payment_days = date_diff(self.actual_end_date, self.actual_start_date) + 1
+
+		
 
 		if not cint(include_holidays_in_total_working_days):
-			holidays = self.get_holidays_for_employee(self.actual_start_date, self.actual_end_date)
+			holidays = self.get_holidays_for_employee(emp_start_date,emp_end_date)
+			frappe.msgprint(f"this is the holiday :{holidays}")
 			payment_days -= len(holidays)
+
+		# holidays = self.get_holidays_for_employee(self.actual_start_date,self.actual_end_date)
+		# payment_days -=  len(holidays)
+			
+
 
 		return max(payment_days,0)
 
@@ -1638,23 +1630,51 @@ class SalarySlip(TransactionBase):
 			
 
 	def add_structure_component(self, struct_row, component_type):
+
+		#frappe.msgprint(f"Adding structure component: {struct_row}")
 		if (
 			self.salary_slip_based_on_timesheet
 			and struct_row.salary_component == self._salary_structure_doc.salary_component
+			
 		):
 			return
-
+		
+		#frappe.msgprint(f"Adding structure component: {struct_row}")
+	    
+		
 			# Fetch prorate value from salary detail
 		prorate = struct_row.get('prorate', None)
 
 		# Check if prorate is defined as "Prorated"
 		if prorate == "Prorated":
-			# Here we assume the prorated amount has been calculated earlier
-			# You can pass the calculated prorated value here (if already computed earlier)
-			amount = struct_row.get('prorated_amount', 0)  # Assuming prorated_amount was set earlier
+
+			if struct_row.amount_based_on_formula:
+            # Evaluate the formula first for formula-based components
+				amount = self.eval_condition_and_formula(struct_row, self.data)
+				# Apply prorating logic for formula-based components
+				# Prorate the amount based on the payment days or total working days
+				prorated_amount = amount * (flt(self.payment_days) / flt(self.total_working_days)) if self.total_working_days else 0
+
+				if struct_row.salary_component in self.deductions:
+					# If it's a deduction, we make sure it follows prorated earnings correctly
+					prorated_amount = -abs(prorated_amount)  # Keep it negative for deductions
+
+				amount = prorated_amount
+				
+
+				# Log the prorated amount for debugging
+				#frappe.msgprint(f"Calculated prorated amount for formula-based component {struct_row.salary_component}: {prorated_amount}")
+				# Here we assume the prorated amount has been calculated earlier
+				# You can pass the calculated prorated value here (if already computed earlier)
+			else:
+				amount = struct_row.get('prorated_amount', 0)  # Assuming prorated_amount was set earlier
+				#frappe.msgprint(f"Calculated amount for component {struct_row.salary_component}: {amount}")
+
+		
 		else:
 			# Otherwise, use the default behavior (full month)
 			amount = self.eval_condition_and_formula(struct_row, self.data)
+			# frappe.msgprint(f"Calculated amount for component {struct_row.salary_component}: {amount}")
 
 		# amount = self.eval_condition_and_formula(struct_row, self.data)
 		if struct_row.statistical_component:
@@ -2618,8 +2638,20 @@ class SalarySlip(TransactionBase):
 		if self.payment_type in payment_types:
 			current_index = payment_types.index(self.payment_type)
 
-			if current_index > 0:  # Ensure it's not the first type (Advance Payment)
-				previous_payment_type = payment_types[current_index - 1]
+			# if current_index > 0:  # Ensure it's not the first type (Advance Payment)
+			# 	previous_payment_type = payment_types[current_index -1] # Get all previous payment types
+
+			# Initialize the total sum of net pay
+			total_net_pay = 0
+	
+			# Get the first day of the current month and the last day of the current month
+			current_month_start = getdate(today()).replace(day=1)  # First day of the current month
+			current_month_end = current_month_start.replace(day=28) + timedelta(days=4)  # Last day of the current month
+	
+			# Loop through all previous payment types and accumulate their net pay for the current month
+			for i in range(current_index):
+				previous_payment_type = payment_types[i]  # Get previous payment type
+
 
 				# Fetch the latest salary slip of the previous payment type
 				previous_salary_slip = frappe.get_all(
@@ -2627,26 +2659,33 @@ class SalarySlip(TransactionBase):
 					filters={
 						"employee": self.employee,
 						"payment_type": previous_payment_type,
+						# "start_date": ["between", [current_month_start, current_month_end]],
+						"start_date":self.actual_start_date,
+						"end_date": self.actual_end_date
 					},
-					fields=["net_pay"],
+					fields=["net_pay","payment_type"],
 					order_by="creation desc",
-					limit=1
+					
 				)
 
+				# frappe.msgprint(f"this is the salary slip: {previous_salary_slip}")
+
 				if previous_salary_slip:
-					previous_net_pay = previous_salary_slip[0].net_pay
+					total_net_pay += previous_salary_slip[0].net_pay  # Add the net pay to the total
 
-					# Check if the deduction already exists
-					existing_deductions = self.get("deductions") or []
-					deduction_exists = any(d.salary_component == "Advance Payment Net Income" for d in existing_deductions)
+			if total_net_pay > 0:
 
-					# Add deduction if it doesn't exist
-					if not deduction_exists:
-						new_deduction = {
-							"salary_component": "Advance Payment Net Income",
-							"amount": previous_net_pay
-						}
-						self.append("deductions", new_deduction)
+				# Check if the deduction already exists
+				existing_deductions = self.get("deductions") or []
+				deduction_exists = any(d.salary_component == "Advance Payment Net Income" for d in existing_deductions)
+			
+				# Add deduction if it doesn't exist
+				if not deduction_exists:
+					new_deduction = {
+						"salary_component": "Advance Payment Net Income",
+						"amount": total_net_pay
+					}
+					self.append("deductions", new_deduction)
 
      # my code to fetch the base salary from Employee doctype
 	def get_employee_base_salary(self):
