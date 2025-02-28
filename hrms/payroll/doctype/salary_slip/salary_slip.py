@@ -966,9 +966,16 @@ class SalarySlip(TransactionBase):
 		# If employee worked full month, set to 26, else prorate
 		payment_days = min(worked_days, 26) 
 
+		# Check if employee is new (joining date within the payroll period)
+		if emp_joining_date and emp_joining_date > emp_start_date:
+			# Employee is new, adjust holidays accordingly
+			holidays = self.get_holidays_for_employee(self.actual_start_date, self.actual_end_date)
+			frappe.msgprint(f"This is the holiday for new employee: {holidays}")
+			payment_days -= len(holidays)
+
 		
 
-		if not cint(include_holidays_in_total_working_days):
+		elif not cint(include_holidays_in_total_working_days):
 			holidays = self.get_holidays_for_employee(emp_start_date,emp_end_date)
 			frappe.msgprint(f"this is the holiday :{holidays}")
 			payment_days -= len(holidays)
