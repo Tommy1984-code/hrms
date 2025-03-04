@@ -515,23 +515,32 @@ class SalarySlip(TransactionBase):
 		   'abbr','payment_type','from_date','to_date','payroll_dates','prorate']
 		)
 
-		# Fetch the employee's joining date
+		# Fetch the employee's joining date and employee leaving date
 		employee_joining_date = self.joining_date  # Fetch this from Employee record
+		employee_relieving_date = self.relieving_date
 		actual_start_date = self.actual_start_date
+		actual_end_date = self.actual_end_date
 		
 		if isinstance(self.actual_start_date, str):
 			actual_start_date = datetime.strptime(actual_start_date, "%Y-%m-%d").date()
+		if isinstance(self.actual_end_date,str):
+			actual_end_date = datetime.strptime(actual_end_date,"%Y-%m-%d").date()
 		if isinstance(employee_joining_date, str):
 			employee_joining_date = datetime.strptime(employee_joining_date, "%Y-%m-%d").date()
+		if isinstance(employee_relieving_date,str):
+			employee_relieving_date = datetime.strptime(employee_relieving_date,"%Y-%m-%d").date()
 
 		# Get the last date of the current month
 		current_date = datetime.today().date()
+		# Get the first day of the current month
+		first_day_of_month = current_date.replace(day=1)
 		last_day_of_month = (datetime(current_date.year, current_date.month, 1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
 		last_day_of_month = last_day_of_month.date()
 		
 
     	# Check if the employee is new (joined after the payroll period started)
 		is_new_employee = employee_joining_date >= actual_start_date
+		is_leaving_employee =employee_relieving_date is not None and employee_relieving_date <= actual_end_date
 
 		for detail in salary_details:
 			if component_type is None or detail.parentfield == component_type:
@@ -572,14 +581,32 @@ class SalarySlip(TransactionBase):
 						total_days_in_month = 26  # Fixed hours per month (based on 26 days)
 
 						# Calculate the number of working days from the joining date to the last day of the month
-						payable_days = self.get_working_days_from_joining_to_month_end(employee_joining_date, last_day_of_month)
-						
-						
+						payable_days = self.get_working_days_from_joining_to_month_end(employee_joining_date, actual_end_date)
+												
 						# Calculate prorated amount
 						prorated_amount = (detail.amount / total_days_in_month) * payable_days
 						detail.amount = round(prorated_amount, 2)  # Adjust the amount
-
 						
+						# # Calculate prorated amount
+						# prorated_amount = (detail.amount / total_days_in_month) * payable_days
+						# detail.amount = round(prorated_amount, 2)  # Adjust the amount
+
+				elif is_leaving_employee:
+					
+					if detail.get("prorate")  == "Full Month":
+						# Give the full amount for new employees
+						detail.amount = round(detail.amount, 2)
+					elif detail.get("prorate") == "Prorated":
+						 # Calculate prorated amount based on working days
+						
+						total_days_in_month = 26  # Fixed hours per month (based on 26 days)
+
+						# Calculate the number of working days from the joining date to the last day of the month
+						payable_days = self.get_working_days_from_joining_to_month_end(actual_start_date, employee_relieving_date)
+												
+						# Calculate prorated amount
+						prorated_amount = (detail.amount / total_days_in_month) * payable_days
+						detail.amount = round(prorated_amount, 2)  # Adjust the amount
 						
 				else:
 					# For existing employees, keep the full amount
@@ -604,7 +631,7 @@ class SalarySlip(TransactionBase):
 					'prorated_amount': detail.amount  # Pass prorated amount 
 					
 				})
-				#frappe.msgprint(f"this is the value of the component {struct_row}")
+				# frappe.msgprint(f"this is the value of the component {struct_row}")
 
 
 				self.add_structure_component(struct_row, component_type)
@@ -626,17 +653,12 @@ class SalarySlip(TransactionBase):
 				
 
 	 # Helper function to get the number of working days from the joining date to the last day of the month
-	def get_working_days_from_joining_to_month_end(self, joining_date, last_day_of_month):
-		# Convert dates to datetime objects for calculation
-		current_date = joining_date
-		working_days = 0
+	def get_working_days_from_joining_to_month_end(self,start_date, end_date):
+		if not start_date or not end_date or start_date > end_date:
+				return 0  # Return 0 if dates are invalid
 
-		# Loop through all days from the joining date to the last day of the month
-		while current_date <= last_day_of_month:
-			# Check if the current day is a weekday (Monday to saturday)
-			if current_date.weekday() < 6:  # 0: Monday, 1: Tuesday, ..., 4: Friday
-				working_days += 1
-			current_date += timedelta(days=1)
+		working_days = sum(1 for day in range((end_date - start_date).days + 1)
+				if (start_date + timedelta(days=day)).weekday() < 6)  # Monday to Saturday
 
 		return working_days
 			
@@ -957,6 +979,9 @@ class SalarySlip(TransactionBase):
 		emp_start_date = parse_date(self.start_date)
 		emp_end_date = parse_date(self.end_date)
 
+		# if not emp_relieving_date:
+		# 	return 
+
 		# Ensure all dates are in the correct format
 		if isinstance(emp_start_date, str) or isinstance(emp_end_date, str):
 			raise ValueError("Start date and end date must be valid date objects.")
@@ -967,24 +992,34 @@ class SalarySlip(TransactionBase):
 		payment_days = min(worked_days, 26) 
 
 		# Check if employee is new (joining date within the payroll period)
-		if emp_joining_date and emp_joining_date > emp_start_date:
+		if emp_joining_date > emp_start_date:
 			# Employee is new, adjust holidays accordingly
 			holidays = self.get_holidays_for_employee(self.actual_start_date, self.actual_end_date)
-			frappe.msgprint(f"This is the holiday for new employee: {holidays}")
+			# frappe.msgprint(f"This is the holiday for new employee: {holidays}")
+			payment_days -= len(holidays)
+			
+
+		elif emp_relieving_date and emp_relieving_date < emp_end_date:
+
+			# If the employee is leaving and has a relieving date, adjust the payment days
+			# Calculate the number of working days from the start date to the relieving date
+			leaving_days = (emp_relieving_date - emp_start_date).days + 1
+			payment_days = min(leaving_days, 26)
+			holidays = self.get_holidays_for_employee(self.actual_start_date,self.actual_end_date)
 			payment_days -= len(holidays)
 
-		
-
-		elif not cint(include_holidays_in_total_working_days):
-			holidays = self.get_holidays_for_employee(emp_start_date,emp_end_date)
-			frappe.msgprint(f"this is the holiday :{holidays}")
-			payment_days -= len(holidays)
-
-		# holidays = self.get_holidays_for_employee(self.actual_start_date,self.actual_end_date)
-		# payment_days -=  len(holidays)
+			# Adjust holidays if not including holidays in total working days
+			if not cint(include_holidays_in_total_working_days):
+				holidays = self.get_holidays_for_employee(self.actual_start_date,self.actual_end_date)
+				payment_days -= len(holidays)
 			
 
 
+		elif not cint(include_holidays_in_total_working_days):
+			holidays = self.get_holidays_for_employee(emp_start_date,emp_end_date)
+			
+			payment_days -= len(holidays)
+			
 		return max(payment_days,0)
 
 	def get_holidays_for_employee(self, start_date, end_date):
@@ -1646,8 +1681,6 @@ class SalarySlip(TransactionBase):
 		):
 			return
 		
-		#frappe.msgprint(f"Adding structure component: {struct_row}")
-	    
 		
 			# Fetch prorate value from salary detail
 		prorate = struct_row.get('prorate', None)
@@ -1675,7 +1708,7 @@ class SalarySlip(TransactionBase):
 				# You can pass the calculated prorated value here (if already computed earlier)
 			else:
 				amount = struct_row.get('prorated_amount', 0)  # Assuming prorated_amount was set earlier
-				#frappe.msgprint(f"Calculated amount for component {struct_row.salary_component}: {amount}")
+				# frappe.msgprint(f"Calculated amount for component {struct_row.salary_component}: {amount}")
 
 		
 		else:

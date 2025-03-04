@@ -30,8 +30,9 @@ class AdditionalSalary(Document):
 
 		if self.amount < 0:
 			frappe.throw(_("Amount should not be less than zero"))
-
-		self.calculate_overtime()
+		if self.salary_component == "OverTime":
+			self.calculate_overtime()
+		
 
 	def calculate_overtime(self):
 		"""Calculate Overtime if the selected salary component is 'Overtime'"""

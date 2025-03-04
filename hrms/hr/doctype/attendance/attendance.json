@@ -28,8 +28,7 @@
   "late_entry",
   "early_exit",
   "amended_from",
-  "section_break_xbef",
-  "deductions"
+  "column_break_onnt"
  ],
  "fields": [
   {
@@ -205,21 +204,15 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "section_break_xbef",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "deductions",
-   "fieldtype": "Table",
-   "label": "Deductions",
-   "options": "Salary Detail"
+   "fieldname": "column_break_onnt",
+   "fieldtype": "Column Break"
   }
  ],
  "icon": "fa fa-ok",
  "idx": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-20 11:36:06.278759",
+ "modified": "2025-02-28 14:53:47.734362",
  "modified_by": "Administrator",
  "module": "HR",
  "name": "Attendance",
