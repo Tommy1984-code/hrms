@@ -2677,38 +2677,39 @@ class SalarySlip(TransactionBase):
 		# Get the index of the current payment type
 		if self.payment_type in payment_types:
 			current_index = payment_types.index(self.payment_type)
-
+      
 			# if current_index > 0:  # Ensure it's not the first type (Advance Payment)
 			# 	previous_payment_type = payment_types[current_index -1] # Get all previous payment types
 
 			# Initialize the total sum of net pay
 			total_net_pay = 0
-	
-			# Get the first day of the current month and the last day of the current month
+			
+
+			# Get the first and last day of the current month
 			current_month_start = getdate(today()).replace(day=1)  # First day of the current month
-			current_month_end = current_month_start.replace(day=28) + timedelta(days=4)  # Last day of the current month
+			next_month_start = (current_month_start + timedelta(days=32)).replace(day=1)  # First day of next month
+			current_month_end = add_days(next_month_start, -1)  # Last day of the current month
 	
 			# Loop through all previous payment types and accumulate their net pay for the current month
 			for i in range(current_index):
 				previous_payment_type = payment_types[i]  # Get previous payment type
 
-
-				# Fetch the latest salary slip of the previous payment type
+						
+	 			# Fetch the latest salary slip of the previous payment type
 				previous_salary_slip = frappe.get_all(
 					"Salary Slip",
 					filters={
 						"employee": self.employee,
 						"payment_type": previous_payment_type,
-						# "start_date": ["between", [current_month_start, current_month_end]],
-						"start_date":self.actual_start_date,
-						"end_date": self.actual_end_date
+						"start_date":self.start_date,
+						"end_date": self.end_date
 					},
-					fields=["net_pay","payment_type"],
+					fields=["net_pay","payment_type","start_date","end_date"],
 					order_by="creation desc",
 					
 				)
-
-				# frappe.msgprint(f"this is the salary slip: {previous_salary_slip}")
+				
+				
 
 				if previous_salary_slip:
 					total_net_pay += previous_salary_slip[0].net_pay  # Add the net pay to the total
