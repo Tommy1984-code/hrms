@@ -699,6 +699,7 @@ class SalarySlip(TransactionBase):
 					
 				})
 				self.add_structure_component(struct_row, component_type)
+
     #my code adding my loan components
 	def add_loan_deductions(self, employee_id, component_type=None):
 		"""Fetch all loan salary components from Salary Detail using Loan Management IDs for an employee"""
@@ -757,16 +758,31 @@ class SalarySlip(TransactionBase):
 				# Fetch Loan Management Doc
 				loan_doc = frappe.get_doc("Loan Management", loan["name"])
 
-				# Update Loan Payment History
-				loan_doc.update_loan_payment(
-					paid_amount=deduction.amount,
-					payment_date=self.actual_start_date # Use Salary Slip start date as payment date
-				)
+				# Check if a loan payment has already been recorded for the current month
+				existing_payment = frappe.get_all(
+                "Loan Payment History", 
+                filters={
+                    "loan_id": loan_doc.name,
+                    "payment_date": self.actual_start_date
+                },
+                fields=["name"]
+            )
+				
+				frappe.msgprint(f"show me history : {existing_payment}")
+				  # Only proceed if no payment has been recorded for the month
+				if not existing_payment:
 
-				frappe.msgprint(
-					_("Loan payment of {0} recorded for Employee {1}").format(deduction.amount, self.employee_name),
-					alert=True
-				)
+					# Update Loan Payment History
+					loan_doc.update_loan_payment(
+						paid_amount=deduction.amount,
+						payment_date=self.actual_start_date # Use Salary Slip start date as payment date
+					)
+					
+
+					frappe.msgprint(
+						_("Loan payment of {0} recorded for Employee {1}").format(deduction.amount, self.employee_name),
+						alert=True
+					)
 
 		frappe.db.commit()  # Ensure database updates are saved
 		
