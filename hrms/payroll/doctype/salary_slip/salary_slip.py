@@ -768,7 +768,7 @@ class SalarySlip(TransactionBase):
                 fields=["name"]
             )
 				
-				frappe.msgprint(f"show me history : {existing_payment}")
+				
 				  # Only proceed if no payment has been recorded for the month
 				if not existing_payment:
 
@@ -777,6 +777,8 @@ class SalarySlip(TransactionBase):
 						paid_amount=deduction.amount,
 						payment_date=self.actual_start_date # Use Salary Slip start date as payment date
 					)
+
+					
 					
 
 					frappe.msgprint(

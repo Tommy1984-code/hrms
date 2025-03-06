@@ -13,10 +13,11 @@
   "loan_amount",
   "monthly_deduction",
   "column_break_ywxd",
-  "remaing_amount",
+  "remaining_amount",
   "start_date",
   "end_date",
   "status",
+  "loan_paid",
   "section_break_imac",
   "deductions",
   "section_break_pdio",
@@ -51,12 +52,6 @@
    "fieldname": "loan_amount",
    "fieldtype": "Int",
    "label": "Loan Amount"
-  },
-  {
-   "fieldname": "remaing_amount",
-   "fieldtype": "Currency",
-   "label": "Remaing Amount",
-   "read_only": 1
   },
   {
    "fieldname": "column_break_ywxd",
@@ -104,11 +99,23 @@
    "fieldname": "employee_name",
    "fieldtype": "Data",
    "label": "Full Name"
+  },
+  {
+   "default": "0",
+   "fieldname": "loan_paid",
+   "fieldtype": "Currency",
+   "label": "Loan Paid"
+  },
+  {
+   "fieldname": "remaining_amount",
+   "fieldtype": "Currency",
+   "label": "Remaining Amount",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-11 15:21:52.112161",
+ "modified": "2025-03-05 14:38:40.053809",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Loan Management",
