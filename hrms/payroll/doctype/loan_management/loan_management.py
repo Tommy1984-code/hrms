@@ -30,7 +30,6 @@ class LoanManagement(Document):
 	def add_loan_salary_component(self):
 		"""Fetch and add the 'loan' salary component to the Deductions child table."""
 		loan_component = frappe.get_value("Salary Component", {"name": "Loan"}, ["name", "amount"])
-
 		
 		if loan_component:
 
@@ -41,15 +40,13 @@ class LoanManagement(Document):
 				latest_remaining_amount = frappe.db.get_value("Loan Management", loan_name, "remaining_amount")
 				latest_monthly_deduction = frappe.db.get_value("Loan Management", loan_name, "monthly_deduction")
 
-				frappe.msgprint(f"💾 Fresh Remaining Amount from DB: {latest_remaining_amount}")
-				frappe.msgprint(f"💾 Fresh Monthly Deduction from DB: {latest_monthly_deduction}")
+				
 
 				if latest_remaining_amount > 0:
 
 				# Adjust the deduction amount if the remaining amount is less than the usual deduction
 					adjusted_deduction = min(latest_monthly_deduction, latest_remaining_amount)
 
-					frappe.msgprint(f"this is adjusted_deduction:{adjusted_deduction}")
 
 					# Check if the loan component already exists in deductions
 					existing_entry = next((detail for detail in self.deductions if detail.salary_component == loan_component[0]), None)
@@ -58,8 +55,7 @@ class LoanManagement(Document):
 						
 						existing_entry.amount = adjusted_deduction
 						frappe.db.set_value("Salary Detail", existing_entry.name, "amount", adjusted_deduction)  # 🔥 Update directly without recursion
-						frappe.msgprint(f"existing entry: {existing_entry.amount}")
-
+						
 					else:
 						deduction_entry = {
 							'salary_component': loan_component[0],  # Name of the component
@@ -68,9 +64,7 @@ class LoanManagement(Document):
 						}
 						# Append to the child table
 						self.append('deductions', deduction_entry)
-					# **Update Loan Record Remaining Amount Immediately**
-					frappe.msgprint(f"💾 Fresh Remaining Amount from DB: {latest_remaining_amount}")
-					frappe.msgprint(f"💾 Fresh Monthly Deduction from DB: {latest_monthly_deduction}")
+					
 					frappe.db.commit() 
 
 

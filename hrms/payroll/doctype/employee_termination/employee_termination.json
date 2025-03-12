@@ -1,0 +1,237 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:EMP-Ter-{####}",
+ "creation": "2025-03-10 11:17:16.926700",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_mhca",
+  "amended_from",
+  "employee",
+  "employee_name",
+  "company",
+  "column_break_nyap",
+  "date_of_employment",
+  "posting_date",
+  "termination_date",
+  "section_break_pvpo",
+  "basic_salary",
+  "annual_leave",
+  "compensation",
+  "column_break_lrbq",
+  "working_days",
+  "payment_days",
+  "column_break_bvjd",
+  "reason",
+  "remark",
+  "section_break_gnhn",
+  "severance_table",
+  "tab_2_tab",
+  "final_settlement_section",
+  "base_pension",
+  "company_pension",
+  "tax",
+  "column_break_epcp",
+  "total_severance",
+  "severance_tax"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_mhca",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Employee Termination",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Read Only",
+   "label": "Employee Name"
+  },
+  {
+   "fetch_from": "employee.company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company ",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.date_of_joining",
+   "fieldname": "date_of_employment",
+   "fieldtype": "Data",
+   "label": "Date of Employment "
+  },
+  {
+   "fieldname": "column_break_nyap",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date"
+  },
+  {
+   "fieldname": "termination_date",
+   "fieldtype": "Date",
+   "label": "Termination Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_pvpo",
+   "fieldtype": "Section Break",
+   "label": "Salary & Leave Details"
+  },
+  {
+   "fetch_from": "employee.base",
+   "fieldname": "basic_salary",
+   "fieldtype": "Currency",
+   "label": "Basic Salary "
+  },
+  {
+   "fieldname": "annual_leave",
+   "fieldtype": "Int",
+   "label": "Annual Leave"
+  },
+  {
+   "fieldname": "compensation",
+   "fieldtype": "Currency",
+   "label": "Compensation"
+  },
+  {
+   "fieldname": "working_days",
+   "fieldtype": "Int",
+   "label": "Working Days"
+  },
+  {
+   "fieldname": "column_break_lrbq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_days",
+   "fieldtype": "Int",
+   "label": "Payment Days"
+  },
+  {
+   "fieldname": "column_break_bvjd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Select",
+   "label": "Reason",
+   "options": "\nResignation\nDismissal\nRedundancy\nRetirement"
+  },
+  {
+   "fieldname": "remark",
+   "fieldtype": "Small Text",
+   "label": "Remark "
+  },
+  {
+   "fieldname": "section_break_gnhn",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "severance_table",
+   "fieldtype": "Table",
+   "label": "Severance Table",
+   "options": "Severance Detail"
+  },
+  {
+   "fieldname": "tab_2_tab",
+   "fieldtype": "Tab Break",
+   "label": "Final Settlement "
+  },
+  {
+   "fieldname": "final_settlement_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "base_pension",
+   "fieldtype": "Currency",
+   "label": "Employee Pension"
+  },
+  {
+   "fieldname": "company_pension",
+   "fieldtype": "Currency",
+   "label": "Company Pension"
+  },
+  {
+   "fieldname": "tax",
+   "fieldtype": "Currency",
+   "label": "Tax"
+  },
+  {
+   "fieldname": "column_break_epcp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_severance",
+   "fieldtype": "Currency",
+   "label": "Total Severance"
+  },
+  {
+   "fieldname": "severance_tax",
+   "fieldtype": "Currency",
+   "label": "Severance Tax"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-03-12 09:28:12.388885",
+ "modified_by": "Administrator",
+ "module": "Payroll",
+ "name": "Employee Termination",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Administrator",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
