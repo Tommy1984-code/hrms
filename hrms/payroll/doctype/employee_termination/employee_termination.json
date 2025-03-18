@@ -20,7 +20,7 @@
   "annual_leave",
   "compensation",
   "column_break_lrbq",
-  "working_days",
+  "worked_days",
   "payment_days",
   "column_break_bvjd",
   "reason",
@@ -34,7 +34,12 @@
   "tax",
   "column_break_epcp",
   "total_severance",
-  "severance_tax"
+  "severance_tax",
+  "net_severance",
+  "section_break_pwqb",
+  "gross_annual_leave_payment",
+  "annual_leave_tax",
+  "net_annual_leave_payment"
  ],
  "fields": [
   {
@@ -64,6 +69,9 @@
    "fetch_from": "employee.employee_name",
    "fieldname": "employee_name",
    "fieldtype": "Read Only",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Employee Name"
   },
   {
@@ -116,11 +124,6 @@
    "fieldname": "compensation",
    "fieldtype": "Currency",
    "label": "Compensation"
-  },
-  {
-   "fieldname": "working_days",
-   "fieldtype": "Int",
-   "label": "Working Days"
   },
   {
    "fieldname": "column_break_lrbq",
@@ -187,17 +190,46 @@
   {
    "fieldname": "total_severance",
    "fieldtype": "Currency",
-   "label": "Total Severance"
+   "label": "Gross Severance"
   },
   {
    "fieldname": "severance_tax",
    "fieldtype": "Currency",
    "label": "Severance Tax"
+  },
+  {
+   "fieldname": "net_severance",
+   "fieldtype": "Currency",
+   "label": "Net Severance"
+  },
+  {
+   "fieldname": "section_break_pwqb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "net_annual_leave_payment",
+   "fieldtype": "Currency",
+   "label": "Net Annual Leave Payment"
+  },
+  {
+   "fieldname": "annual_leave_tax",
+   "fieldtype": "Currency",
+   "label": "Annual Leave Tax"
+  },
+  {
+   "fieldname": "worked_days",
+   "fieldtype": "Int",
+   "label": "worked_days"
+  },
+  {
+   "fieldname": "gross_annual_leave_payment",
+   "fieldtype": "Currency",
+   "label": "Gross Annual Leave Payment"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-12 09:28:12.388885",
+ "modified": "2025-03-17 09:58:31.704817",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Employee Termination",

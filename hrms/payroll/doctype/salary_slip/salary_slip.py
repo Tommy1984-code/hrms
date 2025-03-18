@@ -515,20 +515,18 @@ class SalarySlip(TransactionBase):
 		   'abbr','payment_type','from_date','to_date','payroll_dates','prorate']
 		)
 
-		# Fetch the employee's joining date and employee leaving date
-		employee_joining_date = self.joining_date  # Fetch this from Employee record
-		employee_relieving_date = self.relieving_date
-		actual_start_date = self.actual_start_date
-		actual_end_date = self.actual_end_date
+		# Convert dates once and reuse
+		def parse_date(date_str):
+			return datetime.strptime(date_str, "%Y-%m-%d").date() if isinstance(date_str, str) else date_str
 		
-		if isinstance(self.actual_start_date, str):
-			actual_start_date = datetime.strptime(actual_start_date, "%Y-%m-%d").date()
-		if isinstance(self.actual_end_date,str):
-			actual_end_date = datetime.strptime(actual_end_date,"%Y-%m-%d").date()
-		if isinstance(employee_joining_date, str):
-			employee_joining_date = datetime.strptime(employee_joining_date, "%Y-%m-%d").date()
-		if isinstance(employee_relieving_date,str):
-			employee_relieving_date = datetime.strptime(employee_relieving_date,"%Y-%m-%d").date()
+
+		employee_joining_date = parse_date(self.joining_date)
+		employee_relieving_date = parse_date(self.relieving_date)
+		actual_start_date = parse_date(self.actual_start_date)
+		actual_end_date = parse_date(self.actual_end_date)
+
+		
+		
 
 		# Get the last date of the current month
 		current_date = datetime.today().date()
@@ -542,112 +540,123 @@ class SalarySlip(TransactionBase):
 		is_new_employee = employee_joining_date >= actual_start_date
 		is_leaving_employee =employee_relieving_date is not None and employee_relieving_date <= actual_end_date
 
+		added_components = {}
+
 		for detail in salary_details:
-			if component_type is None or detail.parentfield == component_type:
+			if component_type is not None and detail.parentfield != component_type:
+
+				continue
 				
-				
-				if detail.payment_type not in payment_types_order:
+			if detail.payment_type not in payment_types_order:
 
-					continue # Skip if the payment type doesn't match
+				continue # Skip if the payment type doesn't match
 
-				# Get the index of the component's assigned payment type
-				component_payment_index = payment_types_order.index(detail.payment_type)
+			# Get the index of the component's assigned payment type
+			component_payment_index = payment_types_order.index(detail.payment_type)
 
-				# Ensure the component is included if it's assigned to an earlier or same payment type
-				if component_payment_index > selected_payment_index:
-					continue  # Skip if the component's payment type is beyond the selected one
+			# Ensure the component is included if it's assigned to an earlier or same payment type
+			if component_payment_index > selected_payment_index:
+				continue  # Skip if the component's payment type is beyond the selected one
 
 
-				#check if the date range is 
-				
-				is_valid_date_range = self.is_date_range_valid(detail)
-				
-				# check against payroll_dates for single month inclusion
-				if not self.is_payroll_date_valid(detail):
-					continue # skip if the payroll_dates do not match the current month
-				
-				if self.actual_start_date or self.actual_end_date: #only skip if the date range is invalid
-					if not is_valid_date_range:
-						continue #skip if the date rang is invalid
+			#check if the date range is 
+			
+			is_valid_date_range = self.is_date_range_valid(detail)
+			
+			# check against payroll_dates for single month inclusion
+			if not self.is_payroll_date_valid(detail):
+				continue # skip if the payroll_dates do not match the current month
+			
+			if self.actual_start_date or self.actual_end_date: #only skip if the date range is invalid
+				if not is_valid_date_range:
+					continue #skip if the date rang is invalid
 
-				# Logic to handle "Full Month" or "Prorated" for new employees
-				if is_new_employee:
-					if detail.get("prorate")  == "Full Month":
-						# Give the full amount for new employees
-						detail.amount = round(detail.amount, 2)
-						
-					elif detail.get("prorate") == "Prorated":
-						# Calculate prorated amount based on working days
-						total_days_in_month = 26  # Fixed hours per month (based on 26 days)
-
-						# Calculate the number of working days from the joining date to the last day of the month
-						payable_days = self.get_working_days_from_joining_to_month_end(employee_joining_date, actual_end_date)
-												
-						# Calculate prorated amount
-						prorated_amount = (detail.amount / total_days_in_month) * payable_days
-						detail.amount = round(prorated_amount, 2)  # Adjust the amount
-						
-						# # Calculate prorated amount
-						# prorated_amount = (detail.amount / total_days_in_month) * payable_days
-						# detail.amount = round(prorated_amount, 2)  # Adjust the amount
-
-				elif is_leaving_employee:
-					
-					if detail.get("prorate")  == "Full Month":
-						# Give the full amount for new employees
-						detail.amount = round(detail.amount, 2)
-					elif detail.get("prorate") == "Prorated":
-						 # Calculate prorated amount based on working days
-						
-						total_days_in_month = 26  # Fixed hours per month (based on 26 days)
-
-						# Calculate the number of working days from the joining date to the last day of the month
-						payable_days = self.get_working_days_from_joining_to_month_end(actual_start_date, employee_relieving_date)
-												
-						# Calculate prorated amount
-						prorated_amount = (detail.amount / total_days_in_month) * payable_days
-						detail.amount = round(prorated_amount, 2)  # Adjust the amount
-						
-				else:
-					# For existing employees, keep the full amount
+			# Logic to handle "Full Month" or "Prorated" for new employees
+			if is_new_employee:
+				if detail.get("prorate")  == "Full Month":
+					# Give the full amount for new employees
 					detail.amount = round(detail.amount, 2)
 					
-				
+				elif detail.get("prorate") == "Prorated":
+					# Calculate prorated amount based on working days
+					total_days_in_month = 26  # Fixed hours per month (based on 26 days)
 
-				detail.condition = sanitize_expression(detail.condition)
-				detail.formula = sanitize_expression(detail.formula)
-				
-				# Create struct_row with only necessary fields
-				struct_row = frappe._dict({
-					'salary_component': detail.salary_component,
-					'amount': detail.amount,
-					'condition': detail.condition,
-                    'formula': detail.formula,
-					'amount_based_on_formula': detail.amount_absed_on_formula,
-					'abbr':detail.abbr,
-					'payment_type': detail.payment_type,  # Include payment type
-                	'payroll_dates': detail.payroll_dates, # Include payroll dates
-					'prorate':detail.prorate,
-					'prorated_amount': detail.amount  # Pass prorated amount 
+					# Calculate the number of working days from the joining date to the last day of the month
+					payable_days = self.get_working_days_from_joining_to_month_end(employee_joining_date, actual_end_date)
+											
+					# Calculate prorated amount
+					prorated_amount = (detail.amount / total_days_in_month) * payable_days
+					detail.amount = round(prorated_amount, 2)  # Adjust the amount
 					
-				})
-				# frappe.msgprint(f"this is the value of the component {struct_row}")
+					# # Calculate prorated amount
+					# prorated_amount = (detail.amount / total_days_in_month) * payable_days
+					# detail.amount = round(prorated_amount, 2)  # Adjust the amount
+
+			elif is_leaving_employee:
+				
+				if detail.get("prorate")  == "Full Month":
+					# Give the full amount for new employees
+					detail.amount = round(detail.amount, 2)
+				elif detail.get("prorate") == "Prorated":
+						# Calculate prorated amount based on working days
+					
+					total_days_in_month = 26  # Fixed hours per month (based on 26 days)
+
+					# Calculate the number of working days from the joining date to the last day of the month
+					payable_days = self.get_working_days_from_joining_to_month_end(actual_start_date, employee_relieving_date)
+											
+					# Calculate prorated amount
+					prorated_amount = (detail.amount / total_days_in_month) * payable_days
+					detail.amount = round(prorated_amount, 2)  # Adjust the amount
+					
+			else:
+				# For existing employees, keep the full amount
+				detail.amount = round(detail.amount, 2)
+				
+			 # Store component in dictionary
+			component_key = (detail.salary_component, detail.payment_type)
+
+			if component_key in added_components:
+				continue  # Skip duplicate components
+
+			added_components[component_key] = True
+
+			detail.condition = sanitize_expression(detail.condition)
+			detail.formula = sanitize_expression(detail.formula)
+			
+			# Create struct_row with only necessary fields
+			struct_row = frappe._dict({
+				'salary_component': detail.salary_component,
+				'amount': detail.amount,
+				'condition': detail.condition,
+				'formula': detail.formula,
+				'amount_based_on_formula': detail.amount_absed_on_formula,
+				'abbr':detail.abbr,
+				'payment_type': detail.payment_type,  # Include payment type
+				'payroll_dates': detail.payroll_dates, # Include payroll dates
+				'prorate':detail.prorate,
+				'prorated_amount': detail.amount  # Pass prorated amount 
+				
+			})
+			# frappe.msgprint(f"this is the value of the component {struct_row}")
 
 
-				self.add_structure_component(struct_row, component_type)
+			self.add_structure_component(struct_row, component_type)
 
 		for struct_row in self._employee_salary_structure.get(component_type,[]):
 			#only andd struct_row if it matches the payment type and date range
 			if struct_row.payment_type in payment_types_order and \
 				payment_types_order.index(struct_row.payment_type) <= selected_payment_index:
 
-				is_valid_date_range = self.is_date_range_valid(struct_row)
-				# check agains payroll_dates for single month inclusion
-				if not self.is_payroll_date_valid(struct_row):
-					continue # Skip if the payroll_dates do not match the current month
-				if self.actual_start_date or self.actual_end_date:
-					if not is_valid_date_range:
-						continue #Skip if the date range is invalid
+				# is_valid_date_range = self.is_date_range_valid(struct_row)
+				# # check agains payroll_dates for single month inclusion
+				# if not self.is_payroll_date_valid(struct_row):
+				# 	continue # Skip if the payroll_dates do not match the current month
+				# if self.actual_start_date or self.actual_end_date:
+				# 	if not is_valid_date_range:
+				# 		continue #Skip if the date range is invalid
+				if not self.is_date_range_valid(struct_row) or not self.is_payroll_date_valid(struct_row):
+					continue  # Skip invalid date range
 				
 				self.add_structure_component(struct_row,component_type)
 				

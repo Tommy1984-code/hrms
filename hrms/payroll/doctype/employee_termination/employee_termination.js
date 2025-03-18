@@ -16,7 +16,6 @@ frappe.ui.form.on("Employee Termination", {
                 callback: function(r) {
                     if (!r.exc) {
                         frm.refresh_field("severance_table");  // Refresh the severance table after generation
-                        frappe.msgprint("Severance Table has been generated!");
                         update_severance_total(frm);
                     }
                 }
@@ -28,7 +27,18 @@ frappe.ui.form.on("Employee Termination", {
         add_select_all_checkbox(frm);
         update_severance_total(frm);
         
+        
     },
+    setup: function(frm) {
+        frm.set_query("employee", function () {
+            return {
+                query: "erpnext.controllers.queries.employee_query",
+                filters: {
+                    company: frm.doc.company,  // Ensures only employees from the selected company appear
+                },
+            };
+        });
+    }
 });
 
 // Function to handle individual grant selection and update the total severance
@@ -38,11 +48,9 @@ frappe.ui.form.on('Severance Table', {
         
         // Update value of grant and recalculate severance total
         frappe.model.set_value(cdt, cdn, "grant", row.grant ? 1 : 0);
-
-        console.log('Row:', row);
-        console.log('Grant:', row.grant);
         
         update_severance_total(frm);  // Recalculate severance total
+        frm.refresh_field('severance_table');
     },
     on_change: function(frm, cdt, cdn) {
         update_severance_total(frm);
@@ -89,5 +97,5 @@ function update_severance_total(frm) {
 
     frm.set_value("total_severance", total);
     frm.refresh_field('total_severance');
-    console.log('Total Severance:', total);
+   
 }
