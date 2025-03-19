@@ -1,0 +1,103 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{AL}-{####}",
+ "creation": "2025-03-19 12:46:59.621502",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "base_salary",
+  "column_break_occq",
+  "posting_date",
+  "annual_leave_days",
+  "gross_annual_leave",
+  "column_break_dryq",
+  "annual_leave_tax",
+  "net_annual_leave"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Read Only",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee Name"
+  },
+  {
+   "fetch_from": "employee.base",
+   "fieldname": "base_salary",
+   "fieldtype": "Currency",
+   "label": "Base Salary",
+   "options": "Employee"
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date"
+  },
+  {
+   "fieldname": "column_break_occq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "gross_annual_leave",
+   "fieldtype": "Currency",
+   "label": "Gross Annual Leave"
+  },
+  {
+   "fieldname": "annual_leave_tax",
+   "fieldtype": "Currency",
+   "label": "Annual Leave Tax"
+  },
+  {
+   "fieldname": "column_break_dryq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "net_annual_leave",
+   "fieldtype": "Currency",
+   "label": "Net Annual Leave "
+  },
+  {
+   "fieldname": "annual_leave_days",
+   "fieldtype": "Int",
+   "label": "Annual Leave Days"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-03-19 15:33:48.923625",
+ "modified_by": "Administrator",
+ "module": "Payroll",
+ "name": "Annual Leave",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
