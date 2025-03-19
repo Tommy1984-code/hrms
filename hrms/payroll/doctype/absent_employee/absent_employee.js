@@ -19,7 +19,18 @@ frappe.ui.form.on("Absent Employee", {
             
         };
         
+        
        
+    },
+    setup: function(frm) {
+        frm.set_query("employee", function () {
+            return {
+                query: "erpnext.controllers.queries.employee_query",
+                filters: {
+                    company: frm.doc.company,  // Ensures only employees from the selected company appear
+                },
+            };
+        });
     },
 
     absent_days:function(frm){

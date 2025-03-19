@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:EMP-ABS-{####}",
  "creation": "2025-01-22 16:14:09.493181",
@@ -8,6 +9,7 @@
  "field_order": [
   "section_break_u6na",
   "employee",
+  "employee_name",
   "payroll_month",
   "absent_days",
   "column_break_xixv",
@@ -45,8 +47,7 @@
    "fieldname": "deduct_single_day_amount",
    "fieldtype": "Float",
    "label": "Deduct Single Day Amount",
-   "non_negative": 1,
-   "reqd": 1
+   "non_negative": 1
   },
   {
    "fieldname": "total_deduction",
@@ -85,12 +86,22 @@
    "fieldtype": "Date",
    "label": "Payroll Month",
    "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Read Only",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee Name",
+   "options": "Employee"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-25 10:32:06.661822",
+ "modified": "2025-03-18 16:46:54.962309",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Absent Employee",
@@ -116,6 +127,7 @@
    "delete": 1,
    "email": 1,
    "export": 1,
+   "import": 1,
    "print": 1,
    "read": 1,
    "report": 1,

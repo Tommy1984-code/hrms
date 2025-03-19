@@ -12,7 +12,7 @@ frappe.ui.form.on("Loan Management", {
         function() { 
             return {
                 filters:{
-                    'name':'Load'
+                    'name':'Loan'
                 }
             };
             
@@ -23,4 +23,14 @@ frappe.ui.form.on("Loan Management", {
 	refresh(frm) {
 
 	},
+    setup: function(frm) {
+        frm.set_query("employee", function () {
+            return {
+                query: "erpnext.controllers.queries.employee_query",
+                filters: {
+                    company: frm.doc.company,  // Ensures only employees from the selected company appear
+                },
+            };
+        });
+    }
 });

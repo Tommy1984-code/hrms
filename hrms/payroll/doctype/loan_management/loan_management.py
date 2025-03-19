@@ -3,15 +3,26 @@
 
 # import frappe
 from frappe.model.document import Document
+from frappe.utils import today
 import frappe
 
 
 class LoanManagement(Document):
+
     
 	def validate(self):
 		self.check_duplicate_load_type()
+		self.validate_monthly_deduction()
+		self.validate_loan_paid_amount()
 		self.update_remaining_amount()
+		# self.add_loan_salary_component()
+		if self.loan_paid:
+			self.loan_paid = 0
+
+	def on_update(self):
 		self.add_loan_salary_component()
+
+		
 		
 
 	def check_duplicate_load_type(self):
@@ -29,18 +40,25 @@ class LoanManagement(Document):
 
 	def add_loan_salary_component(self):
 		"""Fetch and add the 'loan' salary component to the Deductions child table."""
+		
+
 		loan_component = frappe.get_value("Salary Component", {"name": "Loan"}, ["name", "amount"])
+
 		
 		if loan_component:
 
 			loan_name = frappe.get_value("Loan Management", {"employee": self.employee, "status": "Ongoing"},"name")
 
+			frappe.msgprint(f"my employee is : {loan_name}")
+			
 			if loan_name:
 
 				latest_remaining_amount = frappe.db.get_value("Loan Management", loan_name, "remaining_amount")
 				latest_monthly_deduction = frappe.db.get_value("Loan Management", loan_name, "monthly_deduction")
-
 				
+				frappe.msgprint(f"remaing amount is : {latest_remaining_amount}")
+				frappe.msgprint(f"montly deduction is : {latest_monthly_deduction}")
+
 
 				if latest_remaining_amount > 0:
 
@@ -66,6 +84,19 @@ class LoanManagement(Document):
 						self.append('deductions', deduction_entry)
 					
 					frappe.db.commit() 
+
+	def validate_monthly_deduction(self):
+		"""Ensure that monthly deduction does not exceed the loan amount."""
+		if self.monthly_deduction and self.monthly_deduction > self.loan_amount:
+			frappe.throw("Monthly deduction cannot exceed the loan amount.")
+
+	def validate_loan_paid_amount(self):
+		"""Ensure that loan paid amount does not exceed the remaining balance."""
+		remaining_amount = self.remaining_amount or 0 
+		if self.loan_paid > self.loan_amount:
+			frappe.throw("Loan paid amount cannot exceed the total loan amount.")
+		if self.loan_paid > remaining_amount:
+			frappe.throw("Loan paid amount cannot exceed the remaining loan balance.")
 
 
 	def validate_remaining_balance(self):
@@ -102,14 +133,22 @@ class LoanManagement(Document):
 
 		"""Update the remaining loan balance after payments are made."""
 		# Get total paid amount from payment history
+		current_remaining_amount = self.remaining_amount or self.loan_amount  # **Use updated remaining amount**
 		total_paid = self.get_total_paid_loan() + self.loan_paid
 
 		# Calculate the remaining amount by subtracting the total paid from the loan amount
-		remaining_amount = max(0, self.loan_amount - total_paid)
+		remaining_amount = max(0, current_remaining_amount - total_paid)
 
 		# If this is the first time, set the initial remaining amount as the loan amount
 		if not self.remaining_amount:
 			self.remaining_amount = self.loan_amount
+
+		# Log manual payment in Manual Loan Payment table
+		if self.loan_paid:
+			self.append("manual_paid_history", {
+				"paid_date": today(),  # Store in YYYY-MM-DD format
+				"paid_amount": self.loan_paid
+			})
 
 		# If the remaining amount has changed, update the field
 		if self.remaining_amount != remaining_amount:

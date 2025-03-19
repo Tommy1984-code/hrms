@@ -9,8 +9,6 @@ class AbsentEmployee(Document):
         self.check_duplicate_absent_record()
         self.calculate_total_deduction()
         self.add_absent_salary_component()
-        
-        
 
     def check_duplicate_absent_record(self):
         """Check if an absent record already exists for the same employee in the same month."""
@@ -31,10 +29,19 @@ class AbsentEmployee(Document):
             frappe.throw(f"An absent record for this employee already exists for the month: {payroll_month}.")
 
     def calculate_total_deduction(self):
-        if self.absent_days and self.deduct_single_day_amount:
-            self.total_deduction = self.absent_days * self.deduct_single_day_amount
-        else:
-            self.total_deduction = 0
+        """Calculate the Absent deduction amount based on the absent days"""
+        emp_base_salary = frappe.get_value("Employee",self.employee,"base")
+
+        if not emp_base_salary:
+            frappe.throw("Base Salary Is Not Found For Emploee {self.employee}")
+        # Always 26 working days per month
+        total_working_days = 26 
+
+        # Calculate the deduction per day
+        self.deduct_single_day_amount = emp_base_salary / total_working_days 
+        #Total deduction
+        self.total_deduction = self.absent_days * self.deduct_single_day_amount
+
 
     def add_absent_salary_component(self):
         """Fetch and add the 'Absent' salary component to the Deductions child table."""
@@ -50,12 +57,6 @@ class AbsentEmployee(Document):
                 }
                 # Append to the child table
                 self.append('deductions', deduction_entry)
-
-
-
-        
-
-
 
 @frappe.whitelist()
 def add_absent_salary_component(docname):
