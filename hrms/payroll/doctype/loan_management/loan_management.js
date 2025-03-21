@@ -12,16 +12,16 @@ frappe.ui.form.on("Loan Management", {
         function() { 
             return {
                 filters:{
-                    'name':'Loan'
+                    'name': ['in', ['Healthy Loan', 'Coast Sharing Loan']] // Filter to show only the loan components
                 }
             };
             
         };
-        
-       
     },
-	refresh(frm) {
 
+	refresh(frm) {
+        // Refresh the deductions table to ensure it shows the latest data
+        frm.refresh_field("deductions");
 	},
     setup: function(frm) {
         frm.set_query("employee", function () {
@@ -32,5 +32,5 @@ frappe.ui.form.on("Loan Management", {
                 },
             };
         });
-    }
+    },
 });

@@ -9,21 +9,19 @@ import frappe
 
 class LoanManagement(Document):
 
-    
+	def before_save(self):
+		self.add_loan_salary_component()
+	
 	def validate(self):
 		self.check_duplicate_load_type()
 		self.validate_monthly_deduction()
 		self.validate_loan_paid_amount()
 		self.update_remaining_amount()
+		
 		# self.add_loan_salary_component()
 		if self.loan_paid:
 			self.loan_paid = 0
 
-	def on_update(self):
-		self.add_loan_salary_component()
-
-		
-		
 
 	def check_duplicate_load_type(self):
 		"""check for duplicate loan types for the same employee"""
@@ -37,53 +35,56 @@ class LoanManagement(Document):
 									})
 			if duplicate_loans:
 				frappe.throw(f"Employee {self.employee} already has a loan of type '{self.loan_type}'.")
-
+	
 	def add_loan_salary_component(self):
-		"""Fetch and add the 'loan' salary component to the Deductions child table."""
-		
+		"""Update the 'Loan' salary component inside the Loan Management doctype's child table (Deductions)."""
 
-		loan_component = frappe.get_value("Salary Component", {"name": "Loan"}, ["name", "amount"])
-
-		
-		if loan_component:
-
-			loan_name = frappe.get_value("Loan Management", {"employee": self.employee, "status": "Ongoing"},"name")
-
-			frappe.msgprint(f"my employee is : {loan_name}")
-			
-			if loan_name:
-
-				latest_remaining_amount = frappe.db.get_value("Loan Management", loan_name, "remaining_amount")
-				latest_monthly_deduction = frappe.db.get_value("Loan Management", loan_name, "monthly_deduction")
-				
-				frappe.msgprint(f"remaing amount is : {latest_remaining_amount}")
-				frappe.msgprint(f"montly deduction is : {latest_monthly_deduction}")
+		loan_type_id = self.loan_type
+		loan_type = frappe.get_value("Loan Type", loan_type_id, "loan_type") 
 
 
-				if latest_remaining_amount > 0:
+		frappe.msgprint(f"Selected loan type: {loan_type}")  
 
-				# Adjust the deduction amount if the remaining amount is less than the usual deduction
-					adjusted_deduction = min(latest_monthly_deduction, latest_remaining_amount)
+		# Define the salary component for each loan type
+		loan_components = {
+			"Healthy Loan": "Healthy Loan", 
+			"Coast Sharing Loan": "Coast Sharing Loan" 
+		}
 
+		loan_component = loan_components.get(loan_type)
+		if not loan_component:
+			frappe.msgprint("Invalid loan type selected.")
+			return
 
-					# Check if the loan component already exists in deductions
-					existing_entry = next((detail for detail in self.deductions if detail.salary_component == loan_component[0]), None)
-					
-					if existing_entry:
-						
-						existing_entry.amount = adjusted_deduction
-						frappe.db.set_value("Salary Detail", existing_entry.name, "amount", adjusted_deduction)  # 🔥 Update directly without recursion
-						
-					else:
-						deduction_entry = {
-							'salary_component': loan_component[0],  # Name of the component
-							'amount': adjusted_deduction,
-							
-						}
-						# Append to the child table
-						self.append('deductions', deduction_entry)
-					
-					frappe.db.commit() 
+		# Fetch the selected loan component from Salary Component
+		loan_component_name = frappe.get_value("Salary Component", {"name": loan_component}, "name")
+		if not loan_component_name:
+			return  # Exit if no corresponding salary component exists
+
+		# Fetch the latest remaining loan balance and monthly deduction
+		latest_remaining_amount = self.remaining_amount
+		latest_monthly_deduction = self.monthly_deduction
+
+		if latest_remaining_amount <= 0:
+			return  # Exit if loan has been fully repaid
+
+		adjusted_deduction = min(latest_monthly_deduction, latest_remaining_amount)
+
+		# Get the first (and only) existing deduction entry
+		existing_entry = self.get("deductions")[0] if self.get("deductions") else None
+
+		if existing_entry:
+			existing_entry.amount = adjusted_deduction  # Update existing deduction
+		else:
+			self.append("deductions", {
+				"salary_component": loan_component_name,
+				"amount": adjusted_deduction
+			})
+
+		frappe.db.commit()
+
+	
+
 
 	def validate_monthly_deduction(self):
 		"""Ensure that monthly deduction does not exceed the loan amount."""
@@ -107,10 +108,18 @@ class LoanManagement(Document):
 
 	def update_loan_payment(self,paid_amount,payment_date):
 		"""Record a payment in Loan Payment History when Salary Slip deducts the loan component."""
-		manual_paid = self.loan_paid
+
+		if self.remaining_amount is None:
+			self.remaining_amount = self.loan_amount  # Initialize remaining amount if not set
+
+		frappe.msgprint(f"my remaing amount from my loan is {self.remaining_amount}")
+
+		# manual_paid = self.loan_paid
 		# Calculate remaing amount
-		total_paid = self.get_total_paid_loan() + paid_amount + manual_paid
-		remaining_amount = max (0,self.loan_amount - total_paid)
+		# total_paid = self.get_total_paid_loan() + paid_amount + manual_paid
+		# remaining_amount = max (0,self.loan_amount - total_paid)
+		remaining_amount = max(0, self.remaining_amount - paid_amount)
+		frappe.msgprint(f"the remiang amount from my loan is {remaining_amount}")
 		# Append a new entry to Loan Payment History
 		self.append("loan_payment_history", {
 			"loan_id": self.name,
@@ -129,19 +138,29 @@ class LoanManagement(Document):
 		"""Calculate the total amount paid for this loan."""
 		return sum(entry.paid_amount for entry in self.loan_payment_history)
 	
+	def get_total_manual_paid(self):
+		"""Calculate the total manually paid amount from the Manual Loan Payment history table."""
+		return sum(entry.paid_amount for entry in self.manual_paid_history)
+
+	
 	def update_remaining_amount(self):
 
 		"""Update the remaining loan balance after payments are made."""
 		# Get total paid amount from payment history
-		current_remaining_amount = self.remaining_amount or self.loan_amount  # **Use updated remaining amount**
-		total_paid = self.get_total_paid_loan() + self.loan_paid
-
-		# Calculate the remaining amount by subtracting the total paid from the loan amount
-		remaining_amount = max(0, current_remaining_amount - total_paid)
-
-		# If this is the first time, set the initial remaining amount as the loan amount
-		if not self.remaining_amount:
+		if self.remaining_amount is None:
 			self.remaining_amount = self.loan_amount
+
+		current_remaining_amount = self.remaining_amount or self.loan_amount  # **Use updated remaining amount**
+		total_paid = self.get_total_paid_loan() + self.get_total_manual_paid() + self.loan_paid 
+		frappe.msgprint(f"the current remmaing amount is {current_remaining_amount}")
+		frappe.msgprint(f"the total paid is :{total_paid}")
+		
+		# Calculate the remaining amount by subtracting the total paid from the loan amount
+		remaining_amount = max(0,self.loan_amount - total_paid)
+
+		frappe.msgprint(f"the remiang amount is {remaining_amount}")
+
+		
 
 		# Log manual payment in Manual Loan Payment table
 		if self.loan_paid:
@@ -149,10 +168,12 @@ class LoanManagement(Document):
 				"paid_date": today(),  # Store in YYYY-MM-DD format
 				"paid_amount": self.loan_paid
 			})
+			self.loan_paid = 0 
 
 		# If the remaining amount has changed, update the field
 		if self.remaining_amount != remaining_amount:
 			self.remaining_amount = remaining_amount
+			frappe.msgprint(f"the remiang amount is {self.remaining_amount}")
 			# Save the document without triggering recursion
 			frappe.db.set_value("Loan Management", self.name, "remaining_amount", remaining_amount)
 			frappe.db.commit() 

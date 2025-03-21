@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:{LM}-{####}",
  "creation": "2025-02-11 08:01:20.230387",
@@ -22,7 +23,8 @@
   "section_break_pdio",
   "loan_payment_history",
   "section_break_uwsg",
-  "manual_paid_history"
+  "manual_paid_history",
+  "amended_from"
  ],
  "fields": [
   {
@@ -120,11 +122,21 @@
    "fieldtype": "Table",
    "label": "Manual Paid history",
    "options": "Manual Loan Payment History"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Loan Management",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-19 10:19:18.436069",
+ "modified": "2025-03-20 10:14:21.060863",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Loan Management",
@@ -136,10 +148,12 @@
    "delete": 1,
    "email": 1,
    "export": 1,
+   "import": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "select": 1,
    "share": 1,
    "write": 1
   }
