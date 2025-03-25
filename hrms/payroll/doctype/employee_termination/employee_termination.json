@@ -31,7 +31,6 @@
   "final_settlement_section",
   "base_pension",
   "company_pension",
-  "tax",
   "column_break_epcp",
   "total_severance",
   "severance_tax",
@@ -179,11 +178,6 @@
    "label": "Company Pension"
   },
   {
-   "fieldname": "tax",
-   "fieldtype": "Currency",
-   "label": "Tax"
-  },
-  {
    "fieldname": "column_break_epcp",
    "fieldtype": "Column Break"
   },
@@ -229,7 +223,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-17 09:58:31.704817",
+ "modified": "2025-03-24 08:34:19.061681",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Employee Termination",

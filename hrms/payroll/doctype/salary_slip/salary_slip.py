@@ -471,8 +471,13 @@ class SalarySlip(TransactionBase):
 					detail.to_date = datetime.combine(detail.to_date, datetime.min.time())
 				return (detail.from_date <= end_date and detail.to_date >= start_date)
 			elif detail.from_date:  # If only from_date is specified
+				if isinstance(detail.from_date, date) and not isinstance(detail.from_date, datetime):
+					detail.from_date = datetime.combine(detail.from_date, datetime.min.time())
 				return (start_date >= detail.from_date)
 			elif detail.to_date:  # If only to_date is specified
+				# Ensure consistency
+				if isinstance(detail.to_date, date) and not isinstance(detail.to_date, datetime):
+						detail.to_date = datetime.combine(detail.to_date, datetime.min.time())
 				return (end_date <= detail.to_date)
 		return True  # If no dates are set, consider valid
 
@@ -503,7 +508,8 @@ class SalarySlip(TransactionBase):
 	def get_salary_components(self, employee_id, component_type=None):
 
 		# Define payment types in order
-		payment_types_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+		payment_types_order = ["Advance Payment", "Performance Payment", "Third Payment", 
+								"Fourth Payment", "Fifth Payment"]
 		# Get the index of the selected payment type
 		selected_payment_index = payment_types_order.index(self.payment_type) if self.payment_type in payment_types_order else -1
 
@@ -519,15 +525,11 @@ class SalarySlip(TransactionBase):
 		# Convert dates once and reuse
 		def parse_date(date_str):
 			return datetime.strptime(date_str, "%Y-%m-%d").date() if isinstance(date_str, str) else date_str
-		
 
 		employee_joining_date = parse_date(self.joining_date)
 		employee_relieving_date = parse_date(self.relieving_date)
 		actual_start_date = parse_date(self.actual_start_date)
 		actual_end_date = parse_date(self.actual_end_date)
-
-		
-		
 
 		# Get the last date of the current month
 		current_date = datetime.today().date()
@@ -541,7 +543,7 @@ class SalarySlip(TransactionBase):
 		is_new_employee = employee_joining_date >= actual_start_date
 		is_leaving_employee =employee_relieving_date is not None and employee_relieving_date <= actual_end_date
 
-		added_components = {}
+		added_components =set()
 
 		for detail in salary_details:
 			if component_type is not None and detail.parentfield != component_type:
@@ -558,8 +560,6 @@ class SalarySlip(TransactionBase):
 			# Ensure the component is included if it's assigned to an earlier or same payment type
 			if component_payment_index > selected_payment_index:
 				continue  # Skip if the component's payment type is beyond the selected one
-
-
 			#check if the date range is 
 			
 			is_valid_date_range = self.is_date_range_valid(detail)
@@ -573,42 +573,25 @@ class SalarySlip(TransactionBase):
 					continue #skip if the date rang is invalid
 
 			# Logic to handle "Full Month" or "Prorated" for new employees
-			if is_new_employee:
-				if detail.get("prorate")  == "Full Month":
-					# Give the full amount for new employees
-					detail.amount = round(detail.amount, 2)
-					
-				elif detail.get("prorate") == "Prorated":
-					# Calculate prorated amount based on working days
-					total_days_in_month = 26  # Fixed hours per month (based on 26 days)
+			
+			if detail.get("prorate")  == "Full Month":
+				# Give the full amount for new employees
+				detail.amount = round(detail.amount, 2)
 
-					# Calculate the number of working days from the joining date to the last day of the month
-					payable_days = self.get_working_days_from_joining_to_month_end(employee_joining_date, actual_end_date)
-											
-					# Calculate prorated amount
-					prorated_amount = (detail.amount / total_days_in_month) * payable_days
-					detail.amount = round(prorated_amount, 2)  # Adjust the amount
-					
-					# # Calculate prorated amount
-					# prorated_amount = (detail.amount / total_days_in_month) * payable_days
-					# detail.amount = round(prorated_amount, 2)  # Adjust the amount
+			elif detail.prorate == "Prorated":
+				# Calculate prorated amount based on payroll days, even if not new/leaving
+				total_days_in_month = 26  # Fixed working days per month
+				start_date = max(actual_start_date, employee_joining_date) if is_new_employee else actual_start_date
+				end_date = min(actual_end_date, employee_relieving_date) if is_leaving_employee else actual_end_date
 
-			elif is_leaving_employee:
-				
-				if detail.get("prorate")  == "Full Month":
-					# Give the full amount for new employees
-					detail.amount = round(detail.amount, 2)
-				elif detail.get("prorate") == "Prorated":
-						# Calculate prorated amount based on working days
-					
-					total_days_in_month = 26  # Fixed hours per month (based on 26 days)
+				# Use provided range if different from start-end dates
+				if detail.from_date and detail.to_date:
+					start_date = parse_date(detail.from_date)
+					end_date = parse_date(detail.to_date)
 
-					# Calculate the number of working days from the joining date to the last day of the month
-					payable_days = self.get_working_days_from_joining_to_month_end(actual_start_date, employee_relieving_date)
-											
-					# Calculate prorated amount
-					prorated_amount = (detail.amount / total_days_in_month) * payable_days
-					detail.amount = round(prorated_amount, 2)  # Adjust the amount
+				payable_days = self.get_working_days_from_joining_to_month_end(start_date, end_date)
+				detail.amount = round((detail.amount / total_days_in_month) * payable_days, 2)
+
 					
 			else:
 				# For existing employees, keep the full amount
@@ -620,7 +603,7 @@ class SalarySlip(TransactionBase):
 			if component_key in added_components:
 				continue  # Skip duplicate components
 
-			added_components[component_key] = True
+			added_components.add(component_key)
 
 			detail.condition = sanitize_expression(detail.condition)
 			detail.formula = sanitize_expression(detail.formula)
@@ -645,21 +628,14 @@ class SalarySlip(TransactionBase):
 			self.add_structure_component(struct_row, component_type)
 
 		for struct_row in self._employee_salary_structure.get(component_type,[]):
-			#only andd struct_row if it matches the payment type and date range
-			if struct_row.payment_type in payment_types_order and \
-				payment_types_order.index(struct_row.payment_type) <= selected_payment_index:
-
-				# is_valid_date_range = self.is_date_range_valid(struct_row)
-				# # check agains payroll_dates for single month inclusion
-				# if not self.is_payroll_date_valid(struct_row):
-				# 	continue # Skip if the payroll_dates do not match the current month
-				# if self.actual_start_date or self.actual_end_date:
-				# 	if not is_valid_date_range:
-				# 		continue #Skip if the date range is invalid
-				if not self.is_date_range_valid(struct_row) or not self.is_payroll_date_valid(struct_row):
-					continue  # Skip invalid date range
-				
-				self.add_structure_component(struct_row,component_type)
+			if (
+				struct_row.payment_type in payment_types_order and
+				payment_types_order.index(struct_row.payment_type) <= selected_payment_index and
+				self.is_date_range_valid(struct_row) and
+				self.is_payroll_date_valid(struct_row)
+			):
+				self.add_structure_component(struct_row, component_type)
+			
 				
 
 	 # Helper function to get the number of working days from the joining date to the last day of the month
@@ -722,7 +698,7 @@ class SalarySlip(TransactionBase):
 		)
 
 		if not active_loans:
-			frappe.msgprint(_("No active loans found for Employee {0}").format(employee_id))
+			
 			return  # No active loans, nothing to process
 
 		loan_ids = [loan["name"] for loan in active_loans]
@@ -772,7 +748,7 @@ class SalarySlip(TransactionBase):
 								fields = ["name","loan_type"])
 		
 		if not active_loans:
-			frappe.msgprint(_("No active loans found for Employee {0}").format(self.employee))
+			
 			return
 		
 		# Loan Type to Salary Component Mapping
@@ -1721,40 +1697,29 @@ class SalarySlip(TransactionBase):
 		):
 			return
 		
-		
-			# Fetch prorate value from salary detail
-		prorate = struct_row.get('prorate', None)
+			
+		prorate = struct_row.get("prorate", None)
+		is_formula_based = struct_row.amount_based_on_formula
+		amount = 0  # Default amount
 
-		# Check if prorate is defined as "Prorated"
-		if prorate == "Prorated":
-
-			if struct_row.amount_based_on_formula:
-            # Evaluate the formula first for formula-based components
-				amount = self.eval_condition_and_formula(struct_row, self.data)
-				# Apply prorating logic for formula-based components
-				# Prorate the amount based on the payment days or total working days
-				prorated_amount = amount * (flt(self.payment_days) / flt(self.total_working_days)) if self.total_working_days else 0
-
-				if struct_row.salary_component in self.deductions:
-					# If it's a deduction, we make sure it follows prorated earnings correctly
-					prorated_amount = -abs(prorated_amount)  # Keep it negative for deductions
-
-				amount = prorated_amount
-				
-
-				# Log the prorated amount for debugging
-				#frappe.msgprint(f"Calculated prorated amount for formula-based component {struct_row.salary_component}: {prorated_amount}")
-				# Here we assume the prorated amount has been calculated earlier
-				# You can pass the calculated prorated value here (if already computed earlier)
-			else:
-				amount = struct_row.get('prorated_amount', 0)  # Assuming prorated_amount was set earlier
-				# frappe.msgprint(f"Calculated amount for component {struct_row.salary_component}: {amount}")
-
-		
-		else:
-			# Otherwise, use the default behavior (full month)
+		# Evaluate formula-based component first to avoid redundant calls
+		if is_formula_based:
 			amount = self.eval_condition_and_formula(struct_row, self.data)
-			# frappe.msgprint(f"Calculated amount for component {struct_row.salary_component}: {amount}")
+		else:
+			amount = struct_row.get("amount", 0)  # Fetch predefined amount if not formula-based
+
+		# Apply prorating logic if necessary
+		if prorate == "Prorated":
+			prorated_amount = (
+				amount * (flt(self.payment_days) / flt(self.total_working_days))
+				if self.total_working_days else 0
+			)
+
+			# Ensure deductions remain negative
+			if struct_row.salary_component in self.deductions:
+				prorated_amount = -abs(prorated_amount)
+
+			amount = prorated_amount  # Apply prorated amount
 
 		# amount = self.eval_condition_and_formula(struct_row, self.data)
 		if struct_row.statistical_component:

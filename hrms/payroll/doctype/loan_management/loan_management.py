@@ -43,8 +43,6 @@ class LoanManagement(Document):
 		loan_type = frappe.get_value("Loan Type", loan_type_id, "loan_type") 
 
 
-		frappe.msgprint(f"Selected loan type: {loan_type}")  
-
 		# Define the salary component for each loan type
 		loan_components = {
 			"Healthy Loan": "Healthy Loan", 
@@ -112,14 +110,14 @@ class LoanManagement(Document):
 		if self.remaining_amount is None:
 			self.remaining_amount = self.loan_amount  # Initialize remaining amount if not set
 
-		frappe.msgprint(f"my remaing amount from my loan is {self.remaining_amount}")
+		
 
 		# manual_paid = self.loan_paid
 		# Calculate remaing amount
 		# total_paid = self.get_total_paid_loan() + paid_amount + manual_paid
 		# remaining_amount = max (0,self.loan_amount - total_paid)
 		remaining_amount = max(0, self.remaining_amount - paid_amount)
-		frappe.msgprint(f"the remiang amount from my loan is {remaining_amount}")
+		
 		# Append a new entry to Loan Payment History
 		self.append("loan_payment_history", {
 			"loan_id": self.name,
@@ -152,28 +150,23 @@ class LoanManagement(Document):
 
 		current_remaining_amount = self.remaining_amount or self.loan_amount  # **Use updated remaining amount**
 		total_paid = self.get_total_paid_loan() + self.get_total_manual_paid() + self.loan_paid 
-		frappe.msgprint(f"the current remmaing amount is {current_remaining_amount}")
-		frappe.msgprint(f"the total paid is :{total_paid}")
 		
 		# Calculate the remaining amount by subtracting the total paid from the loan amount
 		remaining_amount = max(0,self.loan_amount - total_paid)
 
-		frappe.msgprint(f"the remiang amount is {remaining_amount}")
-
-		
 
 		# Log manual payment in Manual Loan Payment table
 		if self.loan_paid:
 			self.append("manual_paid_history", {
 				"paid_date": today(),  # Store in YYYY-MM-DD format
-				"paid_amount": self.loan_paid
+				"paid_amount": self.loan_paid,
+				"remaining_amount":remaining_amount
 			})
 			self.loan_paid = 0 
 
 		# If the remaining amount has changed, update the field
 		if self.remaining_amount != remaining_amount:
 			self.remaining_amount = remaining_amount
-			frappe.msgprint(f"the remiang amount is {self.remaining_amount}")
 			# Save the document without triggering recursion
 			frappe.db.set_value("Loan Management", self.name, "remaining_amount", remaining_amount)
 			frappe.db.commit() 

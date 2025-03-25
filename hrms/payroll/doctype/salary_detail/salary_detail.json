@@ -14,6 +14,7 @@
   "payroll_dates",
   "prorate",
   "column_break_3",
+  "tax_free_transportation_amount",
   "amount",
   "year_to_date",
   "section_break_5",
@@ -297,11 +298,18 @@
    "fieldtype": "Select",
    "label": "Prorate ",
    "options": "\nFull Month\nProrated"
+  },
+  {
+   "depends_on": "eval:doc.salary_component=='Transport Allowance'",
+   "fieldname": "tax_free_transportation_amount",
+   "fieldtype": "Select",
+   "label": "Tax Free Transportation Amount",
+   "options": "600\n2200\nAll Tax"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2025-02-27 07:53:09.656179",
+ "modified": "2025-03-25 09:53:50.640608",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Salary Detail",

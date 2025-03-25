@@ -148,7 +148,7 @@ class EmployeeTermination(Document):
 			return
 		
 		# Calculate per-day salary
-		daily_salary = self.basic_salary / 26  # 26 working days per month
+		daily_salary = self.basic_salary / 30  # 26 working days per month
 
 		# Prorate annual leave based on worked days
 		eligible_leave_days = (self.annual_leave / 365) * self.worked_days
