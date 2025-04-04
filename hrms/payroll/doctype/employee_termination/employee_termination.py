@@ -151,7 +151,7 @@ class EmployeeTermination(Document):
 		daily_salary = self.basic_salary / 30  # 26 working days per month
 
 		# Prorate annual leave based on worked days
-		eligible_leave_days = (self.annual_leave / 365) * self.worked_days
+		eligible_leave_days = (self.annual_leave / self.worked_days) * self.payment_days
 
 		# Calculate annual leave pay
 		leave_compensation = eligible_leave_days * daily_salary
