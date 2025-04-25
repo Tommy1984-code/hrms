@@ -1,0 +1,213 @@
+<script src="https://cdn.tailwindcss.com"></script>
+<div style="width: 100%; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
+    <!-- Logo aligned to the left -->
+    <div style="width: 150px; display: flex; justify-content: flex-start;">
+      <img src="/private/files/asku-logo.png" alt="Logo" style="max-height: 60px;">
+    </div>
+  
+    <!-- Centered Title and Company -->
+    <div style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+      <h2 style="margin: 0; font-size: 28px; font-weight: 600;">{{ filters.company }}</h2>
+      <h3 style="margin: 4px 0; font-size: 22px;">Payroll Summary</h3>
+    </div>
+  
+    <!-- Report Generated Date -->
+    <div style="width: 200px; font-size: 12px; text-align: right; margin-top: 10px;">
+      {% 
+        let now = new Date();
+        let genDate = now.toLocaleString('default', {
+          year: 'numeric', month: 'long', day: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      %}
+      Generated on:<br> {{ genDate }}
+    </div>
+  </div>
+  
+  <!-- Date Range -->
+  <div style="text-align: center; margin: 10px 0 20px 0; font-size: 15px;">
+    {% 
+      let from = new Date(filters.from_date);
+      let to = new Date(filters.to_date);
+      let fromMonth = from.toLocaleString('default', { month: 'long' });
+      let toMonth = to.toLocaleString('default', { month: 'long' });
+      let fromYear = from.getFullYear();
+      let toYear = to.getFullYear();
+    %}
+    For the period: {{ fromMonth }} {{ fromYear }}
+  </div>
+  
+  <style>
+    .payroll-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+  
+    .payroll-table th, .payroll-table td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: right;
+    }
+  
+    .payroll-table th {
+      background-color: #f0f0f0;
+      font-weight: bold;
+    }
+  
+    .payroll-table td:first-child,
+    .payroll-table th:first-child {
+      text-align: left;
+      width: 180px;
+    }
+
+    .no-padding-body  th, td {
+    padding: 3px !important;
+    margin: 0 !important;
+  }
+  
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 20mm;
+      }
+    }
+  </style>
+  <div class="w-full max-w-screen-xl mx-auto">
+    <table class="no-padding-body table-fixed border-collapse border border-gray-300 w-full">
+        
+        <thead>
+            <tr>
+                <th rowspan="2" class="w-[40px]  text-[10px]  font-bold  text-center border whitespace-nowrap">No.</th>
+                <th rowspan="2" class="w-[100px]  text-[12px] font-bold text-left border p-0">Department</th>
+                <th rowspan="2" class="w-[70px]  text-[10px] font-bold text-left border p-0">Basic Pay</th>
+                <th rowspan="2" class="w-[60px]  text-[10px] font-medium text-left border p-0">Absence</th>
+                <th rowspan="2" class="w-[60px]  text-[10px] font-medium text-left border p-0">Hardship Allowance</th>
+                <th rowspan="2" class="w-[60px]  text-[10px] font-medium text-left border p-0">Overtime</th>
+                <th rowspan="2" class="w-[60px]  text-[10px] font-medium text-left border p-0">Commission</th>
+                <th rowspan="2" class="w-[70px]  text-[10px] font-medium text-left border p-0">Incentive</th>
+                <th rowspan="2" class="w-[70px]  text-[10px] font-medium text-left border p-0">Taxable Gross</th>
+                <th rowspan="2" class="w-[70px]  text-[10px] font-medium text-left border p-0">Gross Pay</th>
+                <th rowspan="2" class="w-[60px]  text-[10px] font-medium text-left border p-0">Company Pension</th>
+                <th colspan="4" class="w-[295px]  text-[10px] font-medium text-center border p-0">Deductions</th>
+                <th rowspan="2" class="w-[80px]  text-[10px] font-medium text-left border p-0">Net Pay</th>
+              </tr>
+              <tr>
+                <th class="w-[75px]  text-[10px] font-medium text-left border p-0">Income Tax</th>
+                <th class="w-[70px]  text-[10px] font-medium text-left border p-0">Employee Pension</th>
+                <th class="w-[75px]  text-[9px] font-medium text-left border p-0">Other Deduction</th>
+                <th class="w-[75px]  text-[9px] font-medium text-left border p-0">Total Deduction</th>
+              </tr>
+        </thead>
+        <tbody>
+            {% 
+                var total_basic_salary = 0;
+                var total_absence = 0;
+                var total_hardship_allowance = 0;
+                var total_overtime = 0;
+                var total_commission = 0;
+                var total_incentive = 0;
+                var total_taxable_gross = 0;
+                var total_gross_pay = 0;
+                var total_company_pension= 0;
+                var total_income_tax= 0;
+                var total_employee_pension = 0;
+                var total_other_deduction = 0;
+                var total_deductions = 0;
+                var total_net_pay = 0;
+        
+                for (var i = 0; i < data.length; i++) {
+                  total_basic_salary += data[i].basic|| 0;
+                  total_absence += data[i].absence || 0;
+                  total_hardship_allowance += data[i].hardship|| 0;
+                  total_overtime += data[i].overtime  || 0;
+                  total_commission += data[i].commission || 0;
+                  total_incentive += data[i].incentive || 0;
+                  total_taxable_gross += data[i].taxable_gross || 0;
+                  total_gross_pay += data[i].gross_pay || 0;
+                  total_company_pension += data[i].company_pension || 0;
+                  total_income_tax += data[i].income_tax || 0;
+                  total_employee_pension += data[i].employee_pension || 0;
+                  total_other_deduction += data[i].other_deduction|| 0;
+                  total_deductions += data[i].total_deduction || 0;
+                  total_net_pay += data[i].net_pay || 0;
+              %}
+        <tr>
+            <td class="text-sm text-left border">{{i+1}}</td>
+            <td class="text-[11px] text-left  border p-0">{{data[i].department_name }}</td>
+            <td class=" text-[11px] text-left border p-0">{{data[i].basic || 0.0 }}</td>
+            <td class=" text-[10px] text-left border p-0">{{data[i].absence || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].hardship || 0.0}}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].overtime || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].commission || 0.0  }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].incentive || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].taxable_gross || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].gross || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].company_pension || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].income_tax || 0.0  }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].employee_pension || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].other_deduction || 0.0  }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].total_deduction || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].net_pay || 0.0 }}</td>
+          </tr>
+          {% } %}
+
+        </tbody>
+        <tfoot>
+            <!-- Spacer row to add visual gap -->
+            <tr>
+                <td colspan="9" style="height: 5px; border: none;"></td>
+            </tr>
+            <!-- Total row with style -->
+            <tr style="background-color: #f1f1f1; border-top: 2px solid #131111;">
+                <th colspan="2" style="text-align: right; padding: 10px 0;">Total:</th>
+                <th style="padding: 10px 0;">{{ total_basic_salary }}</th>
+                <th style="padding: 10px 0;">{{ total_absence }}</th>
+                <th style="padding: 10px 0;">{{ total_hardship_allowance }}</th>
+                <th style="padding: 10px 0;">{{ total_overtime }}</th>
+                <th style="padding: 10px 0;">{{ total_commission }}</th>
+                <th style="padding: 10px 0;">{{ total_incentive }}</th>
+                <th style="padding: 10px 0;">{{ total_taxable_gross }}</th>
+                <th style="padding: 10px 0;">{{ total_gross_pay }}</th>
+                <th style="padding: 10px 0;">{{ total_company_pension}}</th>
+                <th style="padding: 10px 0;">{{ total_income_tax}}</th>
+                <th style="padding: 10px 0;">{{ total_employee_pension }}</th>
+                <th style="padding: 10px 0;">{{ total_other_deduction }}</th>
+                <th style="padding: 10px 0;">{{ total_deductions }}</th>
+                <th style="padding: 10px 0;">{{total_net_pay}}</th>
+
+                <th></th>
+            </tr>
+        </tfoot>
+
+    </table>
+
+  </div>
+
+  <div style="margin-top: 30px; font-size: 12px; padding-top: 15px;">
+    <div style="display: flex; justify-content: space-between; gap: 20px;">
+  
+      <!-- SECTION 1 -->
+      <div style="width: 33%;">
+        <div><strong>Prepared By:</strong> ___________________________</div>
+        <div><strong>Signature:</strong>   ___________________________</div>
+        <div><strong>Date:</strong>        ___________________________</div>
+      </div>
+  
+      <!-- SECTION 2 -->
+      <div style="width: 33%;">
+        <div><strong>Checked By:</strong> ___________________________</div>
+        <div><strong>Signature:</strong>  ___________________________</div>
+        <div><strong>Date:</strong>       ___________________________</div>
+      </div>
+  
+      <!-- SECTION 3 -->
+      <div style="width: 33%;">
+        <div><strong>Approved By:</strong> ___________________________</div>
+        <div><strong>Signature:</strong>   ___________________________</div>
+        <div><strong>Date:</strong>        ___________________________</div>
+      </div>
+  
+    </div>
+  </div>
+  
