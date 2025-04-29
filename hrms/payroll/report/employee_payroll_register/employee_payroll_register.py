@@ -106,7 +106,7 @@ def get_data(filters=None):
 
 			if row.employee not in grouped_data:
 				grouped_data[row.employee] = {
-					"employee_name": row.employee_name,
+					"employee_name": " ".join(row.employee_name.split()[:2]),
 					"department": row.department,
 					"gross_pay": row.gross_pay,
 					"net_pay": row.net_pay,

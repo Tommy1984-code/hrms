@@ -1,0 +1,177 @@
+<script src="https://cdn.tailwindcss.com"></script>
+<div style="width: 100%; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
+    <!-- Logo aligned to the left -->
+    <div style="width: 150px; display: flex; justify-content: flex-start;">
+      <img src="/private/files/asku-logo.png" alt="Logo" style="max-height: 60px;">
+    </div>
+  
+    <!-- Centered Title and Company -->
+    <div style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+      <h2 style="margin: 0; font-size: 28px; font-weight: 600;">{{ filters.company }}</h2>
+      <h3 style="margin: 4px 0; font-size: 22px;">Payroll Summary</h3>
+    </div>
+  
+    <!-- Report Generated Date -->
+    <div style="width: 200px; font-size: 12px; text-align: right; margin-top: 10px;">
+      {% 
+        let now = new Date();
+        let genDate = now.toLocaleString('default', {
+          year: 'numeric', month: 'long', day: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      %}
+      Generated on:<br> {{ genDate }}
+    </div>
+  </div>
+  
+  <!-- Date Range -->
+  <div style="text-align: center; margin: 10px 0 20px 0; font-size: 15px;">
+    {% 
+      let from = new Date(filters.from_date);
+      let to = new Date(filters.to_date);
+      let fromMonth = from.toLocaleString('default', { month: 'long' });
+      let toMonth = to.toLocaleString('default', { month: 'long' });
+      let fromYear = from.getFullYear();
+      let toYear = to.getFullYear();
+    %}
+    For the period: {{ fromMonth }} {{ fromYear }}
+  </div>
+  
+  <style>
+    .payroll-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+  
+    .payroll-table th, .payroll-table td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: right;
+    }
+  
+    .payroll-table th {
+      background-color: #f0f0f0;
+      font-weight: bold;
+    }
+  
+    .payroll-table td:first-child,
+    .payroll-table th:first-child {
+      text-align: left;
+      width: 180px;
+    }
+
+    .no-padding-body  th, td {
+    padding: 3px !important;
+    margin: 0 !important;
+  }
+  
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 20mm;
+      }
+    }
+  </style>
+<div class="w-full max-w-screen-xl mx-auto">
+  {% let rowNo = 0; %}
+  {% for (let i = 0; i < data.length; i++) { %}
+    {% let row = data[i]; %}
+
+    {% if (row.employee_name && row.employee_name.startsWith("▶")) { %}
+      {% if (i !== 0) { %}
+          </tbody>
+        </table>
+      {% } %}
+
+      {% rowNo = 0; %}
+      <caption class="text-lg font-semibold mb-2">
+        {{ row.employee_name.slice(2).trim() }}
+      </caption>
+      <div class="h-4"></div>
+      <table class="no-padding-body table-fixed border-collapse border border-gray-300 w-full mb-4">
+        <thead>
+          <tr>
+            <th rowspan="2" class="w-[40px] text-[10px] font-bold text-center border">No.</th>
+            <th rowspan="2" class="w-[100px] text-[12px] font-bold text-left border">Employee Name</th>
+            <th rowspan="2" class="w-[70px] text-[10px] font-bold text-left border">Basic Pay</th>
+            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Absence</th>
+            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Hardship Allowance</th>
+            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Overtime</th>
+            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Commission</th>
+            <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Incentive</th>
+            <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Taxable Gross</th>
+            <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Gross Pay</th>
+            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Company Pension</th>
+            <th colspan="4" class="text-[10px] font-medium text-center border">Deductions</th>
+            <th rowspan="2" class="w-[80px] text-[10px] font-medium text-left border">Net Pay</th>
+            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Signature</th>
+          </tr>
+          <tr>
+            <th class="w-[75px] text-[10px] font-medium text-left border">Income Tax</th>
+            <th class="w-[70px] text-[10px] font-medium text-left border">Employee Pension</th>
+            <th class="w-[75px] text-[9px] font-medium text-left border">Other Deduction</th>
+            <th class="w-[75px] text-[9px] font-medium text-left border">Total Deduction</th>
+          </tr>
+        </thead>
+        
+        <tbody>
+    {% } else { %}
+      {% rowNo += 1; %}
+      <tr>
+        <td class="text-sm text-center border">{{ rowNo }}</td>
+        <td class="text-[11px] text-left border">{{ row.employee_name }}</td>
+        <td class="text-[11px] text-right border">{{ (row.basic || 0).toFixed(2) }}</td>
+        <td class="text-[10px] text-right border">{{ (row.absence || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-right border">{{ (row.hardship || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-right border">{{ (row.overtime || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-right border">{{ (row.commission || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-right border">{{ (row.incentive || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-right border">{{ (row.taxable_gross || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-right border">{{ (row.gross || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-right border">{{ (row.company_pension || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-right border">{{ (row.income_tax || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-right border">{{ (row.employee_pension || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-right border">{{ (row.other_deduction || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-right border">{{ (row.total_deduction || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-right border">{{ (row.net_pay || 0).toFixed(2) }}</td>
+        <td class="text-[11px] text-center border">{{ row.signature || "" }}</td>
+      </tr>
+    {% } %}
+
+    {% if (i === data.length - 1) { %}
+        </tbody>
+      </table>
+    {% } %}
+  {% } %}
+</div>
+
+  
+
+  <div style="margin-top: 30px; font-size: 12px; padding-top: 15px;">
+    <div style="display: flex; justify-content: space-between; gap: 20px;">
+  
+      <!-- SECTION 1 -->
+      <div style="width: 33%;">
+        <div><strong>Prepared By:</strong> ___________________________</div>
+        <div><strong>Signature:</strong>   ___________________________</div>
+        <div><strong>Date:</strong>        ___________________________</div>
+      </div>
+  
+      <!-- SECTION 2 -->
+      <div style="width: 33%;">
+        <div><strong>Checked By:</strong> ___________________________</div>
+        <div><strong>Signature:</strong>  ___________________________</div>
+        <div><strong>Date:</strong>       ___________________________</div>
+      </div>
+  
+      <!-- SECTION 3 -->
+      <div style="width: 33%;">
+        <div><strong>Approved By:</strong> ___________________________</div>
+        <div><strong>Signature:</strong>   ___________________________</div>
+        <div><strong>Date:</strong>        ___________________________</div>
+      </div>
+  
+    </div>
+  </div>
+  

@@ -9,6 +9,18 @@ from collections import defaultdict
 def execute(filters=None):
 	columns = get_columns()
 	data = get_data(filters)
+
+	company_filter = filters.get("company") if filters else None
+	company = frappe.get_doc("Company",company_filter) if company_filter else None
+
+	company_data = {
+		"company_bank_account":company.bank_ac_no if company else ""
+	}
+
+	for row in data:
+		row.update(company_data)
+
+
 	return columns, data
 
 def get_columns():

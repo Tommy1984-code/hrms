@@ -1,0 +1,166 @@
+<script src="https://cdn.tailwindcss.com"></script>
+<div style="width: 100%; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
+    <!-- Logo aligned to the left -->
+    <div style="width: 150px; display: flex; justify-content: flex-start;">
+      <img src="/private/files/asku-logo.png" alt="Logo" style="max-height: 60px;">
+    </div>
+  
+    <!-- Centered Title and Company -->
+    <div style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+      <h2 style="margin: 0; font-size: 28px; font-weight: 600;">{{ filters.company }}</h2>
+      <h3 style="margin: 4px 0; font-size: 22px;">Payroll Net Salary To Bank</h3>
+    </div>
+   
+
+    <!-- Report Generated Date -->
+    <div style="width: 200px; font-size: 12px; text-align: right; margin-top: 10px;">
+      {% 
+        let now = new Date();
+        let genDate = now.toLocaleString('default', {
+          year: 'numeric', month: 'long', day: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      %}
+      Generated on:<br> {{ genDate }}
+    </div>
+</div>
+  
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 14px;">
+  
+    <!-- Left: Company Bank Account -->
+    {% if data.length > 0 %}
+    <div style="flex: 1; text-align: left; margin-left: 20px;">
+      <strong>Account Number:</strong> {{ data[0].company_bank_account }}
+    </div>
+    {% else %}
+    <div style="flex: 1;"></div>
+    {% endif %}
+  
+    <!-- Center: Date Range -->
+    <div style="flex: 1; text-align: center; font-size: 15px;">
+      {% 
+        let from = new Date(filters.from_date);
+        let fromMonth = from.toLocaleString('default', { month: 'long' });
+        let fromYear = from.getFullYear();
+      %}
+      For the period: {{ fromMonth }} {{ fromYear }}
+    </div>
+  
+    <!-- Right: Empty spacer -->
+    <div style="flex: 1;"></div>
+  
+  </div>
+  
+  
+  
+  <style>
+    .payroll-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+  
+    .payroll-table th, .payroll-table td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: right;
+    }
+  
+    .payroll-table th {
+      background-color: #f0f0f0;
+      font-weight: bold;
+    }
+  
+    .payroll-table td:first-child,
+    .payroll-table th:first-child {
+      text-align: left;
+      width: 180px;
+    }
+
+    /* .no-padding-body  th, td {
+    padding: 3px !important;
+    margin: 0 !important;
+  } */
+  
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 20mm;
+      }
+    }
+  </style>
+
+<div class="w-full max-w-screen-xl mx-auto">
+    <table class="no-padding-body table-fixed border-collapse border border-gray-300">
+        
+        <thead>
+            <tr>
+                <th  class="w-[40px]  text-[10px]  font-bold  text-center border whitespace-nowrap">No.</th>
+                <th  class="w-[200px]  text-[12px] font-bold text-left border p-0">Employee Name</th>
+                <th  class="w-[150px]  text-[10px] font-bold text-left border p-0">Bank Branch</th>
+                <th  class="w-[150px]  text-[10px] font-medium text-left border p-0">Account No.</th>
+                <th  class="w-[150px]  text-[10px] font-medium text-left border p-0">Amount</th>
+                
+            </tr>
+             
+        </thead>
+        <tbody>
+            {% 
+                var total_net_pay = 0;
+                for (var i = 0; i < data.length; i++) {
+                total_net_pay += data[i].amount|| 0;
+            %}
+        <tr>
+            <td class="text-sm text-left border">{{i+1}}</td>
+            <td class="text-[12px] text-left  border p-0">{{data[i].employee_name }}</td>
+            <td class=" text-[12px] text-left border p-0">{{data[i].bank }}</td>
+            <td class=" text-[12px] text-left border p-0">{{data[i].bank_ac_no}}</td>
+            <td class=" text-[12px] text-right border p-0">{{data[i].amount || 0.0}}</td>
+           
+          </tr>
+          {% } %}
+
+        </tbody>
+        <tfoot>
+            <!-- Spacer row to add visual gap -->
+            <tr>
+                <td colspan="9" style="height: 5px; border: none;"></td>
+            </tr>
+            <!-- Total row with style -->
+            <tr style="background-color: #f1f1f1; border-top: 2px solid #131111;">
+                <th colspan="4" style="text-align: right; padding: 10px 0;">Total:</th>
+                <th style="padding: 12px 0;">{{ total_net_pay.toFixed(2)}}</th>
+
+                <th></th>
+            </tr>
+        </tfoot>
+
+    </table>
+
+  </div>
+
+  <div style="margin-top: 30px; font-size: 12px; padding-top: 15px;">
+    <div style="display: flex; justify-content: space-between; gap: 20px;">
+  
+      <!-- SECTION 1 -->
+      <div style="width: 33%;">
+        <div><strong>Prepared By:</strong> ___________________________</div>
+        <div><strong>Signature:</strong>   ___________________________</div>
+        <div><strong>Date:</strong>        ___________________________</div>
+      </div>
+  
+      <!-- SECTION 2 -->
+      <div style="width: 33%;">
+        <div><strong>Checked By:</strong> ___________________________</div>
+        <div><strong>Signature:</strong>  ___________________________</div>
+        <div><strong>Date:</strong>       ___________________________</div>
+      </div>
+  
+      <!-- SECTION 3 -->
+      <div style="width: 33%;">
+        <div><strong>Approved By:</strong> ___________________________</div>
+        <div><strong>Signature:</strong>   ___________________________</div>
+        <div><strong>Date:</strong>        ___________________________</div>
+      </div>
+    </div>
+  </div>

@@ -124,7 +124,7 @@
                   total_commission += data[i].commission || 0;
                   total_incentive += data[i].incentive || 0;
                   total_taxable_gross += data[i].taxable_gross || 0;
-                  total_gross_pay += data[i].gross_pay || 0;
+                  total_gross_pay += data[i].gross || 0;
                   total_company_pension += data[i].company_pension || 0;
                   total_income_tax += data[i].income_tax || 0;
                   total_employee_pension += data[i].employee_pension || 0;
@@ -174,7 +174,7 @@
                 <th style="padding: 10px 0;">{{ total_employee_pension }}</th>
                 <th style="padding: 10px 0;">{{ total_other_deduction }}</th>
                 <th style="padding: 10px 0;">{{ total_deductions }}</th>
-                <th style="padding: 10px 0;">{{total_net_pay}}</th>
+                <th style="padding: 10px 0;">{{total_net_pay.toFixed(2)}}</th>
 
                 <th></th>
             </tr>
