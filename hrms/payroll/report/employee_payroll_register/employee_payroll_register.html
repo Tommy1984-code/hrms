@@ -33,6 +33,7 @@
       let toMonth = to.toLocaleString('default', { month: 'long' });
       let fromYear = from.getFullYear();
       let toYear = to.getFullYear();
+      let isBankSelected = filters.mode_of_payment && filters.mode_of_payment === 'Bank';
     %}
     For the period: {{ fromMonth }} {{ fromYear }}
   </div>
@@ -94,6 +95,9 @@
           <tr>
             <th rowspan="2" class="w-[40px] text-[10px] font-bold text-center border">No.</th>
             <th rowspan="2" class="w-[100px] text-[12px] font-bold text-left border">Employee Name</th>
+            {% if isBankSelected %}
+            <th rowspan="2" class="w-[60px] text-[10px] font-bold text-left border">Title</th> 
+            {% endif %}
             <th rowspan="2" class="w-[70px] text-[10px] font-bold text-left border">Basic Pay</th>
             <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Absence</th>
             <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Hardship Allowance</th>
@@ -105,7 +109,9 @@
             <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Company Pension</th>
             <th colspan="4" class="text-[10px] font-medium text-center border">Deductions</th>
             <th rowspan="2" class="w-[80px] text-[10px] font-medium text-left border">Net Pay</th>
+            {% if not isBankSelected %}
             <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Signature</th>
+            {% endif %}
           </tr>
           <tr>
             <th class="w-[75px] text-[10px] font-medium text-left border">Income Tax</th>
@@ -121,6 +127,9 @@
       <tr>
         <td class="text-sm text-center border">{{ rowNo }}</td>
         <td class="text-[11px] text-left border">{{ row.employee_name }}</td>
+        {% if isBankSelected %}
+       <td class="text-[11px] text-left border">{{ row.title || "" }}</td>
+       {% endif %}
         <td class="text-[11px] text-right border">{{ (row.basic || 0).toFixed(2) }}</td>
         <td class="text-[10px] text-right border">{{ (row.absence || 0).toFixed(2) }}</td>
         <td class="text-[11px] text-right border">{{ (row.hardship || 0).toFixed(2) }}</td>
@@ -135,7 +144,9 @@
         <td class="text-[11px] text-right border">{{ (row.other_deduction || 0).toFixed(2) }}</td>
         <td class="text-[11px] text-right border">{{ (row.total_deduction || 0).toFixed(2) }}</td>
         <td class="text-[11px] text-right border">{{ (row.net_pay || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-center border">{{ row.signature || "" }}</td>
+        {% if not isBankSelected %}
+        <td class="text-[11px] text-center border">{{row.signature || "" }}</td>
+        {% endif %}
       </tr>
     {% } %}
 

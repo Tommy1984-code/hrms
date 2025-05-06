@@ -11,6 +11,13 @@ frappe.query_reports["Employee Payroll Register"] = {
             "reqd": 1
         },
         {
+            "fieldname": "mode_of_payment",
+            "label": "Mode Of Payment",
+            "fieldtype": "Select",
+            "options": ['Bank', 'Cash', 'Cheque'],
+            "default":"Bank"
+        },
+        {
             "fieldname": "from_date",
             "label": "From Date",
             "fieldtype": "Date",
