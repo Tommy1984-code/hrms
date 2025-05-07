@@ -38,6 +38,13 @@ def get_data(filters, columns):
     mode_of_payment = filters.get("mode_of_payment")
     employee = filters.get("employee")
     payment_type = filters.get("payment_type")
+    branch = filters.get("branch")
+    department = filters.get("department")
+    grade = filters.get("grade")
+    job_title = filters.get("job_title")
+    employee_type = filters.get("employee_type")
+    bank = filters.get("bank")
+
 
     if not (from_date and to_date):
         frappe.throw("Please set both From Date and To Date")
@@ -51,7 +58,7 @@ def get_data(filters, columns):
         month_end = add_months(month_start, 1) - timedelta(days=1)
 
         query = """
-            SELECT e.name AS employee, e.employee_name, e.department, e.designation,
+            SELECT e.name AS employee, e.employee_name, e.department, e.designation,e.branch,e.grade,e.bank_name,e.employment_type,
                    ss.name AS salary_slip, ss.gross_pay, ss.net_pay, ss.mode_of_payment,ss.payment_type,
                    ss.total_deduction, ss.payment_type,
                    sd.salary_component, sd.abbr, sd.amount, sd.parentfield
@@ -64,12 +71,24 @@ def get_data(filters, columns):
               {payment_mode_clause}
               {employee_clause}
               {payment_type_clause}
+              {branch_clause}
+              {department_clause}
+              {grade_clause}
+              {job_title_clause}
+              {employee_type_clause}
+              {bank_clause}
             ORDER BY ss.end_date DESC
         """.format(
             company_clause="AND ss.company = %(company)s" if company else "",
             payment_mode_clause="AND ss.mode_of_payment = %(mode_of_payment)s" if mode_of_payment else "",
             employee_clause="AND ss.employee = %(employee)s" if employee else "" ,
             payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
+            branch_clause = "AND e.branch = %(branch)s" if branch else "",
+            department_clause = "AND e.department = %(department)s" if department else "",
+            grade_clause = "AND e.grade = %(grade)s" if grade else "",
+            job_title_clause = "AND e.designation = %(job_title)s" if job_title else "",
+            employee_type_clause = "AND e.employment_type = %(employee_type)s" if employee_type else "",
+            bank_clause = "AND ss.bank_name = %(bank)s" if bank else ""
         )
 
         params = {
@@ -85,6 +104,21 @@ def get_data(filters, columns):
 
         if payment_type:
             params["payment_type"] = payment_type
+
+        if branch:
+            params["branch"] = branch
+        if department:
+            params["department"] = department
+        if grade:
+            params["grade"] = grade
+        if job_title:
+            params["job_title"] = job_title
+            
+        if employee_type:
+            params["employee_type"] = employee_type
+
+        if bank:
+            params["bank"] = bank
 
         results = frappe.db.sql(query, params, as_dict=True)
 

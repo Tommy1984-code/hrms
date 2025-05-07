@@ -32,6 +32,42 @@ frappe.query_reports["Employee Payroll Register"] = {
             "default": ""
         },
         {
+            "fieldname": "branch",
+            "label": "Branch",
+            "fieldtype": "Link",
+            "options": "Branch"
+        },
+        {
+            "fieldname": "department",
+            "label": "Department",
+            "fieldtype": "Link",
+            "options": "Department"
+        },
+        {
+            "fieldname": "grade",
+            "label": "Grade",
+            "fieldtype": "Link",
+            "options": "Employee Grade"
+        },
+        {
+            "fieldname": "job_title",
+            "label": "Job Title",
+            "fieldtype": "Link",
+            "options": "Designation"
+        },
+        {
+            "fieldname": "employee_type",
+            "label": "Employee Type",
+            "fieldtype": "Select",
+            "options": "\nFull-Time\nPart-Time\nContract\nTemporary"
+        },
+        {
+            "fieldname": "bank",
+            "label": "Bank",
+            "fieldtype": "Link",
+            "options": "Bank"
+        },
+        {
             "fieldname": "from_date",
             "label": "From Date",
             "fieldtype": "Date",
