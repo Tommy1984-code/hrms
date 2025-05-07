@@ -14,8 +14,22 @@ frappe.query_reports["Employee Payroll Register"] = {
             "fieldname": "mode_of_payment",
             "label": "Mode Of Payment",
             "fieldtype": "Select",
-            "options": ['Bank', 'Cash', 'Cheque'],
-            "default":"Bank"
+            "options": ['','Bank', 'Cash', 'Cheque'],
+            "default":""
+        },
+        {
+            "fieldname": "employee",
+            "label": "Employee",
+            "fieldtype": "Link",
+            "options": "Employee",
+            "reqd": 0
+        },
+        {
+            "fieldname": "payment_type",
+            "label": "Payment Type",
+            "fieldtype": "Select",
+            "options": ["", "Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"],
+            "default": ""
         },
         {
             "fieldname": "from_date",
