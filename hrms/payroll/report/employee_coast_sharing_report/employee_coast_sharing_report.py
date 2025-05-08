@@ -60,30 +60,82 @@ def get_data(filters=None):
     from_date = getdate(filters.get("from_date"))
     to_date = getdate(filters.get("to_date"))
     company = filters.get("company")
+    employee = filters.get("employee")
+    payment_type = filters.get("payment_type")
+    branch = filters.get("branch")
+    department = filters.get("department")
+    grade = filters.get("grade")
+    job_title = filters.get("job_title")
+    employee_type = filters.get("employee_type")
 
     if not (from_date and to_date):
         frappe.throw("Please set both From Date and To Date")
-
-    # Get latest salary slip per employee in the date range
-    latest_slips = frappe.db.sql("""
-        SELECT ss.name, ss.employee, ss.end_date, ss.net_pay,
-               e.employee_name, e.employee_tin_no, e.date_of_joining, e.tax_free_transportation_amount
-        FROM `tabSalary Slip` ss
-        JOIN `tabEmployee` e ON ss.employee = e.name
-        WHERE ss.docstatus = 1 AND ss.start_date >= %s AND ss.end_date <= %s
-              AND e.company = %s
-        ORDER BY ss.employee, ss.end_date DESC
-    """, (from_date, to_date, company), as_dict=True)
-
-    # Keep only the latest slip per employee
-    latest_by_employee = {}
-    for slip in latest_slips:
-        if slip.employee not in latest_by_employee:
-            latest_by_employee[slip.employee] = slip
-
+    months = get_months_in_range(from_date, to_date)
     data = []
+    payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 
-    for slip in latest_by_employee.values():
+    all_results = []
+
+    for month in months:
+        month_start = month.replace(day=1)
+        month_end = add_months(month_start, 1) - timedelta(days=1)
+
+        query = """
+            SELECT ss.name, ss.employee, ss.end_date, ss.net_pay, ss.payment_type,
+                   e.name AS employee, e.employee_name, e.department, e.designation, e.branch,
+                   e.grade, e.bank_name, e.employment_type, e.employee_tin_no, e.date_of_joining, 
+                   e.tax_free_transportation_amount,
+                   sd.salary_component, sd.abbr, sd.amount, sd.parentfield
+            FROM `tabSalary Slip` ss
+            JOIN `tabEmployee` e ON ss.employee = e.name
+            JOIN `tabSalary Detail` sd ON sd.parent = ss.name
+            WHERE ss.start_date <= %(month_end)s AND ss.end_date >= %(month_start)s
+                  AND ss.docstatus = 1
+                  {company_clause}
+                  {employee_clause}
+                  {payment_type_clause}
+                  {branch_clause}
+                  {department_clause}
+                  {grade_clause}
+                  {job_title_clause}
+                  {employee_type_clause}
+            ORDER BY ss.end_date DESC
+        """.format(
+            company_clause="AND ss.company = %(company)s" if company else "",
+            payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
+            employee_clause="AND ss.employee = %(employee)s" if employee else "",
+            branch_clause="AND e.branch = %(branch)s" if branch else "",
+            department_clause="AND e.department = %(department)s" if department else "",
+            grade_clause="AND e.grade = %(grade)s" if grade else "",
+            job_title_clause="AND e.designation = %(job_title)s" if job_title else "",
+            employee_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else ""
+        )
+
+        params = {
+            "month_start": month_start,
+            "month_end": month_end,
+            "company": company,
+            "employee": employee,
+            "payment_type": payment_type,
+            "branch": branch,
+            "department": department,
+            "grade": grade,
+            "job_title": job_title,
+            "employee_type": employee_type
+        }
+
+        results = frappe.db.sql(query, params, as_dict=True)
+        all_results.extend(results)
+
+    # Keep only the latest slip per employee (highest payment order)
+    latest_slips = {}
+    for row in all_results:
+        emp = row.employee
+        current_index = payment_order.index(row.payment_type) if row.payment_type in payment_order else -1
+        if emp not in latest_slips or current_index > payment_order.index(latest_slips[emp].payment_type):
+            latest_slips[emp] = row
+
+    for slip in latest_slips.values():
         salary_details = frappe.db.sql("""
             SELECT sd.amount, sd.abbr, sd.parentfield
             FROM `tabSalary Detail` sd
@@ -115,7 +167,7 @@ def get_data(filters=None):
             "basic_salary": basic_salary,
             "transport_salary": transport_salary,
             "total_tax": employment_tax,
-            "employment_tax":employment_tax,
+            "employment_tax": employment_tax,
             "employee_pension": employee_pension,
             "coast_sharing": coast_sharing,
             "net_pay": slip.net_pay,

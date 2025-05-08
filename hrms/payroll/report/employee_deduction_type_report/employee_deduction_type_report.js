@@ -1,7 +1,7 @@
 // Copyright (c) 2025, Frappe Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Employee Coast Sharing Report"] = {
+frappe.query_reports["Employee Deduction Type Report"] = {
 	"filters": [
 		{
             "fieldname": "company",
@@ -9,6 +9,32 @@ frappe.query_reports["Employee Coast Sharing Report"] = {
             "fieldtype": "Link",
             "options": "Company",
             "reqd": 1
+        },
+        {
+            fieldname: "earning_component",
+            label: "Earning Component",
+            fieldtype: "Link",
+            options: "Salary Component",
+            get_query: function() {
+                return {
+                    filters: {
+                        type: "Earning"
+                    }
+                };
+            }
+        },
+        {
+            fieldname: "deduction_component",
+            label: "Deduction Component",
+            fieldtype: "Link",
+            options: "Salary Component",
+            get_query: function() {
+                return {
+                    filters: {
+                        type: "Deduction"
+                    }
+                };
+            }
         },
         {
             "fieldname": "employee",
@@ -49,12 +75,12 @@ frappe.query_reports["Employee Coast Sharing Report"] = {
             "options": "Designation"
         },
         {
-            "fieldname": "employee_type",
-            "label": "Employee Type",
+            "fieldname": "employment_type",
+            "label": "Employment Type",
             "fieldtype": "Select",
             "options": "\nFull-Time\nPart-Time\nContract\nTemporary"
         },
-        {
+		{
             "fieldname": "from_date",
             "label": "From Date",
             "fieldtype": "Date",
@@ -66,5 +92,7 @@ frappe.query_reports["Employee Coast Sharing Report"] = {
             "fieldtype": "Date",
             "default": frappe.datetime.month_end()
         }
+		
+	
 	]
 };

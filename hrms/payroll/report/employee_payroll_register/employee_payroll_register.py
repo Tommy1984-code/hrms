@@ -96,29 +96,46 @@ def get_data(filters, columns):
             "month_end": month_end,
             "company": company,
         }
-        if mode_of_payment:
-            params["mode_of_payment"] = mode_of_payment
+        # if mode_of_payment:
+        #     params["mode_of_payment"] = mode_of_payment
 
-        if employee:
-            params["employee"] = employee
+        # if employee:
+        #     params["employee"] = employee
 
-        if payment_type:
-            params["payment_type"] = payment_type
+        # if payment_type:
+        #     params["payment_type"] = payment_type
 
-        if branch:
-            params["branch"] = branch
-        if department:
-            params["department"] = department
-        if grade:
-            params["grade"] = grade
-        if job_title:
-            params["job_title"] = job_title
+        # if branch:
+        #     params["branch"] = branch
+        # if department:
+        #     params["department"] = department
+        # if grade:
+        #     params["grade"] = grade
+        # if job_title:
+        #     params["job_title"] = job_title
             
-        if employee_type:
-            params["employee_type"] = employee_type
+        # if employee_type:
+        #     params["employee_type"] = employee_type
 
-        if bank:
-            params["bank"] = bank
+        # if bank:
+        #     params["bank"] = bank
+
+        optional_fields = [
+            "mode_of_payment",
+            "employee",
+            "payment_type",
+            "branch",
+            "department",
+            "grade",
+            "job_title",
+            "employee_type",
+            "bank"
+        ]
+
+        for field in optional_fields:
+            value = locals().get(field)
+            if value:
+                params[field] = value
 
         results = frappe.db.sql(query, params, as_dict=True)
 
