@@ -8,25 +8,37 @@ from collections import defaultdict
 
 
 def execute(filters=None):
-	columns = get_columns()
-	data = get_data(filters)
-	return columns, data
-
-
-def get_columns():
-	return [
-        {"label": "Loan ID", "fieldname": "loan_id", "fieldtype": "Data", "width": 60},
-        {"label": "Payment Date", "fieldname": "payment_date", "fieldtype": "Date", "width": 120},
-        {"label": "Paid Amount", "fieldname": "paid_amount", "fieldtype": "Currency", "width": 120},
-        {"label": "Remaining Amount", "fieldname": "remaining_amount", "fieldtype": "Currency", "width": 120},
-    ]
-
-import frappe
-
-def execute(filters=None):
     columns = get_columns()
-    data = get_data(filters)
-    return columns, data
+    data_rows = get_data(filters)
+
+    # Fetch employee and loan details for the header
+    employee_id = filters.get("employee")
+    loan_type = filters.get("loan_type")
+
+    employee_doc = frappe.get_doc("Employee", employee_id) if employee_id else None
+    loan_doc = None
+
+    if employee_id and loan_type:
+        loan_doc = frappe.get_all("Loan Management",
+                                  filters={"employee": employee_id, "loan_type": loan_type},
+                                  fields=["name", "monthly_deduction","remaining_amount","loan_amount"],
+                                  limit=1)
+        loan_doc = loan_doc[0] if loan_doc else None
+
+    summary_data = {
+        "employee_id": employee_doc.name if employee_doc else "",
+        "employee_name": employee_doc.employee_name if employee_doc else "",
+        "monthly_deduction": loan_doc.monthly_deduction if loan_doc else 0,
+        "remaining_amount": loan_doc.remaining_amount if loan_doc else 0,
+        "loan_amount": loan_doc.loan_amount if loan_doc else 0
+    }
+
+    # Attach summary info to each row (so it can be picked in the report)
+    for row in data_rows:
+        row.update(summary_data)
+
+    return columns, data_rows
+
 
 def get_columns():
     return [
@@ -42,9 +54,6 @@ def get_data(filters=None):
     employee = filters.get("employee")
     company = filters.get("company")
     loan_type = filters.get("loan_type")
-
-    if not employee:
-        frappe.throw("Please select an Employee.")  # Make sure employee filter is selected
 
     # Prepare query parameters
     params = {
@@ -65,11 +74,12 @@ def get_data(filters=None):
         LEFT JOIN `tabEmployee` e ON lm.employee = e.name
         WHERE lm.employee = %(employee)s
         {company_clause}
-        {loan_type_clause}
+        AND lm.loan_type = %(loan_type)s
+
         ORDER BY lph.payment_date DESC
     """.format(
         company_clause="AND e.company = %(company)s" if company else "",
-        loan_type_clause="AND lm.loan_type = %(loan_type)s" if loan_type else ""
+        
     )
 
     # Fetch results from the database
