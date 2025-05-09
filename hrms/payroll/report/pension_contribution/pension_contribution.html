@@ -46,49 +46,66 @@
     }
 </style>
 
+
 <div>
-  {% let current_department = ""; %}
-  {% for (let i = 0; i < data.length; i++) { %}
-    {% let row = data[i]; %}
-    
-    {% if (row.employee_name && row.employee_name.startsWith("▶")) { %}
-      {% if (i !== 0) { %}
-          </tbody>
-        </table>
-      {% } %}
-
-      <h3 style="margin-top: 24px;">{{ row.employee_name.slice(2).trim() }}</h3>
-
-      <table class="main-table">
-        <thead>
-          <tr>
-            {% for (let col of columns) { %}
-              {% if (col.fieldname !== "department") { %}
-                <th>{{ col.label }}</th>
-              {% } %}
-            {% } %}
-          </tr>
-        </thead>
-        <tbody>
-    {% } else { %}
+  <table class="main-table" style="border-collapse: collapse; width: 100%;">
+    <thead style="border-bottom: 2px solid #b1b0b0;">
       <tr>
+        <th style="text-align: left; padding: 4px; border-bottom: 2px solid #000;">No.</th>
         {% for (let col of columns) { %}
           {% if (col.fieldname !== "department") { %}
-          <td>
-            {% if (typeof row[col.fieldname] === "number") { %}
-              {{ row[col.fieldname].toFixed(2) }}
-            {% } else { %}
-              {{ row[col.fieldname] || "" }}
-            {% } %}
-          </td>
+            <th style="text-align: left; padding: 4px; border-bottom: 2px solid #000;">{{ col.label }}</th>
           {% } %}
         {% } %}
       </tr>
-    {% } %}
+    </thead>
+    <tbody>
+      {% let count = 1; %}
+      {% let totals = {}; %}
+      {% for (let i = 0; i < data.length; i++) { %}
+        {% let row = data[i]; %}
 
-    {% if (i === data.length - 1) { %}
-        </tbody>
-      </table>
-    {% } %}
-  {% } %}
+        {% if (row.employee_name && row.employee_name.startsWith("▶")) { %}
+          <tr>
+            <td colspan="{{ columns.length }}" style="font-weight: bold; text-align: left; padding: 6px 0; border: none;">
+              {{ row.employee_name.slice(2).trim() }}
+            </td>
+          </tr>
+        {% } else { %}
+          <tr style="border: none;">
+            <td style="padding: 4px; border: none;">{{ count }}</td>
+            {% count++; %}
+            {% for (let col of columns) { %}
+              {% if (col.fieldname !== "department") { %}
+                <td style="padding: 4px; border: none;">
+                  {% if (typeof row[col.fieldname] === "number") { %}
+                    {{ row[col.fieldname].toFixed(2) }}
+                    {% totals[col.fieldname] = (totals[col.fieldname] || 0) + row[col.fieldname]; %}
+                  {% } else { %}
+                    {{ row[col.fieldname] || "" }}
+                  {% } %}
+                </td>
+              {% } %}
+            {% } %}
+          </tr>
+        {% } %}
+      {% } %}
+      
+      <!-- Total Row (at the bottom) -->
+      <tr style="font-weight: bold;">
+        <td style="padding: 10%; border: none;">Total</td>
+        {% for (let col of columns) { %}
+          {% if (col.fieldname !== "department") { %}
+            {% if (typeof totals[col.fieldname] === "number") { %}
+              <td style="padding: 10%; border: none; text-align: center;">{{ totals[col.fieldname].toFixed(2) }}</td>
+            {% } else { %}
+              <td style="padding: 10%; border: none;"></td>
+            {% } %}
+          {% } %}
+        {% } %}
+      </tr>
+    </tbody>
+  </table>
 </div>
+
+
