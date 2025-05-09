@@ -15,25 +15,20 @@ def get_columns():
         {"label": "Amount", "fieldname": "amount", "fieldtype": "Currency", "width": 120},
     ]
 
+
 def get_data(filters, columns):
     from_date = getdate(filters.get("from_date"))
     to_date = getdate(filters.get("to_date"))
     company = filters.get("company")
     earning_component = filters.get("earning_component")
     deduction_component = filters.get("deduction_component")
-    employee = filters.get("employee")
-    payment_type = filters.get("payment_type")
-    branch = filters.get("branch")
-    department = filters.get("department")
-    grade = filters.get("grade")
-    job_title = filters.get("job_title")
-    employment_type = filters.get("employment_type")
-
-    
 
     salary_component = earning_component or deduction_component
     months = get_months_in_range(from_date, to_date)
-    payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+    payment_order = [
+        "Advance Payment", "Performance Payment", "Third Payment",
+        "Fourth Payment", "Fifth Payment"
+    ]
 
     data = []
 
@@ -68,7 +63,7 @@ def get_data(filters, columns):
             branch_clause="AND e.branch = %(branch)s" if filters.get("branch") else "",
             grade_clause="AND e.grade = %(grade)s" if filters.get("grade") else "",
             job_title_clause="AND e.designation = %(job_title)s" if filters.get("job_title") else "",
-            employment_type_clause = "AND e.employment_type = %(employment_type)s" if employment_type else "",
+            employment_type_clause="AND e.employment_type = %(employment_type)s" if filters.get("employment_type") else "",
             payment_order=", ".join(["'{}'".format(pt) for pt in payment_order])
         )
 
@@ -78,6 +73,7 @@ def get_data(filters, columns):
             "company": company,
             "salary_component": salary_component,
         }
+
         optional_fields = [
             "employee", "employee_name", "department", "payment_type",
             "branch", "grade", "job_title", "employment_type"
@@ -115,47 +111,19 @@ def get_data(filters, columns):
                 "amount": row.amount or 0
             })
 
-#       # Build final data list with section headers
-#     num_columns = len(columns)
-#     for dept, employees in dept_group.items():
-#         data.append([f"▶ {dept}"] + [None] * (num_columns - 1))
-#         for emp_data in employees:
-#             row = [
-#                 emp_data["employee_id"],
-#                 emp_data["employee_name"],
-#                 emp_data["month"],
-#                 emp_data["amount"]
-#             ]
-#             data.append(row)
+    num_columns = len(columns)
 
-   # Build final data list with section headers
+    # Build final data list with section headers (departments)
     for dept, employees in dept_group.items():
-        data.append({
-            "is_group": True,
-            "group_label": f"▶ {dept}"
-        })
-        for emp_data in employees:
-            emp_data["is_group"] = False
-            data.append(emp_data)
-    # # Assuming `columns` is a list of column definitions.
-    # num_columns = len(columns)
-
-    # # Prepare final data list with section headers (departments)
-    # for dept, employees in dept_group.items():
-    #     # For Frappe Report: Add department as a row with `None` placeholders for all columns except the first.
-    #     data.append([f"▶ {dept}"] + [None] * (num_columns - 1))
+        # Add department header row (dictionary approach, works in Frappe report)
+        data.append({"employee_id": f"▶ {dept}"})
         
-    #     # Add employee rows under the department
-    #     for emp_data in employees:
-    #         row = [
-    #             emp_data["employee_id"],
-    #             emp_data["employee_name"],
-    #             emp_data["month"],
-    #             emp_data["amount"]
-    #         ]
-    #         data.append(row)
+        # Add employee rows under the department
+        for emp_data in employees:
+            data.append(emp_data)
 
     return data
+
 
 def get_months_in_range(start_date, end_date):
     months = []
