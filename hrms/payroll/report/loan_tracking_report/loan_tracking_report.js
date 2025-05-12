@@ -27,4 +27,5 @@ frappe.query_reports["Loan Tracking Report"] = {
 		},
    
 	]
+    
 };

@@ -18,6 +18,8 @@ def execute(filters=None):
     employee_doc = frappe.get_doc("Employee", employee_id) if employee_id else None
     loan_doc = None
 
+    
+
     if employee_id and loan_type:
         loan_doc = frappe.get_all("Loan Management",
                                   filters={"employee": employee_id, "loan_type": loan_type},
@@ -29,7 +31,7 @@ def execute(filters=None):
         "employee_id": employee_doc.name if employee_doc else "",
         "employee_name": employee_doc.employee_name if employee_doc else "",
         "monthly_deduction": loan_doc.monthly_deduction if loan_doc else 0,
-        "remaining_amount": loan_doc.remaining_amount if loan_doc else 0,
+        "remaining_amounts": loan_doc.remaining_amount if loan_doc else 0,
         "loan_amount": loan_doc.loan_amount if loan_doc else 0
     }
 
@@ -55,12 +57,19 @@ def get_data(filters=None):
     company = filters.get("company")
     loan_type = filters.get("loan_type")
 
+    loan_type_name = None
+    if loan_type:
+        loan_type_doc = frappe.get_doc("Loan Type", loan_type)
+        loan_type_name = loan_type_doc.loan_type  
+
     # Prepare query parameters
     params = {
         "employee": employee,
         "company": company,
         "loan_type": loan_type,
     }
+
+   
 
     # Construct the query to fetch the required data from Loan Payment History
     query = """
@@ -84,6 +93,8 @@ def get_data(filters=None):
 
     # Fetch results from the database
     results = frappe.db.sql(query, params, as_dict=True)
+    for row in results:
+        row["loan_type_name"] = loan_type_name
 
     # If no results, return empty data (to prevent errors)
     if not results:
