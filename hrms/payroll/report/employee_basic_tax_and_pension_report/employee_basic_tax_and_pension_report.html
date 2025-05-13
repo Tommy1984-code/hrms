@@ -6,15 +6,26 @@
     </div>
   
     <!-- Centered Title and Company -->
-    <div style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-     
-      <h3 style="margin: 4px 0; font-size: 22px;">Payroll Summary</h3>
-      <h3 style="margin: 0; font-size: 28px; font-weight: 600;">{{ filters.company }}</h3>
-      <h2>{{data[0].company_tin}}</h2>
-      <h2>{{filters.employee}}</h2>
-      <h2>{{data[0].employee_tin}}</h2>
-    </div>
-  
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 14px; gap: 40px;">
+
+        <!-- Employee Info (wider section) -->
+        <div style="flex: 1 1 auto; min-width: 60%;">
+          <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 600;">Employee Info</h3>
+          <p style="margin: 0;"><strong>Name:</strong> <span style="overflow-wrap: break-word;">{{ data[0].employee_name }}</span></p>
+          <p style="margin: 0;"><strong>TIN:</strong> {{ data[0].employee_tin }}</p>
+        </div>
+      
+        <!-- Company Info (aligned right) -->
+        <div style="flex: 0 0 35%; text-align: right;">
+          <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 600;">Company Info</h3>
+          <p style="margin: 0;"><strong>Name:</strong> {{ filters.company }}</p>
+          <p style="margin: 0;"><strong>TIN:</strong> {{ data[0].company_tin }}</p>
+        </div>
+      
+      </div>
+      
+      
+      
     <!-- Report Generated Date -->
     <div style="width: 200px; font-size: 12px; text-align: right; margin-top: 10px;">
       {% 
@@ -78,68 +89,65 @@
     }
   </style>
 
-<div class="w-full max-w-screen-xl mx-auto">
-    <table class="no-padding-body table-fixed border-collapse border border-gray-300 w-full">
-        
-        <thead>
-            <tr>
-                <th  class="w-[40px]  text-[12px]  font-bold  text-center border whitespace-nowrap">No.</th>
-                <th  class="w-[100px]  text-[12px] font-bold text-left border p-0">Month</th>
-                <th  class="w-[100px]  text-[12px] font-bold text-left border p-0">Basic Salary</th>
-                <th  class="w-[100px]  text-[12px] font-medium text-left border p-0">Other Taxable Income</th>
-                <th  class="w-[100px]  text-[12px] font-medium text-left border p-0">Cost Sharing</th>
-                <th  class="w-[100px]  text-[12px] font-medium text-left border p-0">Tax on Gross Monthly Income</th>
-                <th  class="w-[100px]  text-[12px] font-medium text-left border p-0">Pension</th>
-              </tr>
-              
-        </thead>
-        <tbody>
-            {% 
-                var total_basic_salary = 0;
-                var total_other_taxable_income = 0;
-                var total_cost_sharing = 0;
-                var total_tax_on_gross_monthly_income = 0;
-                var total_pension = 0;
-    
-        
-                for (var i = 0; i < data.length; i++) {
-                  total_basic_salary += data[i].basic_salary|| 0;
-                  total_other_taxable_income += data[i].other_income || 0;
-                  total_cost_sharing += data[i].cost_sharing|| 0;
-                  total_tax_on_gross_monthly_income += data[i].tax  || 0;
-                  total_pension += data[i].pension|| 0;
-                  
-              %}
+<div class="flex justify-center">
+    <table class="no-padding-body table-fixed border-collapse border border-gray-300">
+      <thead>
         <tr>
-            <td class="text-sm text-left border">{{i+1}}</td>
-            <td class="text-[11px] text-left  border p-0">{{data[i].month }}</td>
-            <td class=" text-[11px] text-left border p-0">{{data[i].basic_salary || 0.0 }}</td>
-            <td class=" text-[10px] text-left border p-0">{{data[i].other_income || 0.0 }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].cost_sharing || 0.0}}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].tax || 0.0 }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].pension || 0.0  }}</td>
-            
-          </tr>
-          {% } %}
-
-        </tbody>
-        <tfoot>
-            <!-- Spacer row to add visual gap -->
-            <tr>
-                <td colspan="9" style="height: 5px; border: none;"></td>
-            </tr>
-            <!-- Total row with style -->
-            <tr style="background-color: #f1f1f1; border-top: 2px solid #131111;">
-                <th colspan="2" style="text-align: right; padding: 10px 0;">Total:</th>
-                <th style="padding: 10px 0;">{{ total_basic_salary.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_other_taxable_income.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_cost_sharing.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_tax_on_gross_monthly_income.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{total_pension.toFixed(2)}}</th>
-                <th></th>
-            </tr>
-        </tfoot>
+          <th class="w-[40px] text-[12px] font-bold text-center border whitespace-nowrap">No.</th>
+          <th class="w-[100px] text-[12px] font-bold text-left border p-0">Month</th>
+          <th class="w-[100px] text-[12px] font-bold text-left border p-0">Basic Salary</th>
+          <th class="w-[100px] text-[12px] font-medium text-left border p-0">Other Taxable Income</th>
+          <th class="w-[100px] text-[12px] font-medium text-left border p-0">Cost Sharing</th>
+          <th class="w-[100px] text-[12px] font-medium text-left border p-0">Tax on Gross Monthly Income</th>
+          <th class="w-[100px] text-[12px] font-medium text-left border p-0">Pension</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% 
+          var total_basic_salary = 0;
+          var total_other_taxable_income = 0;
+          var total_cost_sharing = 0;
+          var total_tax_on_gross_monthly_income = 0;
+          var total_pension = 0;
+  
+          for (var i = 0; i < data.length; i++) {
+            total_basic_salary += data[i].basic_salary|| 0;
+            total_other_taxable_income += data[i].other_income || 0;
+            total_cost_sharing += data[i].cost_sharing|| 0;
+            total_tax_on_gross_monthly_income += data[i].tax  || 0;
+            total_pension += data[i].pension|| 0;
+        %}
+        <tr>
+          <td class="text-sm text-left border">{{ i+1 }}</td>
+          <td class="text-[11px] text-left border p-0">{{ data[i].month }}</td>
+          <td class="text-[11px] text-left border p-0">{{ data[i].basic_salary || 0.0 }}</td>
+          <td class="text-[10px] text-left border p-0">{{ data[i].other_income || 0.0 }}</td>
+          <td class="text-[11px] text-right border p-0">{{ data[i].cost_sharing || 0.0 }}</td>
+          <td class="text-[11px] text-right border p-0">{{ data[i].tax || 0.0 }}</td>
+          <td class="text-[11px] text-right border p-0">{{ data[i].pension || 0.0 }}</td>
+        </tr>
+        {% } %}
+      </tbody>
+      <tfoot>
+        <tr><td colspan="9" style="height: 5px; border: none;"></td></tr>
+        <tr style="background-color: #fffafa; border-top: 2px solid #7e7d7d;">
+          <th colspan="2" class="text-right py-2">Total:</th>
+          <th class="py-2">{{ total_basic_salary.toFixed(2) }}</th>
+          <th class="py-2">{{ total_other_taxable_income.toFixed(2) }}</th>
+          <th class="py-2">{{ total_cost_sharing.toFixed(2) }}</th>
+          <th class="py-2">{{ total_tax_on_gross_monthly_income.toFixed(2) }}</th>
+          <th class="py-2">{{ total_pension.toFixed(2) }}</th>
+          
+        </tr>
+      </tfoot>
 
     </table>
+    
+  </div>
 
-</div>
+  <div class="flex justify-center p-4">
+    <div><strong>Prepared By:</strong> ___________________________</div>
+    <div><strong>Signature:</strong>   ___________________________</div>
+  </div>
+  
+  

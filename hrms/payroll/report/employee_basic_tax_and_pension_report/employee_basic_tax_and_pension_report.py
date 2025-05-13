@@ -12,7 +12,8 @@ def execute(filters=None):
 	employee_filter = filters.get("employee") if filters else None
 	employee = frappe.get_doc("Employee",employee_filter) if employee_filter else None
 	employee_data = {
-		"employee_tin" : employee.employee_tin_no if employee_filter else None
+		"employee_tin" : employee.employee_tin_no if employee_filter else None,
+        "employee_name" : employee.employee_name if employee_filter else None 
 	}
      
 	company_filter = filters.get("company") if filters else None
