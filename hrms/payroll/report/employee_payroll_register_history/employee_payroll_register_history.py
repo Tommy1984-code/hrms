@@ -61,6 +61,7 @@ def get_data(filters):
             JOIN `tabSalary Detail` sd ON sd.parent = ss.name
             WHERE ss.start_date <= %(month_end)s AND ss.end_date >= %(month_start)s
               AND ss.docstatus = 1
+              AND ss.employee = %(employee)s
               {employee_clause}
               {company_clause}
               {payment_type_clause}
