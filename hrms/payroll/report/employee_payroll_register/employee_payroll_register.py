@@ -49,10 +49,10 @@ def get_data(filters, columns):
         frappe.throw("Please set both From Date and To Date")
 
     months = get_months_in_range(from_date, to_date)
-    data = []
     payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
-    added_departments = set()  # To track department headers already added
     num_columns = len(columns)
+
+    department_rows = {}
 
     for month in months:
         month_start = month.replace(day=1)
@@ -61,7 +61,7 @@ def get_data(filters, columns):
         query = """
             SELECT e.name AS employee, e.employee_name, e.department, e.designation, e.branch, e.grade, e.bank_name, e.employment_type,
                    ss.name AS salary_slip, ss.gross_pay, ss.net_pay, ss.mode_of_payment, ss.payment_type,
-                   ss.total_deduction,
+                   ss.total_deduction, ss.end_date,
                    sd.salary_component, sd.abbr, sd.amount, sd.parentfield
             FROM `tabSalary Slip` ss
             JOIN `tabEmployee` e ON ss.employee = e.name
@@ -117,7 +117,7 @@ def get_data(filters, columns):
 
         results = frappe.db.sql(query, params, as_dict=True)
 
-        # Pick latest slip per employee by payment priority
+        # Get latest salary slip per employee for that month
         latest_slips = {}
         for row in results:
             emp = row.employee
@@ -130,11 +130,12 @@ def get_data(filters, columns):
             if row.employee not in latest_slips or row.salary_slip != latest_slips[row.employee].salary_slip:
                 continue
 
-            if row.employee not in grouped_data:
-                grouped_data[row.employee] = {
+            if row.salary_slip not in grouped_data:
+                grouped_data[row.salary_slip] = {
                     "employee_name": " ".join(row.employee_name.split()[:2]),
                     "department": row.department,
                     "designation": row.designation,
+                    "month_label": row.end_date.strftime("%B"),  # <-- Show month
                     "gross_pay": row.gross_pay,
                     "net_pay": row.net_pay,
                     "total_deduction": row.total_deduction,
@@ -149,48 +150,48 @@ def get_data(filters, columns):
 
             if field == "earnings":
                 if comp in ('B', 'VB'):
-                    grouped_data[row.employee]["basic"] += val
+                    grouped_data[row.salary_slip]["basic"] += val
                 elif comp == 'HDA':
-                    grouped_data[row.employee]["hardship"] += val
+                    grouped_data[row.salary_slip]["hardship"] += val
                 elif comp == 'OT':
-                    grouped_data[row.employee]["overtime"] += val
+                    grouped_data[row.salary_slip]["overtime"] += val
                 elif comp == 'C':
-                    grouped_data[row.employee]["commission"] += val
+                    grouped_data[row.salary_slip]["commission"] += val
                 elif comp == 'PP':
-                    grouped_data[row.employee]["incentive"] += val
+                    grouped_data[row.salary_slip]["incentive"] += val
             elif field == "deductions":
                 if comp == 'IT':
-                    grouped_data[row.employee]["income_tax"] += val
+                    grouped_data[row.salary_slip]["income_tax"] += val
                 elif comp == 'PS':
-                    grouped_data[row.employee]["employee_pension"] += val
+                    grouped_data[row.salary_slip]["employee_pension"] += val
                 elif comp == 'ABT':
-                    grouped_data[row.employee]["absence"] += val
+                    grouped_data[row.salary_slip]["absence"] += val
                 else:
-                    grouped_data[row.employee]["other_deduction"] += val
+                    grouped_data[row.salary_slip]["other_deduction"] += val
 
-        dept_group = {}
-        for emp, g in grouped_data.items():
-            dept = g.get("department") or "No Department"
-            if dept not in dept_group:
-                dept_group[dept] = []
+        # Merge rows under department
+        for slip, g in grouped_data.items():
             g["company_pension"] = g["basic"] * 0.11
             g["taxable_gross"] = g["gross_pay"]
-            dept_group[dept].append(g)
+            dept = g.get("department") or "No Department"
+            if dept not in department_rows:
+                department_rows[dept] = []
+            department_rows[dept].append(g)
 
-        for dept, employees in dept_group.items():
-            if dept not in added_departments:
-                data.append([f"▶ {dept}"] + [None] * (num_columns - 1))
-                added_departments.add(dept)
-            for g in employees:
-                row = [
-                    g["employee_name"],
-                    g["basic"], g["absence"], g["hardship"], g["overtime"],
-                    g["commission"], g["incentive"], g["taxable_gross"], g["gross_pay"],
-                    g["company_pension"], g["income_tax"], g["employee_pension"],
-                    g["other_deduction"], g["total_deduction"], g["net_pay"]
-                ]
-                row.append(g["designation"] if mode_of_payment == "Bank" else "")
-                data.append(row)
+    # Now create final data table
+    data = []
+    for dept, employees in sorted(department_rows.items()):
+        data.append([f"▶ {dept}"] + [None] * (num_columns - 1))
+        for g in employees:
+            row = [
+                f"{g['employee_name']}",
+                g["basic"], g["absence"], g["hardship"], g["overtime"],
+                g["commission"], g["incentive"], g["taxable_gross"], g["gross_pay"],
+                g["company_pension"], g["income_tax"], g["employee_pension"],
+                g["other_deduction"], g["total_deduction"], g["net_pay"]
+            ]
+            row.append(g["designation"] if mode_of_payment == "Bank" else "")
+            data.append(row)
 
     return data
 
