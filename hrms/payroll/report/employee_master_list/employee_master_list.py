@@ -75,17 +75,23 @@ def get_columns():
         {"label": "Net Pay", "fieldname": "net_pay", "fieldtype": "Currency", "width": 130},
     ]
 
-
 def get_data(filters):
     from_date = getdate(filters.get("from_date"))
     to_date = getdate(filters.get("to_date"))
     employee = filters.get("employee")
     company = filters.get("company")
     payment_type = filters.get("payment_type")
+    branch = filters.get("branch")
+    department = filters.get("department")
+    grade = filters.get("grade")
+    job_title = filters.get("job_title")
+    employee_type = filters.get("employee_type")
 
     months = get_months_in_range(from_date, to_date)
     data = []
     payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+
+    seen_departments = set()
 
     for month in months:
         month_start = month.replace(day=1)
@@ -107,11 +113,21 @@ def get_data(filters):
               {company_clause}
               {employee_clause}
               {payment_type_clause}
+              {branch_clause}
+              {department_clause}
+              {grade_clause}
+              {job_title_clause}
+              {employee_type_clause}
             ORDER BY ss.end_date DESC
         """.format(
             company_clause="AND ss.company = %(company)s" if company else "",
             employee_clause="AND ss.employee = %(employee)s" if employee else "",
             payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
+            branch_clause = "AND e.branch = %(branch)s" if branch else "",
+            department_clause = "AND e.department = %(department)s" if department else "",
+            grade_clause = "AND e.grade = %(grade)s" if grade else "",
+            job_title_clause = "AND e.designation = %(job_title)s" if job_title else "",
+            employee_type_clause = "AND e.employment_type = %(employee_type)s" if employee_type else "",
         )
 
         params = {
@@ -119,10 +135,24 @@ def get_data(filters):
             "month_end": month_end,
             "company": company
         }
-        if employee:
-            params["employee"] = employee
-        if payment_type:
-            params["payment_type"] = payment_type
+        # if employee:
+        #     params["employee"] = employee
+        # if payment_type:
+        #     params["payment_type"] = payment_type
+
+        optional_fields = [
+            "employee",
+            "payment_type",
+            "branch",
+            "department",
+            "grade",
+            "employee_type",
+        ]
+
+        for field in optional_fields:
+            value = locals().get(field)
+            if value:
+                params[field] = value
 
         results = frappe.db.sql(query, params, as_dict=True)
 
@@ -136,12 +166,13 @@ def get_data(filters):
             if not any(r.amount for r in rows):
                 continue
 
-            # Add department header row without department column or zeros in other columns
-            data.append({
-                "is_group_header": 1,
-                "employee_name": f"▶ {dept}",
-                # No 'department' or other columns with zeros here
-            })
+            # Add department header only once
+            if dept not in seen_departments:
+                data.append({
+                    "is_group_header": 1,
+                    "employee_name": f"▶ {dept}",
+                })
+                seen_departments.add(dept)
 
             latest_slips = {}
             for row in rows:
@@ -153,6 +184,7 @@ def get_data(filters):
             for emp, base in latest_slips.items():
                 slip_data = [r for r in rows if r.salary_slip == base.salary_slip]
 
+                # Employee row with all keys, zeros allowed
                 row_dict = {
                     "employee": base.employee,
                     "employee_name": base.employee_name,

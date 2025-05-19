@@ -45,22 +45,23 @@ def get_data(filters, columns):
     employee_type = filters.get("employee_type")
     bank = filters.get("bank")
 
-
     if not (from_date and to_date):
         frappe.throw("Please set both From Date and To Date")
 
     months = get_months_in_range(from_date, to_date)
     data = []
     payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+    added_departments = set()  # To track department headers already added
+    num_columns = len(columns)
 
     for month in months:
         month_start = month.replace(day=1)
         month_end = add_months(month_start, 1) - timedelta(days=1)
 
         query = """
-            SELECT e.name AS employee, e.employee_name, e.department, e.designation,e.branch,e.grade,e.bank_name,e.employment_type,
-                   ss.name AS salary_slip, ss.gross_pay, ss.net_pay, ss.mode_of_payment,ss.payment_type,
-                   ss.total_deduction, ss.payment_type,
+            SELECT e.name AS employee, e.employee_name, e.department, e.designation, e.branch, e.grade, e.bank_name, e.employment_type,
+                   ss.name AS salary_slip, ss.gross_pay, ss.net_pay, ss.mode_of_payment, ss.payment_type,
+                   ss.total_deduction,
                    sd.salary_component, sd.abbr, sd.amount, sd.parentfield
             FROM `tabSalary Slip` ss
             JOIN `tabEmployee` e ON ss.employee = e.name
@@ -81,14 +82,14 @@ def get_data(filters, columns):
         """.format(
             company_clause="AND ss.company = %(company)s" if company else "",
             payment_mode_clause="AND ss.mode_of_payment = %(mode_of_payment)s" if mode_of_payment else "",
-            employee_clause="AND ss.employee = %(employee)s" if employee else "" ,
+            employee_clause="AND ss.employee = %(employee)s" if employee else "",
             payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
-            branch_clause = "AND e.branch = %(branch)s" if branch else "",
-            department_clause = "AND e.department = %(department)s" if department else "",
-            grade_clause = "AND e.grade = %(grade)s" if grade else "",
-            job_title_clause = "AND e.designation = %(job_title)s" if job_title else "",
-            employee_type_clause = "AND e.employment_type = %(employee_type)s" if employee_type else "",
-            bank_clause = "AND ss.bank_name = %(bank)s" if bank else ""
+            branch_clause="AND e.branch = %(branch)s" if branch else "",
+            department_clause="AND e.department = %(department)s" if department else "",
+            grade_clause="AND e.grade = %(grade)s" if grade else "",
+            job_title_clause="AND e.designation = %(job_title)s" if job_title else "",
+            employee_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else "",
+            bank_clause="AND ss.bank_name = %(bank)s" if bank else ""
         )
 
         params = {
@@ -96,29 +97,6 @@ def get_data(filters, columns):
             "month_end": month_end,
             "company": company,
         }
-        # if mode_of_payment:
-        #     params["mode_of_payment"] = mode_of_payment
-
-        # if employee:
-        #     params["employee"] = employee
-
-        # if payment_type:
-        #     params["payment_type"] = payment_type
-
-        # if branch:
-        #     params["branch"] = branch
-        # if department:
-        #     params["department"] = department
-        # if grade:
-        #     params["grade"] = grade
-        # if job_title:
-        #     params["job_title"] = job_title
-            
-        # if employee_type:
-        #     params["employee_type"] = employee_type
-
-        # if bank:
-        #     params["bank"] = bank
 
         optional_fields = [
             "mode_of_payment",
@@ -199,10 +177,10 @@ def get_data(filters, columns):
             g["taxable_gross"] = g["gross_pay"]
             dept_group[dept].append(g)
 
-        num_columns = len(columns)
-
         for dept, employees in dept_group.items():
-            data.append([f"▶ {dept}"] + [None] * (num_columns - 1))
+            if dept not in added_departments:
+                data.append([f"▶ {dept}"] + [None] * (num_columns - 1))
+                added_departments.add(dept)
             for g in employees:
                 row = [
                     g["employee_name"],
@@ -211,7 +189,6 @@ def get_data(filters, columns):
                     g["company_pension"], g["income_tax"], g["employee_pension"],
                     g["other_deduction"], g["total_deduction"], g["net_pay"]
                 ]
-                # Add title or blank signature at end
                 row.append(g["designation"] if mode_of_payment == "Bank" else "")
                 data.append(row)
 

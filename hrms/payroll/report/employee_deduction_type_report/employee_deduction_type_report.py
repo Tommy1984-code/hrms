@@ -31,6 +31,7 @@ def get_data(filters, columns):
     ]
 
     data = []
+    dept_group = {}  # ✅ Moved outside the month loop
 
     for month in months:
         month_start = month.replace(day=1)
@@ -89,7 +90,7 @@ def get_data(filters, columns):
 
         results = frappe.db.sql(query, params, as_dict=True)
 
-        # Pick only the latest slip per employee
+        # Pick only the latest slip per employee for the current month
         latest_slips = {}
         for row in results:
             emp = row.employee_id
@@ -97,12 +98,12 @@ def get_data(filters, columns):
             if emp not in latest_slips or current_index > payment_order.index(latest_slips[emp].payment_type):
                 latest_slips[emp] = row
 
-        # Group by department
-        dept_group = {}
+        # Group by department (across all months)
         for emp, row in latest_slips.items():
             dept = row.get("department") or "No Department"
             if dept not in dept_group:
                 dept_group[dept] = []
+
             row["month"] = row["end_date"].strftime("%Y-%m")
             dept_group[dept].append({
                 "employee_id": row.employee_id,
@@ -111,11 +112,9 @@ def get_data(filters, columns):
                 "amount": row.amount or 0
             })
 
-    num_columns = len(columns)
-
     # Build final data list with section headers (departments)
     for dept, employees in dept_group.items():
-        # Add department header row (dictionary approach, works in Frappe report)
+        # Add department header row
         data.append({"employee_id": f"▶ {dept}"})
         
         # Add employee rows under the department

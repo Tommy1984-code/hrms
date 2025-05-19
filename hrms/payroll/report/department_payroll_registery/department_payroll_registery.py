@@ -37,6 +37,9 @@ def get_data(filters=None):
 	from_date = getdate(filters.get("from_date"))
 	to_date = getdate(filters.get("to_date"))
 	company = filters.get("company")
+	payment_type = filters.get("payment_type")
+	branch = filters.get("branch")
+	department = filters.get("department")
 
 	if not (from_date and to_date):
 		frappe.throw("Please set both From Date and To Date")
@@ -73,14 +76,27 @@ def get_data(filters=None):
 			  AND ss.end_date >= %(month_start)s
 			  AND ss.docstatus = 1
 			  {company_clause}
+			  {department_clause}
+			  {payment_type_clause}
 			ORDER BY ss.end_date DESC
-		""".format(company_clause="AND ss.company = %(company)s" if company else "")
+		""".format(
+			company_clause="AND ss.company = %(company)s" if company else "",
+			department_clause = "AND ss.department = %(department)s" if department else "",
+			payment_type_clause = "AND ss.payment_type = %(payment_type)s" if payment_type else ""
+			)
+		
+		params = {
+            "month_start": month_start,
+            "month_end": month_end,
+            "company": company
+        }
 
-		results = frappe.db.sql(query, {
-			"month_start": month_start,
-			"month_end": month_end,
-			"company": company
-		}, as_dict=True)
+		if department:
+			params["department"] = department
+		if payment_type:
+			params["payment_type"] = payment_type
+
+		results = frappe.db.sql(query,params, as_dict=True)
 
 		# Get latest slip per employee
 		latest_slips = {}

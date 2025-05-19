@@ -11,6 +11,19 @@ frappe.query_reports["Department Payroll Registery"] = {
             "reqd": 1
         },
         {
+            "fieldname": "department",
+            "label": "Department",
+            "fieldtype": "Link",
+            "options": "Department"
+        },
+        {
+            "fieldname": "payment_type",
+            "label": "Payment Type",
+            "fieldtype": "Select",
+            "options": ["", "Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"],
+            "default": ""
+        },
+        {
             "fieldname": "from_date",
             "label": "From Date",
             "fieldtype": "Date",
