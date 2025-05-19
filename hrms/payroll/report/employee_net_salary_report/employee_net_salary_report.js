@@ -11,6 +11,50 @@ frappe.query_reports["Employee Net Salary Report"] = {
             "reqd": 1
         },
         {
+            "fieldname": "employee",
+            "label": "Employee",
+            "fieldtype": "Link",
+            "options": "Employee",
+            "reqd": 0
+        },
+        {
+            "fieldname": "payment_type",
+            "label": "Payment Type",
+            "fieldtype": "Select",
+            "options": ["", "Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"],
+            "default": ""
+        },
+        {
+            "fieldname": "branch",
+            "label": "Branch",
+            "fieldtype": "Link",
+            "options": "Branch"
+        },
+        {
+            "fieldname": "department",
+            "label": "Department",
+            "fieldtype": "Link",
+            "options": "Department"
+        },
+        {
+            "fieldname": "grade",
+            "label": "Grade",
+            "fieldtype": "Link",
+            "options": "Employee Grade"
+        },
+        {
+            "fieldname": "employee_type",
+            "label": "Employee Type",
+            "fieldtype": "Select",
+            "options": "\nFull-Time\nPart-Time\nContract\nTemporary"
+        },
+        {
+            "fieldname": "bank",
+            "label": "Bank",
+            "fieldtype": "Link",
+            "options": "Bank"
+        },
+        {
             "fieldname": "from_date",
             "label": "From Date",
             "fieldtype": "Date",
