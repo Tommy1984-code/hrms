@@ -11,6 +11,37 @@ frappe.query_reports["Employee Salary Slip Report"] = {
             "reqd": 1
         },
         {
+            "fieldname": "employee",
+            "label": "Employee",
+            "fieldtype": "Link",
+            "options": "Employee"
+          },
+          {
+            "fieldname": "department",
+            "label": "Department",
+            "fieldtype": "Link",
+            "options": "Department"
+          },
+          {
+            "fieldname": "grade",
+            "label": "Grade",
+            "fieldtype": "Link",
+            "options": "Employee Grade"
+          },
+          {
+            "fieldname": "payment_type",
+            "label": "Payment Type",
+            "fieldtype": "Select",
+            "options": ["", "Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"],
+            "default": ""
+          },
+          {
+            "fieldname": "branch",
+            "label": "Branch",
+            "fieldtype": "Link",
+            "options": "Branch"
+          },
+        {
             "fieldname": "from_date",
             "label": "From Date",
             "fieldtype": "Date",

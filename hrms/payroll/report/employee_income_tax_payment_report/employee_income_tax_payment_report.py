@@ -21,7 +21,12 @@ def get_grouped_data(filters=None):
 	from_date = filters.get("from_date")
 	to_date = filters.get("to_date")
 	company = filters.get("company")
-	payment_type = filters.get("payment_type")  # <-- added
+	payment_type = filters.get("payment_type") 
+	employee = filters.get("employee") 
+	branch = filters.get("branch")
+	department = filters.get("department")
+	grade = filters.get("grade")
+	employee_type = filters.get("employee_type")
 
 	if not (from_date and to_date):
 		frappe.throw("Please set both From Date and To Date")
@@ -30,39 +35,57 @@ def get_grouped_data(filters=None):
 	grouped = defaultdict(list)
 
 	for month in months:
-		month = getdate(month)
 		month_start = month.replace(day=1)
-		month_end = (add_months(month_start, 1) - timedelta(days=1))
+		month_end = add_months(month_start, 1) - timedelta(days=1)
 
-		conditions = ["ss.docstatus = 1", "ss.start_date BETWEEN %s AND %s"]
-		params = [month_start, month_end]
-
-		if company:
-			conditions.append("ss.company = %s")
-			params.append(company)
-
-		if payment_type:
-			conditions.append("ss.payment_type = %s")
-			params.append(payment_type)
-
-		query = f"""
+		query = """
 			SELECT 
-				ss.name as salary_slip,
-				ss.employee,
-				ss.employee_name,
-				ss.payment_type,
-				e.employee_tin_no,
-				e.department,
-				ss.gross_pay,
-				ss.net_pay,
-				ss.end_date
+				e.employee_tin_no,e.department,e.name AS employee, e.employee_name, e.department, e.designation,
+				e.branch, e.grade, e.bank_name, e.employment_type,
+				ss.name as salary_slip,ss.employee,ss.employee_name,
+				ss.payment_type,ss.gross_pay,ss.net_pay,ss.end_date
 			FROM `tabSalary Slip` ss
 			LEFT JOIN `tabEmployee` e ON ss.employee = e.name
-			WHERE {' AND '.join(conditions)}
+			WHERE ss.start_date <= %(month_end)s AND ss.end_date >= %(month_start)s
+              AND ss.docstatus = 1
+			  {company_clause}
+              {employee_clause}
+              {branch_clause}
+			  {payment_type_clause}
+              {department_clause}
+              {grade_clause}
+              {employee_type_clause}
 			ORDER BY ss.end_date DESC
-		"""
+		""".format(
+			company_clause="AND ss.company = %(company)s" if company else "",
+            employee_clause="AND ss.employee = %(employee)s" if employee else "",
+            branch_clause="AND e.branch = %(branch)s" if branch else "",
+			payment_type_clause = "AND ss.payment_type = %(payment_type)s" if payment_type else "",
+            department_clause="AND e.department = %(department)s" if department else "",
+            grade_clause="AND e.grade = %(grade)s" if grade else "",
+            employee_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else "",
+		)
+		params = {
+            "month_start": month_start,
+            "month_end": month_end,
+            "company" :company
+        }
+		optional_fields = [
+            "employee",
+            "payment_type",
+            "branch",
+            "department",
+            "grade",
+            "job_title",
+            "employee_type",
+        ]
 
-		results = frappe.db.sql(query, tuple(params), as_dict=True)
+		for field in optional_fields:
+			value = locals().get(field)
+			if value:
+				params[field] = value
+
+		results = frappe.db.sql(query, params, as_dict=True)
 
 		payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 		employee_latest_slip = {}

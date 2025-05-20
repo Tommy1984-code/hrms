@@ -64,6 +64,13 @@ def get_data(filters=None):
     from_date = getdate(filters.get("from_date"))
     to_date = getdate(filters.get("to_date"))
     company = filters.get("company")
+    employee = filters.get("employee")
+    payment_type = filters.get("payment_type")
+    branch = filters.get("branch")
+    department = filters.get("department")
+    grade = filters.get("grade")
+    employee_type = filters.get("employee_type")
+    
 
     if not (from_date and to_date):
         frappe.throw("Please set both From Date and To Date")
@@ -72,23 +79,63 @@ def get_data(filters=None):
     data = []
 
     for month in months:
-        start_of_month = month.replace(day=1)
-        end_of_month = (add_months(start_of_month, 1) - timedelta(days=1))
+        month_start = month.replace(day=1)
+        month_end = add_months(month_start, 1) - timedelta(days=1)
 
         # Get all salary slips in the range
-        salary_slips = frappe.db.sql("""
-            SELECT ss.name, ss.employee, ss.start_date, ss.end_date, ss.net_pay,
-                   e.employee_name, e.employee_tin_no, e.date_of_joining, e.tax_free_transportation_amount
+        query = """
+            SELECT e.name AS employee,e.employee_name, e.employee_tin_no, e.date_of_joining,
+                e.tax_free_transportation_amount,e.department,e.designation,e.branch,e.grade,e.employment_type,
+                ss.name, ss.employee, ss.start_date, ss.end_date, ss.net_pay,ss.payment_type
             FROM `tabSalary Slip` ss
             JOIN `tabEmployee` e ON ss.employee = e.name
-            WHERE ss.start_date >= %s AND ss.end_date <= %s
-                AND ss.docstatus = 1 AND e.company = %s
-            ORDER BY ss.end_date ASC
-        """, (start_of_month, end_of_month, company), as_dict=True)
+            WHERE ss.start_date <= %(month_end)s 
+            AND ss.end_date >= %(month_start)s
+                AND ss.docstatus = 1 
+            {company_clause}
+            {employee_clause}
+            {payment_type_clause}
+            {branch_clause}
+            {department_clause}
+            {grade_clause}
+            {employment_type_clause}
+            ORDER BY ss.end_date DESC
+        """.format(
+            company_clause="AND ss.company = %(company)s" if company else "",
+            employee_clause="AND ss.employee = %(employee)s" if employee else "",
+            payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
+            branch_clause="AND e.branch = %(branch)s" if branch else "",
+            department_clause="AND e.department = %(department)s" if department else "",
+            grade_clause="AND e.grade = %(grade)s" if grade else "",
+            employment_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else "",
+        )
+
+        params = {
+            "month_start": month_start,
+            "month_end": month_end,
+        }
+
+        optional_fields = [
+            "company",
+            "employee",
+            "payment_type",
+            "branch",
+            "department",
+            "grade",
+            "designation",
+            "employment_type",
+        ]
+
+        for field in optional_fields:
+            value = locals().get(field)
+            if value:
+                params[field] = value
+
+        results = frappe.db.sql(query, params, as_dict=True)
 
         # Group slips by employee
         slips_by_employee = {}
-        for slip in salary_slips:
+        for slip in results:
             slips_by_employee.setdefault(slip.employee, []).append(slip)
 
         for emp_id, emp_slips in slips_by_employee.items():

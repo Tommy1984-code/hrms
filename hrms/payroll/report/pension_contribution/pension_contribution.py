@@ -30,6 +30,12 @@ def get_grouped_data(filters=None):
     from_date = filters.get("from_date")
     to_date = filters.get("to_date")
     company = filters.get("company")
+    employee = filters.get("employee")
+    branch = filters.get("branch")
+    department = filters.get("department")
+    grade = filters.get("grade")
+    job_title = filters.get("job_title")
+    employee_type = filters.get("employee_type")
 
     if not (from_date and to_date):
         frappe.throw("Please set both From Date and To Date")
@@ -59,19 +65,47 @@ def get_grouped_data(filters=None):
                 AND ss.end_date >= %(month_start)s
                 AND ss.docstatus = 1
                 AND sd.abbr IN ('B', 'VB')
-        """
+              {company_clause}
+              {employee_clause}
+              {branch_clause}
+              {department_clause}
+              {grade_clause}
+              {employee_type_clause}
+              
+        """.format(
+            company_clause="AND ss.company = %(company)s" if company else "",
+            employee_clause="AND ss.employee = %(employee)s" if employee else "",
+            branch_clause="AND e.branch = %(branch)s" if branch else "",
+            department_clause="AND e.department = %(department)s" if department else "",
+            grade_clause="AND e.grade = %(grade)s" if grade else "",
+            job_title_clause="AND e.designation = %(job_title)s" if job_title else "",
+            employee_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else "",
+            
+        )
 
-        conditions = {
+        params = {
             "month_start": month_start,
-            "month_end": month_end
+            "month_end": month_end,
+            "company" :company
         }
 
-        if company:
-            query += " AND e.company = %(company)s"
-            conditions["company"] = company
+        optional_fields = [
+            "employee",
+            "payment_type",
+            "branch",
+            "department",
+            "grade",
+            "job_title",
+            "employee_type",
+        ]
 
-        results = frappe.db.sql(query, conditions, as_dict=True)
+        for field in optional_fields:
+            value = locals().get(field)
+            if value:
+                params[field] = value
 
+        results = frappe.db.sql(query, params, as_dict=True)
+ 
         # Group results by employee to ensure we're getting the latest salary slip
         employee_latest_slip = {}
 
