@@ -8,7 +8,9 @@ import calendar
 
 
 def execute(filters=None):
-	columns = get_columns()
+	
+	employee_filter = filters.get("employee") if filters else None
+	columns = get_columns(employee_filter)
 	data = get_data(filters)
 
 	employee_filter = filters.get("employee") if filters else None
@@ -39,14 +41,26 @@ def execute(filters=None):
 
 	return columns, data
 
-def get_columns():
-    return [
-        {"label":"From", "fieldname": "from_date", "fieldtype": "Date", "width": 200},
-        {"label": "To", "fieldname": "to_date", "fieldtype": "Date", "width": 200},
-        {"label":"Basic Salary", "fieldname": "basic_salary", "fieldtype": "Currency", "width": 150},
-        {"label": "Rate", "fieldname": "rate", "fieldtype": "Data", "width": 150},
-        {"label": "Amount", "fieldname": "amount", "fieldtype": "Currency", "width": 150},
-    ]
+def get_columns(employee_filter):
+
+	if employee_filter:
+		return [
+			{"label":"From", "fieldname": "from_date", "fieldtype": "Date", "width": 200},
+			{"label": "To", "fieldname": "to_date", "fieldtype": "Date", "width": 200},
+			{"label":"Basic Salary", "fieldname": "basic_salary", "fieldtype": "Currency", "width": 150},
+			{"label": "Rate", "fieldname": "rate", "fieldtype": "Data", "width": 150},
+			{"label": "Amount", "fieldname": "amount", "fieldtype": "Currency", "width": 150},
+		]
+	else:
+		# Columns when NO employee is selected
+		return [
+			{"label": "Employee Name", "fieldname": "employee_name", "fieldtype": "Data", "width": 200},
+			{"label": "Date of Employment", "fieldname": "date_of_employment", "fieldtype": "Date", "width": 180},
+			{"label": "Termination Date", "fieldname": "termination_date", "fieldtype": "Date", "width": 180},
+			{"label": "Total Severance", "fieldname": "total_severance", "fieldtype": "Currency", "width": 150},
+			{"label": "Severance Tax", "fieldname": "severance_tax", "fieldtype": "Currency", "width": 150},
+			{"label": "Net Severance", "fieldname": "net_severance", "fieldtype": "Currency", "width": 150},
+		]
 
 
 
@@ -56,68 +70,106 @@ def get_data(filters):
 	to_date = getdate(filters.get("to_date"))
 	company = filters.get("company")
 	employee = filters.get("employee")
-      
+
 	if not (from_date and to_date):
 		frappe.throw("Please set both From Date and To Date")
 
 	data = []
 	months = get_months_in_range(from_date, to_date)
-      
+
 	for month in months:
 		month_start = month.replace(day=1)
 		month_end = add_months(month_start, 1) - timedelta(days=1)
 
-		query = """
-			SELECT
-				st.date_from,
-				st.date_to,
-				et.basic_salary,
-				st.percent AS rate,
-				st.amount
-			FROM
-				`tabEmployee Termination` et
-			JOIN
-				`tabSeverance Detail` st ON st.parent = et.name
-			WHERE
-				et.termination_date BETWEEN %(month_start)s AND %(month_end)s
-				{employee_clause}
-				{company_clause}
-		""".format(
-			employee_clause="AND et.employee = %(employee)s" if employee else "",
-			company_clause="AND et.company = %(company)s" if company else ""
-		)
+		if employee:
+			# Detailed view for selected employee
+			query = """
+				SELECT
+					st.date_from,
+					st.date_to,
+					et.basic_salary,
+					st.percent AS rate,
+					st.amount
+				FROM
+					`tabEmployee Termination` et
+				JOIN
+					`tabSeverance Detail` st ON st.parent = et.name
+				WHERE
+					et.termination_date BETWEEN %(month_start)s AND %(month_end)s
+					AND et.employee = %(employee)s
+					{company_clause}
+			""".format(
+				company_clause="AND et.company = %(company)s" if company else ""
+			)
 
-		params = {
-			"month_start": month_start,
-			"month_end": month_end,
-			"company": company,
-			"employee": employee
-		}
-	
-		results = frappe.db.sql(query, params, as_dict=True)
+			params = {
+				"month_start": month_start,
+				"month_end": month_end,
+				"employee": employee,
+				"company": company
+			}
 
-		for row in results:
-			from_date = row.date_from
-			to_date = row.date_to
+			results = frappe.db.sql(query, params, as_dict=True)
 
-			# Format months to short names and extract year
-			from_str = f"{calendar.month_abbr[from_date.month]} {from_date.year}"
-			to_str = f"{calendar.month_abbr[to_date.month]} {to_date.year}"
+			for row in results:
+				from_str = f"{calendar.month_abbr[row.date_from.month]} {row.date_from.year}"
+				to_str = f"{calendar.month_abbr[row.date_to.month]} {row.date_to.year}"
 
-			data.append({
-				"year": from_date.year,
-				"from_date": from_str,
-				"to_date": to_str,
-				"basic_salary": row.basic_salary,
-				"rate": f"{row.rate}%",
-				"amount": row.amount
-			})
+				data.append({
+					"year": row.date_from.year,
+					"from_date": from_str,
+					"to_date": to_str,
+					"basic_salary": row.basic_salary,
+					"rate": f"{row.rate}%",
+					"amount": row.amount
+				})
 
-	# Sort the data by year and month order
-	data.sort(key=lambda x: (x["year"], list(calendar.month_abbr).index(x["from_date"].split(" ")[0])))
+		else:
+			# Summary view for all employees
+			query = """
+				SELECT
+					et.employee,
+					et.employee_name,
+					et.date_of_employment,
+					et.termination_date,
+					et.total_severance,
+					et.severance_tax,
+					et.net_severance
+				FROM
+					`tabEmployee Termination` et
+				WHERE
+					et.termination_date BETWEEN %(month_start)s AND %(month_end)s
+					{company_clause}
+			""".format(
+				company_clause="AND et.company = %(company)s" if company else ""
+			)
+
+			params = {
+				"month_start": month_start,
+				"month_end": month_end,
+				"company": company
+			}
+
+			results = frappe.db.sql(query, params, as_dict=True)
+
+			for row in results:
+				# Ensure no duplicate employees
+				if not any(d.get("employee") == row.employee for d in data):
+					data.append({
+						"employee": row.employee,
+						"employee_name": row.employee_name,
+						"date_of_employment": row.date_of_employment,
+						"termination_date": row.termination_date,
+						"total_severance": row.total_severance,
+						"severance_tax": row.severance_tax,
+						"net_severance": row.net_severance
+					})
+
+	# Sort the detailed data only if employee is selected
+	if employee:
+		data.sort(key=lambda x: (x["year"], list(calendar.month_abbr).index(x["from_date"].split(" ")[0])))
 
 	return data
-
 
 
 def get_months_in_range(start_date, end_date):

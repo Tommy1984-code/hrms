@@ -23,8 +23,11 @@
       Generated on:<br> {{ genDate }}
     </div>
 </div>
+{% 
+  var is_summary_mode = data.length > 0 && !data[0].from_date; 
+%}
+{% if (!is_summary_mode) { %}
 <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 14px; gap: 40px;">
-
     <!-- Employee Info -->
     <div style="flex: 1 1 auto; min-width: 60%;">
       <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 600;">Employee Info</h3>
@@ -44,10 +47,9 @@
         <div>{{ data[0].termination_date }}</div>
       </div>
     </div>
-  
-  </div>
-  
-  
+</div>
+{% } %}
+
   <!-- Date Range -->
   <div style="text-align: center; margin: 10px 0 20px 0; font-size: 15px;">
     {%
@@ -103,56 +105,114 @@
       }
     }
   </style>
+{% 
+  var is_summary_mode = data.length > 0 && !data[0].from_date; 
+%}
 
+{% if (!is_summary_mode) { %}
+<!-- Detailed Table: When an employee is selected -->
 <table class="payroll-table no-padding-body" style="margin-top: 20px;">
-    <thead>
+  <thead>
+    <tr>
+      <th style="text-align: center;">Year</th>
+      <th style="text-align: center;">From</th>
+      <th style="text-align: center;">To</th>
+      <th style="text-align: right;">Rate (%)</th>
+      <th style="text-align: right;">Basic Salary</th>
+      <th style="text-align: right;">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+      {% 
+          var total_amount = 0;
+          for (var i = 0; i < data.length; i++) {
+            total_amount += data[i].amount || 0;
+      %}
       <tr>
-        <th style="text-align: center;">Year</th>
-        <th style="text-align: center;">From</th>
-        <th style="text-align: center;">To</th>
-        <th style="text-align: right;">Rate (%)</th>
-        <th style="text-align: right;">Basic Salary</th>
-        <th style="text-align: right;">Amount</th>
+        <td style="text-align: center;">{{ i+1 }}</td>
+        <td style="text-align: center;">{{ data[i].from_date }}</td>
+        <td style="text-align: center;">{{ data[i].to_date }}</td>
+        <td style="text-align: right;">{{ data[i].rate }}</td>
+        <td style="text-align: right;">{{ data[i].basic_salary }}</td>
+        <td style="text-align: right;">{{ data[i].amount }}</td>
       </tr>
-    </thead>
-    <tbody>
-        {% 
-            var total_amount = 0;
-            for (var i = 0; i < data.length; i++) {
-              total_amount += data[i].amount|| 0;
-              
-        %}
-        <tr>
-          <td style="text-align: center;">{{ i+1 }}</td>
-          <td style="text-align: center;">{{ data[i].from_date }}</td>
-          <td style="text-align: center;">{{ data[i].to_date }}</td>
-          <td style="text-align: right;">{{ data[i].rate }}</td>
-          <td style="text-align: right;">{{ data[i].basic_salary }}</td>
-          <td style="text-align: right;">{{ data[i].amount }}</td>
-        </tr>
-        {% } %}
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colspan="5" style="text-align: right; font-weight: bold;">Total Severance</td>
-        <td style="text-align: right;">{{ data[0].total_severance }}</td>
-      </tr>
-    </tfoot>
-  </table>
-  
-  <!-- Below Table Footer Items -->
-  <div style="margin-top: 16px; font-size: 14px; display: flex; flex-direction: column; gap: 4px;">
-    <div style="display: flex; justify-content: flex-end;">
-      <div style="width: 200px; text-align: right; font-weight: bold;">Severance Tax:</div>
-      <div style="width: 100px; text-align: right;">{{ data[0].severance_tax }}</div>
-    </div>
-    <div style="display: flex; justify-content: flex-end;">
-      <div style="width: 200px; text-align: right; font-weight: bold;">Net Severance:</div>
-      <div style="width: 100px; text-align: right;">{{ data[0].net_severance }}</div>
-    </div>
-    <div style="display: flex; justify-content: flex-start;">
-      <div style="width: 200px; text-align: left; font-weight: bold;">Recipient's Signature</div>_________________________
-    </div>
+      {% } %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="5" style="text-align: right; font-weight: bold;">Total Severance</td>
+      <td style="text-align: right;">{{ data[0].total_severance }}</td>
+    </tr>
+  </tfoot>
+</table>
+
+<!-- Footer Items for Detailed Mode -->
+<div style="margin-top: 16px; font-size: 14px; display: flex; flex-direction: column; gap: 4px;">
+  <div style="display: flex; justify-content: flex-end;">
+    <div style="width: 200px; text-align: right; font-weight: bold;">Severance Tax:</div>
+    <div style="width: 100px; text-align: right;">{{ data[0].severance_tax }}</div>
   </div>
-  
+  <div style="display: flex; justify-content: flex-end;">
+    <div style="width: 200px; text-align: right; font-weight: bold;">Net Severance:</div>
+    <div style="width: 100px; text-align: right;">{{ data[0].net_severance }}</div>
+  </div>
+  <div style="display: flex; justify-content: flex-start;">
+    <div style="width: 200px; text-align: left; font-weight: bold;">Recipient's Signature</div>_________________________
+  </div>
+</div>
+
+{% } else { %}
+<!-- Summary Table: When no employee is selected -->
+{% 
+  var total_severance = 0;
+  var total_tax = 0;
+  var total_net = 0;
+%}
+<table class="payroll-table no-padding-body" style="margin-top: 20px;">
+  <thead>
+    <tr>
+      <th style="text-align: left;">No.</th>
+      <th style="text-align: left;">Employee Name</th>
+      <th style="text-align: center;">Date of Employment</th>
+      <th style="text-align: center;">Termination Date</th>
+      <th style="text-align: right;">Total Severance</th>
+      <th style="text-align: right;">Severance Tax</th>
+      <th style="text-align: right;">Net Severance</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for (var i = 0; i < data.length; i++) { 
+         total_severance += data[i].total_severance || 0;
+         total_tax += data[i].severance_tax || 0;
+         total_net += data[i].net_severance || 0;
+    %}
+    <tr>
+      <td>{{i+1}}</td>
+      <td>{{ data[i].employee_name }}</td>
+      <td style="text-align: center;">{{ data[i].date_of_employment }}</td>
+      <td style="text-align: center;">{{ data[i].termination_date }}</td>
+      <td style="text-align: right;">{{ data[i].total_severance }}</td>
+      <td style="text-align: right;">{{ data[i].severance_tax }}</td>
+      <td style="text-align: right;">{{ data[i].net_severance }}</td>
+    </tr>
+    {% } %}
+  </tbody>
+  <tfoot>
+    <tr style="font-weight: bold; border-top: 2px solid #333;">
+      <td colspan="4" style="text-align: right;">Grand Totals</td>
+      <td style="text-align: right;">{{ total_severance }}</td>
+      <td style="text-align: right;">{{ total_tax }}</td>
+      <td style="text-align: right;">{{ total_net }}</td>
+    </tr>
+  </tfoot>
+</table>
+
+<!-- Shared Footer Items for Summary Mode -->
+<div style="margin-top: 16px; font-size: 14px; display: flex; flex-direction: column; gap: 4px;">
+  <div style="display: flex; justify-content: flex-start;">
+    <div style="width: 200px; text-align: left; font-weight: bold;">Recipient's Signature</div>_________________________
+  </div>
+</div>
+{% } %}
+
   
