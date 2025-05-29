@@ -82,62 +82,61 @@
 
 
 <table class="payroll-table no-padding-body" style="margin-top: 20px;">
-    <thead>
-      <tr>
-        <th style="text-align: center;">NO.</th>
-        <th style="text-align: center;">Employee ID</th>
-        <th style="text-align: center;">Name</th>
-        <th style="text-align: center;">Date</th>
-        <th style="text-align: center;">OT 1.25</th>
-        <th style="text-align: center;">Amount</th>
-        <th style="text-align: center;">OT 1.5</th>
-        <th style="text-align: center;">Amount</th>
-        <th style="text-align: center;">OT 2.0</th>
-        <th style="text-align: center;">Amount</th>
-        <th style="text-align: center;">OT 2.5</th>
-        <th style="text-align: center;">Amount</th>
-      </tr>
-    </thead>
-    <tbody>
-      {%
-        var total_amount_125 = 0;
-        var total_amount_150 = 0;
-        var total_amount_200 = 0;
-        var total_amount_250 = 0;
-  
-        for (var i = 0; i < data.length; i++) {
-          total_amount_125 += data[i].amount_1_25 || 0;
-          total_amount_150 += data[i].amount_1_5 || 0;
-          total_amount_200 += data[i].amount_2_0 || 0;
-          total_amount_250 += data[i].amount_2_5 || 0;
-      %}
-      <tr>
-        <td style="text-align: center;">{{ i + 1 }}</td>
-        <td style="text-align: center;">{{ data[i].employee }}</td>
-        <td style="text-align: center;">{{ data[i].employee_name }}</td>
-        <td style="text-align: center;">{{ data[i].date }}</td>
-        <td style="text-align: center;">{{ data[i].ot_1_25 }}</td>
-        <td style="text-align: center;">{{ data[i].amount_1_25 }}</td>
-        <td style="text-align: center;">{{ data[i].ot_1_5 }}</td>
-        <td style="text-align: center;">{{ data[i].amount_1_5 }}</td>
-        <td style="text-align: center;">{{ data[i].ot_2_0 }}</td>
-        <td style="text-align: center;">{{ data[i].amount_2_0 }}</td>
-        <td style="text-align: center;">{{ data[i].ot_2_5 }}</td>
-        <td style="text-align: center;">{{ data[i].amount_2_5 }}</td>
-      </tr>
-      {% } %}
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colspan="5" style="text-align: center; font-weight: bold;">Total Amount</td>
-        <td style="text-align: center;">{{ total_amount_125 }}</td>
-        <td></td>
-        <td style="text-align: center;">{{ total_amount_150 }}</td>
-        <td></td>
-        <td style="text-align: center;">{{ total_amount_200 }}</td>
-        <td></td>
-        <td style="text-align: center;">{{ total_amount_250 }}</td>
-      </tr>
-    </tfoot>
-  </table>
-  
+  <thead>
+    <tr>
+      <th style="text-align: center;">NO.</th>
+      <th style="text-align: center;">Employee ID</th>
+      <th style="text-align: center;">Name</th>
+      <th style="text-align: center;">Date</th>
+      <th style="text-align: center;">OT 1.25</th>
+      <th style="text-align: center;">Amount</th>
+      <th style="text-align: center;">OT 1.5</th>
+      <th style="text-align: center;">Amount</th>
+      <th style="text-align: center;">OT 2.0</th>
+      <th style="text-align: center;">Amount</th>
+      <th style="text-align: center;">OT 2.5</th>
+      <th style="text-align: center;">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {%
+      var total_amount_125 = 0;
+      var total_amount_150 = 0;
+      var total_amount_200 = 0;
+      var total_amount_250 = 0;
+
+      for (var i = 0; i < data.length; i++) {
+        total_amount_125 += data[i].amount_1_25 || 0;
+        total_amount_150 += data[i].amount_1_5 || 0;
+        total_amount_200 += data[i].amount_2_0 || 0;
+        total_amount_250 += data[i].amount_2_5 || 0;
+    %}
+    <tr>
+      <td style="text-align: center;">{{ i + 1 }}</td>
+      <td style="text-align: center;">{{ data[i].employee }}</td>
+      <td style="text-align: center;">{{ data[i].employee_name }}</td>
+      <td style="text-align: center;">{{ data[i].date }}</td>
+      <td style="text-align: center;">{{ data[i].ot_1_25 }}</td>
+      <td style="text-align: center;">{{ data[i].amount_1_25.toFixed(2) }}</td>
+      <td style="text-align: center;">{{ data[i].ot_1_5 }}</td>
+      <td style="text-align: center;">{{ data[i].amount_1_5.toFixed(2) }}</td>
+      <td style="text-align: center;">{{ data[i].ot_2_0 }}</td>
+      <td style="text-align: center;">{{ data[i].amount_2_0.toFixed(2) }}</td>
+      <td style="text-align: center;">{{ data[i].ot_2_5 }}</td>
+      <td style="text-align: center;">{{ data[i].amount_2_5.toFixed(2) }}</td>
+    </tr>
+    {% } %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="5" style="text-align: right; font-weight: bold;">Total Amount</td>
+      <td style="text-align: center;">{{ total_amount_125.toFixed(2) }}</td>
+      <td></td>
+      <td style="text-align: center;">{{ total_amount_150.toFixed(2) }}</td>
+      <td></td>
+      <td style="text-align: center;">{{ total_amount_200.toFixed(2) }}</td>
+      <td></td>
+      <td style="text-align: center;">{{ total_amount_250.toFixed(2) }}</td>
+    </tr>
+  </tfoot>
+</table>
