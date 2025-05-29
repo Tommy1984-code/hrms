@@ -207,7 +207,7 @@
    "fieldname": "rate",
    "fieldtype": "Select",
    "label": "Rate",
-   "options": "1.5\n1.7\n2.0\n2.5"
+   "options": "1.25\n1.5\n2.0\n2.5"
   },
   {
    "depends_on": "eval:doc.salary_component=='OverTime'",
@@ -219,7 +219,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-26 10:39:39.782135",
+ "modified": "2025-05-29 10:15:45.025662",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Additional Salary",

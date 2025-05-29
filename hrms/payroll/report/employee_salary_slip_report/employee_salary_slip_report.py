@@ -89,7 +89,7 @@ def get_data(filters=None):
                 ss.name, ss.employee, ss.start_date, ss.end_date, ss.net_pay,ss.payment_type
             FROM `tabSalary Slip` ss
             JOIN `tabEmployee` e ON ss.employee = e.name
-            WHERE ss.start_date <= %(month_end)s 
+                     WHERE ss.start_date <= %(month_end)s 
             AND ss.end_date >= %(month_start)s
                 AND ss.docstatus = 1 
             {company_clause}

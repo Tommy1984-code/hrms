@@ -1,0 +1,143 @@
+<script src="https://cdn.tailwindcss.com"></script>
+<div style="width: 100%; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
+    <!-- Logo aligned to the left -->
+    <div style="width: 150px; display: flex; justify-content: flex-start;">
+      <img src="/private/files/asku-logo.png" alt="Logo" style="max-height: 60px;">
+    </div>
+  
+    <!-- Centered Title and Company -->
+    <div style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+      <h2 style="margin: 0; font-size: 28px; font-weight: 600;">{{ filters.company }}</h2>
+      <h3 style="margin: 4px 0; font-size: 22px;">OverTime Ledger</h3>
+    </div>
+
+    <!-- Report Generated Date -->
+    <div style="width: 200px; font-size: 12px; text-align: center; margin-top: 10px;">
+      {% 
+        let now = new Date();
+        let genDate = now.toLocaleString('default', {
+          year: 'numeric', month: 'long', day: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      %}
+      Generated on:<br> {{ genDate }}
+    </div>
+</div>
+
+
+  <!-- Date Range -->
+  <div style="text-align: center; margin: 10px 0 20px 0; font-size: 15px;">
+    {%
+      let from = new Date(filters.from_date);
+      let to = new Date(filters.to_date);
+      let fromMonth = from.toLocaleString('default', { month: 'long' });
+      let toMonth = to.toLocaleString('default', { month: 'long' });
+      let fromYear = from.getFullYear();
+      let toYear = to.getFullYear();
+    %}
+    For the period:
+    {% if fromMonth === toMonth && fromYear === toYear %}
+      {{ fromMonth }} {{ fromYear }}
+    {% else %}
+      {{ fromMonth }} {{ fromYear }} to {{ toMonth }} {{ toYear }}
+    {% endif %}
+  </div>
+
+  <style>
+    .payroll-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+  
+    .payroll-table th, .payroll-table td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+    }
+  
+    .payroll-table th {
+      background-color: #f0f0f0;
+      font-weight: bold;
+    }
+  
+    .payroll-table td:first-child,
+    .payroll-table th:first-child {
+      text-align: left;
+      width: 180px;
+    }
+
+    .no-padding-body  th, td {
+    padding: 3px !important;
+    margin: 0 !important;
+  }
+  
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 20mm;
+      }
+    }
+  </style>
+
+
+<table class="payroll-table no-padding-body" style="margin-top: 20px;">
+    <thead>
+      <tr>
+        <th style="text-align: center;">NO.</th>
+        <th style="text-align: center;">Employee ID</th>
+        <th style="text-align: center;">Name</th>
+        <th style="text-align: center;">Date</th>
+        <th style="text-align: center;">OT 1.25</th>
+        <th style="text-align: center;">Amount</th>
+        <th style="text-align: center;">OT 1.5</th>
+        <th style="text-align: center;">Amount</th>
+        <th style="text-align: center;">OT 2.0</th>
+        <th style="text-align: center;">Amount</th>
+        <th style="text-align: center;">OT 2.5</th>
+        <th style="text-align: center;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {%
+        var total_amount_125 = 0;
+        var total_amount_150 = 0;
+        var total_amount_200 = 0;
+        var total_amount_250 = 0;
+  
+        for (var i = 0; i < data.length; i++) {
+          total_amount_125 += data[i].amount_1_25 || 0;
+          total_amount_150 += data[i].amount_1_5 || 0;
+          total_amount_200 += data[i].amount_2_0 || 0;
+          total_amount_250 += data[i].amount_2_5 || 0;
+      %}
+      <tr>
+        <td style="text-align: center;">{{ i + 1 }}</td>
+        <td style="text-align: center;">{{ data[i].employee }}</td>
+        <td style="text-align: center;">{{ data[i].employee_name }}</td>
+        <td style="text-align: center;">{{ data[i].date }}</td>
+        <td style="text-align: center;">{{ data[i].ot_1_25 }}</td>
+        <td style="text-align: center;">{{ data[i].amount_1_25 }}</td>
+        <td style="text-align: center;">{{ data[i].ot_1_5 }}</td>
+        <td style="text-align: center;">{{ data[i].amount_1_5 }}</td>
+        <td style="text-align: center;">{{ data[i].ot_2_0 }}</td>
+        <td style="text-align: center;">{{ data[i].amount_2_0 }}</td>
+        <td style="text-align: center;">{{ data[i].ot_2_5 }}</td>
+        <td style="text-align: center;">{{ data[i].amount_2_5 }}</td>
+      </tr>
+      {% } %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="5" style="text-align: center; font-weight: bold;">Total Amount</td>
+        <td style="text-align: center;">{{ total_amount_125 }}</td>
+        <td></td>
+        <td style="text-align: center;">{{ total_amount_150 }}</td>
+        <td></td>
+        <td style="text-align: center;">{{ total_amount_200 }}</td>
+        <td></td>
+        <td style="text-align: center;">{{ total_amount_250 }}</td>
+      </tr>
+    </tfoot>
+  </table>
+  
