@@ -170,7 +170,19 @@ def get_data(filters):
             if dept not in seen_departments:
                 data.append({
                     "is_group_header": 1,
-                    "employee_name": f"▶ {dept}",
+                    "employee_name": f" {dept}",
+                   "basic_pay": None, "overtime": None, "absence": None, "allowance": None, "net_benefit_gross_up": None,
+                    "attendance_incentive": None, "commission_incentive": None, "transport_allowance": None,
+                    "representative_allowance": None, "medical": None, "insurance": None, "bonus": None,
+                    "puagume_salary": None, "cash_indemnity_allowance": None, "housing_allowance": None,
+                    "acting_allowance": None, "responsibility_allowance": None, "skill_allowance": None,
+                    "total_benefit": None, "taxable_gross": None, "gross_pay": None,
+                    "company_pension": None, "income_tax": None, "employee_pension": None, "salary_advance": None,
+                    "loan": None, "penalty": None, "union": None, "cost_sharing": None, "court": None, "bank": None,
+                    "credit_purchase": None, "saving": None, "penalty_2": None, "medical_2": None,
+                    "cash_indemnity_2": None, "medical_loan_1": None, "credit_association": None, "refund": None,
+                    "social_health_insurance": None, "gym": None, "milk_sales": None, "red_cross": None,
+                    "credit_association_loan": None, "total_deduction": None, "net_pay": None
                 })
                 seen_departments.add(dept)
 

@@ -115,7 +115,10 @@ def get_data(filters, columns):
     # Build final data list with section headers (departments)
     for dept, employees in dept_group.items():
         # Add department header row
-        data.append({"employee_id": f"▶ {dept}"})
+        data.append({
+            "employee_id": f"▶ {dept}",
+            "amount":None
+            })
         
         # Add employee rows under the department
         for emp_data in employees:
