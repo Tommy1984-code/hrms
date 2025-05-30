@@ -74,6 +74,27 @@
       }
     }
   </style>
+<div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 14px; gap: 40px;">
+  <!-- Employee Info -->
+  <div style="flex: 1 1 auto; min-width: 60%;">
+    <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 600;">Employee Info</h3>
+
+    <div style="display: flex; margin-bottom: 4px;">
+      <div style="width: 160px;">Name:</div>
+      <div style="overflow-wrap: break-word;">{{ data[0].employee_name }}</div>
+    </div>
+
+    <div style="display: flex; margin-bottom: 4px;">
+      <div style="width: 160px;">Employee Id</div>
+      <div>{{ filters.employee }}</div> 
+    </div>
+
+    <div style="display: flex;">
+      <div style="width: 160px;">Departement</div>
+      <div>{{ data[0].department }}</div>
+    </div>
+  </div>
+</div>
 
 <div class="w-full max-w-screen-xl mx-auto">
     <table class="no-padding-body table-fixed border-collapse border border-gray-300 w-full mb-4">
@@ -143,15 +164,15 @@
             <td class="text-[11px] text-left border p-0">{{ data[i].commission }}</td>
             <td class="text-[11px] text-left border p-0">{{ data[i].overtime }}</td>
             <td class="text-[11px] text-left border p-0">{{ data[i].duty  }}</td>
-            <td class="text-[11px] text-left border p-0">{{ data[i].gross  }}</td>
+            <td class="text-[11px] text-left border p-0">{{ data[i].gross.toFixed(2)  }}</td>
             <td class="text-[11px] text-left border p-0">{{ data[i].company_pension }}</td>
             <td class="text-[11px] text-left border p-0">{{ data[i].income_tax }}</td>
             <td class="text-[11px] text-left border p-0">{{ data[i].employee_pension }}</td>
             <td class="text-[11px] text-left border p-0">{{ data[i].salary_advance }}</td>
             <td class="text-[11px] text-left border p-0">{{ data[i].loan }}</td>
             <td class="text-[11px] text-left border p-0">{{ data[i].gym }}</td>
-            <td class="text-[11px] text-left border p-0">{{ data[i].total_deduction || 0}}</td>
-            <td class="text-[11px] text-left border p-0">{{ data[i].net_pay || 0 }}</td>
+            <td class="text-[11px] text-left border p-0">{{ data[i].total_deduction.toFixed(2) || 0}}</td>
+            <td class="text-[11px] text-left border p-0">{{ data[i].net_pay.toFixed(2) || 0 }}</td>
 
         </tr>
 

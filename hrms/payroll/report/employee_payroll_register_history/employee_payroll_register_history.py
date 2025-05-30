@@ -7,9 +7,36 @@ from datetime import timedelta
 
 
 def execute(filters=None):
+	employee_filter = filters.get("employee") if filters else None
+
 	columns = get_columns()
 	data = get_data(filters)
+
+	employee_info = {}
+
+	if employee_filter:
+		employee = frappe.get_value(
+			"Employee",
+			employee_filter,
+			["employee","employee_name", "department", "grade", "employment_type", "branch"],
+			as_dict=True
+		)
+
+		if employee:
+			employee_info = {
+				"employee_name": employee.employee_name,
+				"department": employee.department,
+				"grade": employee.grade,
+				"employee_type": employee.employment_type,
+				"branch": employee.branch
+			}
+
+	# Inject employee info into each row of the report
+	for row in data:
+		row.update(employee_info)
+
 	return columns, data
+
 
 
 def get_columns():
@@ -33,125 +60,116 @@ def get_columns():
 
 
 def get_data(filters):
-    
+	from_date = getdate(filters.get("from_date"))
+	to_date = getdate(filters.get("to_date"))
+	employee = filters.get("employee")
+	company = filters.get("company")
+	payment_type = filters.get("payment_type")
 
-    from_date = getdate(filters.get("from_date"))
-    to_date = getdate(filters.get("to_date"))
-    employee = filters.get("employee")
-    company = filters.get("company")
-    payment_type = filters.get("payment_type")
+	if not (from_date and to_date):
+		frappe.throw("Please set both From Date and To Date")
 
-    if not (from_date and to_date):
-        frappe.throw("Please set both From Date and To Date")
+	months = get_months_in_range(from_date, to_date)
+	data = []
 
-    months = get_months_in_range(from_date, to_date)
-    data = []
-    payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+	for month in months:
+		month_start = month.replace(day=1)
+		month_end = add_months(month_start, 1) - timedelta(days=1)
+		month_label = month.strftime('%B %Y')
 
-    for month in months:
-        month_start = month.replace(day=1)
-        month_end = add_months(month_start, 1) - timedelta(days=1)
-        month_label = month.strftime('%B %Y')
-
-        query = """
-            SELECT ss.name AS salary_slip, ss.employee, ss.gross_pay, ss.net_pay,
-                   ss.total_deduction, ss.payment_type,
-                   sd.salary_component, sd.abbr, sd.amount, sd.parentfield
-            FROM `tabSalary Slip` ss
-            JOIN `tabSalary Detail` sd ON sd.parent = ss.name
-            WHERE ss.start_date <= %(month_end)s AND ss.end_date >= %(month_start)s
-              AND ss.docstatus = 1
-              AND ss.employee = %(employee)s
-              {employee_clause}
-              {company_clause}
-              {payment_type_clause}
-            ORDER BY ss.end_date DESC
-        """.format(
-            company_clause="AND ss.company = %(company)s" if company else "",
-            employee_clause="AND ss.employee = %(employee)s" if employee else "",
+		query = """
+			SELECT ss.name AS salary_slip, ss.employee, ss.gross_pay, ss.net_pay,
+				   ss.total_deduction, ss.payment_type,
+				   sd.salary_component, sd.abbr, sd.amount, sd.parentfield
+			FROM `tabSalary Slip` ss
+			JOIN `tabSalary Detail` sd ON sd.parent = ss.name
+			WHERE ss.start_date <= %(month_end)s AND ss.end_date >= %(month_start)s
+			  AND ss.docstatus = 1
+			  {employee_clause}
+			  {company_clause}
+			  {payment_type_clause}
+			ORDER BY ss.end_date DESC
+		""".format(
+			employee_clause="AND ss.employee = %(employee)s" if employee else "",
+			company_clause="AND ss.company = %(company)s" if company else "",
 			payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
-        )
+		)
 
-        params = {
-            "month_start": month_start,
-            "month_end": month_end,
-            "employee" : employee,
-            "company" : company
-        }
+		params = {
+			"month_start": month_start,
+			"month_end": month_end,
+			"employee": employee,
+			"company": company
+		}
+		if payment_type:
+			params["payment_type"] = payment_type
 
-        if payment_type:
-            params["payment_type"] = payment_type
+		results = frappe.db.sql(query, params, as_dict=True)
 
-        results = frappe.db.sql(query, params, as_dict=True)
+		# Group results by salary slip name
+		slip_map = {}
+		for row in results:
+			slip_map.setdefault(row.salary_slip, {
+				"employee": row.employee,
+				"gross": row.gross_pay,
+				"net": row.net_pay,
+				"total_deduction": row.total_deduction,
+				"components": [],
+				"payment_type": row.payment_type
+			})["components"].append(row)
 
-        # Get latest salary slip per employee for the month
-        latest_slips = {}
-        for row in results:
-            emp = row.employee
-            current_index = payment_order.index(row.payment_type) if row.payment_type in payment_order else -1
-            if emp not in latest_slips or current_index > payment_order.index(latest_slips[emp].payment_type):
-                latest_slips[emp] = row
+		# Process each salary slip
+		for slip_id, slip_data in slip_map.items():
+			row_dict = {
+				"month": month_label,
+				"basic": 0,
+				"hardship": 0,
+				"commission": 0,
+				"overtime": 0,
+				"duty": 0,
+				"gross": slip_data["gross"],
+				"company_pension": 0,
+				"income_tax": 0,
+				"employee_pension": 0,
+				"salary_advance": 0,
+				"loan": 0,
+				"gym": 0,
+				"total_deduction": slip_data["total_deduction"],
+				"net_pay": slip_data["net"],
+			}
 
-        for emp in latest_slips:
-            slip = latest_slips[emp]["salary_slip"]
-            slip_data = [row for row in results if row.salary_slip == slip]
+			for r in slip_data["components"]:
+				amt = r.amount or 0
+				comp = r.abbr or r.salary_component
 
-            row_dict = {
-                "month": month_label,
-                "basic": 0,
-                "hardship": 0,
-                "commission": 0,
-                "overtime": 0,
-                "duty": 0,
-                "gross": 0,
-                "company_pension": 0,
-                "income_tax": 0,
-                "employee_pension": 0,
-                "salary_advance": 0,
-                "loan": 0,
-                "gym": 0,
-                "total_deduction": 0,
-                "net_pay": 0,
-            }
+				if r.parentfield == "earnings":
+					if comp in ('B', 'VB'):
+						row_dict["basic"] += amt
+					elif comp == 'HDA':
+						row_dict["hardship"] += amt
+					elif comp == 'C':
+						row_dict["commission"] += amt
+					elif comp == 'OT':
+						row_dict["overtime"] += amt
+					elif comp == 'DY':
+						row_dict["duty"] += amt
+				elif r.parentfield == "deductions":
+					if comp == 'IT':
+						row_dict["income_tax"] += amt
+					elif comp == 'PS':
+						row_dict["employee_pension"] += amt
+					elif comp == 'APNI':
+						row_dict["salary_advance"] += amt
+					elif comp in ('HL', 'csl'):
+						row_dict["loan"] += amt
+					elif comp == 'GM':
+						row_dict["gym"] += amt
 
-            for r in slip_data:
-                amt = r.amount or 0
-                comp = r.abbr or r.salary_component
+			row_dict["company_pension"] = row_dict["basic"] * 0.11
 
-                if r.parentfield == "earnings":
-                    if comp in ('B', 'VB'):
-                        row_dict["basic"] += amt
-                    elif comp == 'HDA':
-                        row_dict["hardship"] += amt
-                    elif comp == 'C':
-                        row_dict["commission"] += amt
-                    elif comp == 'OT':
-                        row_dict["overtime"] += amt
-                    elif comp == 'DY':
-                        row_dict["duty"] += amt
-                    
-                elif r.parentfield == "deductions":
-                    if comp == 'IT':
-                        row_dict["income_tax"] += amt
-                    elif comp == 'PS':
-                        row_dict["employee_pension"] += amt
-                    elif comp == 'APNI':
-                        row_dict["salary_advance"] += amt
-                    elif comp in ('HL', 'csl'):  # Loan types: Healthy Loan, Coast Sharing Loan
-                        row_dict["loan"] += amt
-                    elif comp == 'GM':
-                        row_dict["GYM"] += amt
+			data.append(row_dict)
 
-            # Fill in gross, total_deduction, net_pay from salary slip
-            base = latest_slips[emp]
-            row_dict["gross"] = base.gross_pay
-            row_dict["total_deduction"] = base.total_deduction
-            row_dict["net_pay"] = base.net_pay
-            row_dict["company_pension"] = row_dict["basic"] * 0.11
-
-            data.append(row_dict)
-
-    return data
+	return data
 
 
 def get_months_in_range(start_date, end_date):
