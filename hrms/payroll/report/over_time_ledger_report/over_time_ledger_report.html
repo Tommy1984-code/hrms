@@ -50,15 +50,20 @@
       font-size: 12px;
     }
   
-    .payroll-table th, .payroll-table td {
+    /* Header row: bordered and styled */
+    .payroll-table thead th {
       border: 1px solid #ccc;
+      background-color: #f0f0f0;
+      font-weight: bold;
       padding: 6px;
       text-align: center;
     }
   
-    .payroll-table th {
-      background-color: #f0f0f0;
-      font-weight: bold;
+    /* Data row: no border but with padding */
+    .payroll-table tbody td {
+      border: none;
+      padding: 6px;
+      text-align: center;
     }
   
     .payroll-table td:first-child,
@@ -66,11 +71,22 @@
       text-align: left;
       width: 180px;
     }
-
-    .no-padding-body  th, td {
-    padding: 3px !important;
-    margin: 0 !important;
-  }
+  
+    /* Total row: top border only */
+    .payroll-table tfoot td {
+      border-top: 1px solid #ccc;
+      border-bottom: none;
+      border-left: none;
+      border-right: none;
+      font-weight: bold;
+      padding: 6px;
+      text-align: center;
+    }
+  
+    /* Only adjust padding for headers and totals if needed */
+    .no-padding-body th {
+      padding: 3px !important;
+    }
   
     @media print {
       @page {
@@ -79,23 +95,23 @@
       }
     }
   </style>
+  
 
-
-<table class="payroll-table no-padding-body" style="margin-top: 20px;">
+<table class="table-fixed" style="min-width: 1024px;">
   <thead>
-    <tr>
-      <th style="text-align: center;">NO.</th>
-      <th style="text-align: center;">Employee ID</th>
-      <th style="text-align: center;">Name</th>
-      <th style="text-align: center;">Date</th>
-      <th style="text-align: center;">OT 1.25</th>
-      <th style="text-align: center;">Amount</th>
-      <th style="text-align: center;">OT 1.5</th>
-      <th style="text-align: center;">Amount</th>
-      <th style="text-align: center;">OT 2.0</th>
-      <th style="text-align: center;">Amount</th>
-      <th style="text-align: center;">OT 2.5</th>
-      <th style="text-align: center;">Amount</th>
+    <tr style="background-color: #e0e0e0; font-weight: bold;">
+      <th class="w-[40px] text-[12px] font-bold text-center border border-gray-400 py-2">NO.</th>
+      <th class="w-[150px] text-[12px] font-bold text-left border border-gray-400 py-2">Employee ID</th>
+      <th class="w-[200px] text-[12px] font-bold text-left border border-gray-400 py-2">Name</th>
+      <th class="w-[100px] text-[12px] font-bold text-left border border-gray-400 py-2">Date</th>
+      <th class="w-[80px] text-[12px] font-bold text-center border border-gray-400 py-2">OT 1.25</th>
+      <th class="w-[100px] text-[12px] font-bold text-right border border-gray-400 py-2">Amount</th>
+      <th class="w-[80px] text-[12px] font-bold text-center border border-gray-400 py-2">OT 1.5</th>
+      <th class="w-[100px] text-[12px] font-bold text-right border border-gray-400 py-2">Amount</th>
+      <th class="w-[80px] text-[12px] font-bold text-center border border-gray-400 py-2">OT 2.0</th>
+      <th class="w-[100px] text-[12px] font-bold text-right border border-gray-400 py-2">Amount</th>
+      <th class="w-[80px] text-[12px] font-bold text-center border border-gray-400 py-2">OT 2.5</th>
+      <th class="w-[100px] text-[12px] font-bold text-right border border-gray-400 py-2">Amount</th>
     </tr>
   </thead>
   <tbody>
@@ -112,23 +128,23 @@
         total_amount_250 += data[i].amount_2_5 || 0;
     %}
     <tr>
-      <td style="text-align: center;">{{ i + 1 }}</td>
-      <td style="text-align: center;">{{ data[i].employee }}</td>
-      <td style="text-align: center;">{{ data[i].employee_name }}</td>
-      <td style="text-align: center;">{{ data[i].date }}</td>
-      <td style="text-align: center;">{{ data[i].ot_1_25 }}</td>
-      <td style="text-align: center;">{{ data[i].amount_1_25.toFixed(2) }}</td>
-      <td style="text-align: center;">{{ data[i].ot_1_5 }}</td>
-      <td style="text-align: center;">{{ data[i].amount_1_5.toFixed(2) }}</td>
-      <td style="text-align: center;">{{ data[i].ot_2_0 }}</td>
-      <td style="text-align: center;">{{ data[i].amount_2_0.toFixed(2) }}</td>
-      <td style="text-align: center;">{{ data[i].ot_2_5 }}</td>
-      <td style="text-align: center;">{{ data[i].amount_2_5.toFixed(2) }}</td>
+      <td class="text-sm text-center py-1">{{ i + 1 }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].employee }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].employee_name }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].date }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].ot_1_25 }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].amount_1_25.toFixed(2) }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].ot_1_5 }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].amount_1_5.toFixed(2) }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].ot_2_0 }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].amount_2_0.toFixed(2) }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].ot_2_5 }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].amount_2_5.toFixed(2) }}</td>
     </tr>
     {% } %}
   </tbody>
   <tfoot>
-    <tr>
+    <tr style="border-top: 2px solid #a5a3a3;">
       <td colspan="5" style="text-align: right; font-weight: bold;">Total Amount</td>
       <td style="text-align: center;">{{ total_amount_125.toFixed(2) }}</td>
       <td></td>

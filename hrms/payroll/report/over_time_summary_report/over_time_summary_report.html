@@ -84,15 +84,15 @@
     <thead>
       <tr style="background-color: #e0e0e0; font-weight: bold;">
         <th class="w-[40px] text-[12px] font-bold text-center border border-gray-400 py-2">No.</th>
-        <th class="w-[150px] text-[12px] font-bold text-left border border-gray-400 py-2">Employee ID</th>
-        <th class="w-[150px] text-[12px] font-bold text-left border border-gray-400 py-2">Name</th>
-        <th class="w-[150px] text-[12px] font-bold text-left border border-gray-400 py-2">Job Title</th>
-        <th class="w-[100px] text-[12px] font-bold text-right border border-gray-400 py-2">Salary</th>
+        <th class="w-[150px] text-[12px] font-bold text-center border border-gray-400 py-2">Employee ID</th>
+        <th class="w-[200px] text-[12px] font-bold text-center border border-gray-400 py-2">Employee Name</th>
+        <th class="w-[150px] text-[12px] font-bold text-center border border-gray-400 py-2">Job Title</th>
+        <th class="w-[100px] text-[12px] font-bold text-center border border-gray-400 py-2">Salary</th>
         <th class="w-[80px] text-[12px] font-bold text-center border border-gray-400 py-2">OT 1.25</th>
         <th class="w-[80px] text-[12px] font-bold text-center border border-gray-400 py-2">OT 1.50</th>
         <th class="w-[80px] text-[12px] font-bold text-center border border-gray-400 py-2">OT 2.00</th>
         <th class="w-[80px] text-[12px] font-bold text-center border border-gray-400 py-2">OT 2.50</th>
-        <th class="w-[100px] text-[12px] font-bold text-right border border-gray-400 py-2">Amount</th>
+        <th class="w-[100px] text-[12px] font-bold text-center border border-gray-400 py-2">Amount</th>
       </tr>
     </thead>
     <tbody>
@@ -117,15 +117,15 @@
       %}
       <tr>
         <td class="text-sm text-center py-1">{{ row_number++ }}</td>
-        <td class="text-[12px] text-left py-1">{{ row.employee }}</td>
-        <td class="text-[12px] text-left py-1">{{ row.employee_name }}</td>
-        <td class="text-[12px] text-left py-1">{{ row.designation }}</td>
-        <td class="text-[12px] text-right py-1">{{ row.base }}</td>
+        <td class="text-[12px] text-center py-1">{{ row.employee }}</td>
+        <td class="text-[12px] text-center py-1">{{ row.employee_name }}</td>
+        <td class="text-[12px] text-center py-1">{{ row.designation }}</td>
+        <td class="text-[12px] text-center py-1">{{ row.base }}</td>
         <td class="text-[12px] text-center py-1">{{ row.ot_125 }}</td>
         <td class="text-[12px] text-center py-1">{{ row.ot_150 }}</td>
         <td class="text-[12px] text-center py-1">{{ row.ot_200 }}</td>
         <td class="text-[12px] text-center py-1">{{ row.ot_250 }}</td>
-        <td class="text-[12px] text-right py-1">{{ amount.toFixed(2) }}</td>
+        <td class="text-[12px] text-center py-1">{{ amount.toFixed(2) }}</td>
       </tr>
       {%
           }
@@ -135,7 +135,7 @@
     <tfoot>
       <tr style="border-top: 2px solid #a5a3a3;">
         <td colspan="9" class="text-right font-bold p-2">Total:</td>
-        <td class="text-right font-bold p-2">{{ grand_total_amount.toFixed(2) }}</td>
+        <td class="text-center font-bold p-2">{{ grand_total_amount.toFixed(2) }}</td>
       </tr>
     </tfoot>
   </table>
