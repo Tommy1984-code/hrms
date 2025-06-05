@@ -39,9 +39,9 @@
     </div>
 </div>
   
-  <!-- Date Range -->
-  <div style="text-align: center; margin: 10px 0 20px 0; font-size: 15px;">
-    {% 
+   <!-- Date Range -->
+   <div style="text-align: center; margin: 10px 0 20px 0; font-size: 15px;">
+    {%
       let from = new Date(filters.from_date);
       let to = new Date(filters.to_date);
       let fromMonth = from.toLocaleString('default', { month: 'long' });
@@ -49,7 +49,12 @@
       let fromYear = from.getFullYear();
       let toYear = to.getFullYear();
     %}
-    For the period: {{ fromMonth }} {{ fromYear }}
+    For the period:
+    {% if fromMonth === toMonth && fromYear === toYear %}
+      {{ fromMonth }} {{ fromYear }}
+    {% else %}
+      {{ fromMonth }} {{ fromYear }} to {{ toMonth }} {{ toYear }}
+    {% endif %}
   </div>
   
   <style>

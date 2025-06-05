@@ -8,7 +8,7 @@
     <!-- Centered Title and Company -->
     <div style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
       <h2 style="margin: 0; font-size: 28px; font-weight: 600;">{{ filters.company }}</h2>
-      <h3 style="margin: 4px 0; font-size: 22px;">Payroll Summary</h3>
+      <h3 style="margin: 4px 0; font-size: 22px;">Payroll Registery</h3>
     </div>
   
     <!-- Report Generated Date -->
@@ -75,88 +75,79 @@
     }
   </style>
   
-<div class="w-full max-w-screen-xl mx-auto">
-  {% let rowNo = 0; %}
-  {% for (let i = 0; i < data.length; i++) { %}
-    {% let row = data[i]; %}
-
-    {% if (row.employee_name && row.employee_name.startsWith("▶")) { %}
-      {% if (i !== 0) { %}
-          </tbody>
-        </table>
-      {% } %}
-
-      {% rowNo = 0; %}
-      <caption class="text-lg font-semibold mb-2">
-        {{ row.employee_name.slice(2).trim() }}
-      </caption>
-      <div class="h-4"></div>
-      <table class="no-padding-body table-fixed border-collapse border border-gray-300 w-full mb-4">
-        <thead>
-          <tr>
-            <th rowspan="2" class="w-[40px] text-[10px] font-bold text-center border">No.</th>
-            <th rowspan="2" class="w-[100px] text-[12px] font-bold text-left border">Employee Name</th>
-            {% if isBankSelected %}
-            <th rowspan="2" class="w-[60px] text-[10px] font-bold text-left border">Title</th> 
-            {% endif %}
-            <th rowspan="2" class="w-[70px] text-[10px] font-bold text-left border">Basic Pay</th>
-            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Absence</th>
-            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Hardship Allowance</th>
-            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Overtime</th>
-            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Commission</th>
-            <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Incentive</th>
-            <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Taxable Gross</th>
-            <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Gross Pay</th>
-            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Company Pension</th>
-            <th colspan="4" class="text-[10px] font-medium text-center border">Deductions</th>
-            <th rowspan="2" class="w-[80px] text-[10px] font-medium text-left border">Net Pay</th>
-            {% if not isBankSelected %}
-            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Signature</th>
-            {% endif %}
-          </tr>
-          <tr>
-            <th class="w-[75px] text-[10px] font-medium text-left border">Income Tax</th>
-            <th class="w-[70px] text-[10px] font-medium text-left border">Employee Pension</th>
-            <th class="w-[75px] text-[9px] font-medium text-left border">Other Deduction</th>
-            <th class="w-[75px] text-[9px] font-medium text-left border">Total Deduction</th>
-          </tr>
-        </thead>
-        
-        <tbody>
-    {% } else { %}
-      {% rowNo += 1; %}
-      <tr>
-        <td class="text-sm text-center border">{{ rowNo }}</td>
-        <td class="text-[11px] text-left border">{{ row.employee_name }}</td>
-        {% if isBankSelected %}
-       <td class="text-[11px] text-left border">{{ row.title || "" }}</td>
-       {% endif %}
-        <td class="text-[11px] text-right border">{{ (row.basic || 0).toFixed(2) }}</td>
-        <td class="text-[10px] text-right border">{{ (row.absence || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-right border">{{ (row.hardship || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-right border">{{ (row.overtime || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-right border">{{ (row.commission || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-right border">{{ (row.incentive || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-right border">{{ (row.taxable_gross || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-right border">{{ (row.gross || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-right border">{{ (row.company_pension || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-right border">{{ (row.income_tax || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-right border">{{ (row.employee_pension || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-right border">{{ (row.other_deduction || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-right border">{{ (row.total_deduction || 0).toFixed(2) }}</td>
-        <td class="text-[11px] text-right border">{{ (row.net_pay || 0).toFixed(2) }}</td>
-        {% if not isBankSelected %}
-        <td class="text-[11px] text-center border">{{row.signature || "" }}</td>
-        {% endif %}
-      </tr>
-    {% } %}
-
-    {% if (i === data.length - 1) { %}
-        </tbody>
-      </table>
-    {% } %}
-  {% } %}
-</div>
+  <div class="w-full max-w-screen-xl mx-auto">
+    <table class="no-padding-body table-fixed border-collapse border border-gray-300 w-full mb-4">
+      <thead>
+        <tr>
+          <th rowspan="2" class="w-[40px] text-[10px] font-bold text-center border">No.</th>
+          <th rowspan="2" class="w-[100px] text-[12px] font-bold text-left border">Employee Name</th>
+          {% if isBankSelected %}
+          <th rowspan="2" class="w-[60px] text-[10px] font-bold text-left border">Title</th> 
+          {% endif %}
+          <th rowspan="2" class="w-[70px] text-[10px] font-bold text-left border">Basic Pay</th>
+          <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Absence</th>
+          <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Hardship Allowance</th>
+          <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Overtime</th>
+          <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Commission</th>
+          <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Incentive</th>
+          <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Taxable Gross</th>
+          <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Gross Pay</th>
+          <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Company Pension</th>
+          <th colspan="4" class="w-[225px] text-[10px] font-medium text-center border">Deductions</th>
+          <th rowspan="2" class="w-[80px] text-[10px] font-medium text-left border">Net Pay</th>
+          {% if not isBankSelected %}
+          <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Signature</th>
+          {% endif %}
+        </tr>
+        <tr>
+          <th class="w-[75px] text-[10px] font-medium text-left border">Income Tax</th>
+          <th class="w-[70px] text-[10px] font-medium text-left border">Employee Pension</th>
+          <th class="w-[75px] text-[9px] font-medium text-left border">Other Deduction</th>
+          <th class="w-[75px] text-[9px] font-medium text-left border">Total Deduction</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% let rowNo = 0; %}
+        {% for (let i = 0; i < data.length; i++) { %}
+          {% let row = data[i]; %}
+          {% if (row.employee_name && row.employee_name.startsWith("▶")) { %}
+            <tr>
+              <td colspan="100%" class="bg-gray-100 text-[12px] font-bold text-left px-2 py-1 border">
+                {{ row.employee_name.slice(2).trim() }}
+              </td>
+            </tr>
+          {% } else { %}
+            {% rowNo += 1; %}
+            <tr>
+              <td class="text-sm text-center border">{{ rowNo }}</td>
+              <td class="text-[11px] text-left border">{{ row.employee_name }}</td>
+              {% if isBankSelected %}
+              <td class="text-[11px] text-left border">{{ row.title || "" }}</td>
+              {% endif %}
+              <td class="text-[11px] text-right border">{{ (row.basic || 0).toFixed(2) }}</td>
+              <td class="text-[10px] text-right border">{{ (row.absence || 0).toFixed(2) }}</td>
+              <td class="text-[11px] text-right border">{{ (row.hardship || 0).toFixed(2) }}</td>
+              <td class="text-[11px] text-right border">{{ (row.overtime || 0).toFixed(2) }}</td>
+              <td class="text-[11px] text-right border">{{ (row.commission || 0).toFixed(2) }}</td>
+              <td class="text-[11px] text-right border">{{ (row.incentive || 0).toFixed(2) }}</td>
+              <td class="text-[11px] text-right border">{{ (row.taxable_gross || 0).toFixed(2) }}</td>
+              <td class="text-[11px] text-right border">{{ (row.gross || 0).toFixed(2) }}</td>
+              <td class="text-[11px] text-right border">{{ (row.company_pension || 0).toFixed(2) }}</td>
+              <td class="text-[11px] text-right border">{{ (row.income_tax || 0).toFixed(2) }}</td>
+              <td class="text-[11px] text-right border">{{ (row.employee_pension || 0).toFixed(2) }}</td>
+              <td class="text-[11px] text-right border">{{ (row.other_deduction || 0).toFixed(2) }}</td>
+              <td class="text-[11px] text-right border">{{ (row.total_deduction || 0).toFixed(2) }}</td>
+              <td class="text-[11px] text-right border">{{ (row.net_pay || 0).toFixed(2) }}</td>
+              {% if not isBankSelected %}
+              <td class="text-[11px] text-center border">{{ row.signature || "" }}</td>
+              {% endif %}
+            </tr>
+          {% } %}
+        {% } %}
+      </tbody>
+    </table>
+  </div>
+  
 
   
 

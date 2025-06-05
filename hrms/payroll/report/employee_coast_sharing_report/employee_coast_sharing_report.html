@@ -156,13 +156,13 @@
           <td class="text-[11px] text-left  border p-0">{{ data[i].employee_name }}</td>
           <td class=" text-[12px] text-left border p-0">{{ data[i].tin_number }}</td>
           <td class=" text-[12px] text-left border p-0">{{ frappe.datetime.str_to_user(data[i].date_of_hire) }}</td>
-          <td class=" text-[12px] text-right border p-0">{{ data[i].basic_salary }}</td>
-          <td class=" text-[12px] text-right border p-0">{{ data[i].transport_salary }}</td>
-          <td class=" text-[12px] text-right border p-0">{{ data[i].total_tax }}</td>
-          <td class=" text-[12px] text-right border p-0">{{ data[i].employment_tax }}</td>
-          <td class=" text-[12px] text-right border p-0">{{ data[i].employee_pension }}</td>
-          <td class=" text-[12px] text-right border p-0">{{ data[i].coast_sharing }}</td>
-          <td class=" text-[12px] text-right border p-0">{{ data[i].net_pay }}</td>
+          <td class=" text-[12px] text-right border p-0">{{ data[i].basic_salary.toFixed(2) }}</td>
+          <td class=" text-[12px] text-right border p-0">{{ data[i].transport_salary.toFixed(2) }}</td>
+          <td class=" text-[12px] text-right border p-0">{{ data[i].total_tax.toFixed(2) }}</td>
+          <td class=" text-[12px] text-right border p-0">{{ data[i].employment_tax.toFixed(2) }}</td>
+          <td class=" text-[12px] text-right border p-0">{{ data[i].employee_pension.toFixed(2) }}</td>
+          <td class=" text-[12px] text-right border p-0">{{ data[i].coast_sharing.toFixed(2) }}</td>
+          <td class=" text-[12px] text-right border p-0">{{ data[i].net_pay.toFixed(2) }}</td>
         </tr>
         {% } %}
       </tbody>
@@ -174,13 +174,13 @@
         <!-- Total row with style -->
         <tr style="background-color: #f1f1f1; border-top: 2px solid #131111;">
             <th colspan="4" style="text-align: right; padding: 10px 0;">Total:</th>
-            <th style="padding: 10px 0;">{{total_basic_salary }}</th>
-            <th style="padding: 10px 0;">{{total_transport}}</th>
-            <th style="padding: 10px 0;">{{ total_taxable_income }}</th>
-            <th style="padding: 10px 0;">{{ total_employment_tax }}</th>
-            <th style="padding: 10px 0;">{{ total_employee_pension}}</th>
-            <th style="padding: 10px 0;">{{ total_coast_sharing }}</th>
-            <th style="padding: 10px 0;">{{ total_net_pay.toFixed(2) }}</th>
+            <th style="padding: 10px 0;text-align: right;">{{total_basic_salary.toFixed(2) }}</th>
+            <th style="padding: 10px 0;text-align: right;">{{total_transport.toFixed(2)}}</th>
+            <th style="padding: 10px 0;text-align: right;">{{ total_taxable_income.toFixed(2) }}</th>
+            <th style="padding: 10px 0;text-align: right;">{{ total_employment_tax.toFixed(2) }}</th>
+            <th style="padding: 10px 0;text-align: right;">{{ total_employee_pension.toFixed(2)}}</th>
+            <th style="padding: 10px 0;text-align: right;">{{ total_coast_sharing.toFixed(2) }}</th>
+            <th style="padding: 10px 0;text-align: right;">{{ total_net_pay.toFixed(2) }}</th>
             <th></th>
         </tr>
     </tfoot>
@@ -205,11 +205,11 @@
                 </tr>
                 <tr>
                     <td style="padding: 8px; border: 1px solid #ddd;">የወሩ ጠቅላላ ግብር የሚከፈልበት ገቢ</td>
-                    <td style="padding: 8px; border: 1px solid #ddd;">{{ total_taxable_income }}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">{{ total_taxable_income.toFixed(2)}}</td>
                 </tr>
                 <tr>
                     <td style="padding: 8px; border: 1px solid #ddd;">የወሩ ጠቅላላ የስራ መከፈል ያለበት የስራ ግብር</td>
-                    <td style="padding: 8px; border: 1px solid #ddd;">{{ total_taxable_income  }}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">{{ total_taxable_income.toFixed(2) }}</td>
                 </tr>
                 
             </tbody>

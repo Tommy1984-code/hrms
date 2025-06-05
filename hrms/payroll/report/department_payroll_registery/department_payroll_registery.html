@@ -136,19 +136,19 @@
             <td class="text-sm text-left border">{{i+1}}</td>
             <td class="text-[11px] text-left  border p-0">{{data[i].department_name }}</td>
             <td class=" text-[11px] text-left border p-0">{{data[i].basic || 0.0 }}</td>
-            <td class=" text-[10px] text-left border p-0">{{data[i].absence || 0.0 }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].hardship || 0.0}}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].overtime || 0.0 }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].commission || 0.0  }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].incentive || 0.0 }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].taxable_gross || 0.0 }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].gross || 0.0 }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].company_pension || 0.0 }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].income_tax || 0.0  }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].employee_pension || 0.0 }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].other_deduction || 0.0  }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].total_deduction || 0.0 }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].net_pay || 0.0 }}</td>
+            <td class=" text-[10px] text-left border p-0">{{data[i].absence.toFixed(2) || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].hardship.toFixed(2) || 0.0}}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].overtime.toFixed(2) || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].commission.toFixed(2) || 0.0  }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].incentive.toFixed(2) || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].taxable_gross.toFixed(2) || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].gross.toFixed(2) || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].company_pension.toFixed(2) || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].income_tax.toFixed(2) || 0.0  }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].employee_pension.toFixed(2) || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].other_deduction.toFixed(2) || 0.0  }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].total_deduction.toFixed(2) || 0.0 }}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].net_pay.toFixed(2) || 0.0 }}</td>
           </tr>
           {% } %}
 

@@ -68,6 +68,8 @@ def get_data(filters):
 
 	if not (from_date and to_date):
 		frappe.throw("Please set both From Date and To Date")
+	if not employee or not company:
+		return []
 
 	months = get_months_in_range(from_date, to_date)
 	data = []

@@ -8,7 +8,7 @@
     <!-- Centered Title and Company -->
     <div style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
       <h2 style="margin: 0; font-size: 28px; font-weight: 600;">{{ filters.company }}</h2>
-      <h3 style="margin: 4px 0; font-size: 22px;">Payroll Net Salary To Bank</h3>
+      <h3 style="margin: 4px 0; font-size: 22px;margin-bottom: 10px;">Income Tax Payment</h3>
     </div>
    
 
@@ -100,7 +100,7 @@
       {% if (row.employee_name && row.employee_name.startsWith("▶")) { %}
         {% if (current_group && group_totals[current_group]) { %}
           <tr class="bg-gray-100 font-semibold">
-            <td colspan="3" class="text-right px-2 py-1">Total for {{ current_group }}</td>
+            <td colspan="3" class="text-right px-2 py-1">Total</td>
             <td class="text-right px-2 py-1">{{ group_totals[current_group].gross.toFixed(2) }}</td>
             <td class="text-right px-2 py-1">{{ group_totals[current_group].tax.toFixed(2) }}</td>
             <td class="text-right px-2 py-1">{{ group_totals[current_group].net.toFixed(2) }}</td>
@@ -132,16 +132,16 @@
           <td class="px-2 py-1">{{ rowNo }}</td>
           <td class="px-2 py-1">{{ row.employee_name }}</td>
           <td class="px-2 py-1">{{ row.tin_number }}</td>
-          <td class="text-right px-2 py-1">{{ row.gross_salary }}</td>
-          <td class="text-right px-2 py-1">{{ row.income_tax }}</td>
-          <td class="text-right px-2 py-1">{{ row.net_salary }}</td>
+          <td class="text-right px-2 py-1">{{ row.gross_salary.toFixed(2) }}</td>
+          <td class="text-right px-2 py-1">{{ row.income_tax.toFixed(2) }}</td>
+          <td class="text-right px-2 py-1">{{ row.net_salary.toFixed(2) }}</td>
         </tr>
       {% } %}
     {% } %}
 
     {% if (current_group && group_totals[current_group]) { %}
       <tr class="bg-gray-100 font-semibold">
-        <td colspan="3" class="text-right px-2 py-1">Total for {{ current_group }}</td>
+        <td colspan="3" class="text-right px-2 py-1">Total</td>
         <td class="text-right px-2 py-1">{{ group_totals[current_group].gross.toFixed(2) }}</td>
         <td class="text-right px-2 py-1">{{ group_totals[current_group].tax.toFixed(2) }}</td>
         <td class="text-right px-2 py-1">{{ group_totals[current_group].net.toFixed(2) }}</td>

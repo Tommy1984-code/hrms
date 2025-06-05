@@ -70,15 +70,18 @@ def get_data(filters=None):
 
     if not (from_date and to_date):
         frappe.throw("Please set both From Date and To Date")
+
     months = get_months_in_range(from_date, to_date)
     data = []
     payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 
-    all_results = []
+    # Keep latest slip per employee per month
+    latest_slips = {}
 
     for month in months:
         month_start = month.replace(day=1)
         month_end = add_months(month_start, 1) - timedelta(days=1)
+        month_key = month.strftime("%Y-%m")  # example: '2025-05'
 
         query = """
             SELECT ss.name, ss.employee, ss.end_date, ss.net_pay, ss.payment_type,
@@ -125,17 +128,17 @@ def get_data(filters=None):
         }
 
         results = frappe.db.sql(query, params, as_dict=True)
-        all_results.extend(results)
 
-    # Keep only the latest slip per employee (highest payment order)
-    latest_slips = {}
-    for row in all_results:
-        emp = row.employee
-        current_index = payment_order.index(row.payment_type) if row.payment_type in payment_order else -1
-        if emp not in latest_slips or current_index > payment_order.index(latest_slips[emp].payment_type):
-            latest_slips[emp] = row
+        # For each slip, retain highest priority per employee per month
+        for row in results:
+            emp = row.employee
+            month_emp_key = (month_key, emp)
+            current_index = payment_order.index(row.payment_type) if row.payment_type in payment_order else -1
 
-    for slip in latest_slips.values():
+            if month_emp_key not in latest_slips or current_index > payment_order.index(latest_slips[month_emp_key].payment_type):
+                latest_slips[month_emp_key] = row
+
+    for (month_key, emp), slip in latest_slips.items():
         salary_details = frappe.db.sql("""
             SELECT sd.amount, sd.abbr, sd.parentfield
             FROM `tabSalary Detail` sd

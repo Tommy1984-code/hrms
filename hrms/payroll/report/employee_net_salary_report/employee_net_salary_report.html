@@ -115,7 +115,7 @@
             <td class="text-[12px] text-left  border p-0">{{data[i].employee_name }}</td>
             <td class=" text-[12px] text-left border p-0">{{data[i].bank }}</td>
             <td class=" text-[12px] text-left border p-0">{{data[i].bank_ac_no}}</td>
-            <td class=" text-[12px] text-right border p-0">{{data[i].amount || 0.0}}</td>
+            <td class=" text-[12px] text-right border p-0">{{data[i].amount.toFixed(2) || 0.0}}</td>
            
           </tr>
           {% } %}
@@ -131,7 +131,7 @@
                 <th colspan="4" style="text-align: right; padding: 10px 0;">Total:</th>
                 <th style="padding: 12px 0;">{{ total_net_pay.toFixed(2)}}</th>
 
-                <th></th>
+               
             </tr>
         </tfoot>
 

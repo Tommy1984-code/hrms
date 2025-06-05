@@ -159,7 +159,7 @@ def get_data(filters=None):
 
             basic_salary = earnings.get('B') or earnings.get('VB') or 0
             transport_salary = earnings.get('TA', 0)
-            employee_bonus = earnings.get('Bns', 0)
+            employee_bonus = earnings.get('OT', 0)
             tax_free_transportation_amount = float(latest_slip.tax_free_transportation_amount or 0)
             transport_pension = max(transport_salary - tax_free_transportation_amount, 0)
 
@@ -176,6 +176,7 @@ def get_data(filters=None):
                 amt for abbr, amt in deductions.items()
                 if abbr not in ['IT', 'PS', 'csl']
             )
+            
 
             company_pension = basic_salary * 0.11
 
