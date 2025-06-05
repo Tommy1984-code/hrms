@@ -120,8 +120,7 @@ def get_data(filters):
         filtered_rows = [row for row in results if row.salary_slip in selected_slip_names]
         all_filtered_rows.extend(filtered_rows)
 
-    # Aggregate final data
-    from collections import defaultdict
+   
 
     grouped = defaultdict(lambda: {
         "salary_base": 0, "salary_tax": 0, "pension": 0, "salary_advance": 0,
@@ -138,7 +137,10 @@ def get_data(filters):
         pf = row.parentfield
         data = grouped[key]
         data["employee"] = row.employee
-        data["employee_name"] = row.employee_name
+        full_name = row.employee_name or ""
+        name_parts = full_name.split()
+        short_name = " ".join(name_parts[:2]) if len(name_parts) >= 2 else full_name
+        data["employee_name"] = short_name
 
         if abbr in ("B", "VB"):
             data["salary_base"] += amount
