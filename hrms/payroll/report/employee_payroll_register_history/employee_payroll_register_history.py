@@ -63,12 +63,11 @@ def get_data(filters):
 	from_date = getdate(filters.get("from_date"))
 	to_date = getdate(filters.get("to_date"))
 	employee = filters.get("employee")
-	company = filters.get("company")
 	payment_type = filters.get("payment_type")
 
 	if not (from_date and to_date):
 		frappe.throw("Please set both From Date and To Date")
-	if not employee or not company:
+	if not employee :
 		return []
 
 	months = get_months_in_range(from_date, to_date)
@@ -88,12 +87,12 @@ def get_data(filters):
 			WHERE ss.start_date <= %(month_end)s AND ss.end_date >= %(month_start)s
 			  AND ss.docstatus = 1
 			  {employee_clause}
-			  {company_clause}
+			  
 			  {payment_type_clause}
 			ORDER BY ss.end_date DESC
 		""".format(
 			employee_clause="AND ss.employee = %(employee)s" if employee else "",
-			company_clause="AND ss.company = %(company)s" if company else "",
+			
 			payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
 		)
 

@@ -53,8 +53,15 @@
   
     .payroll-table th {
       background-color: #f0f0f0;
+      color: #000;   
       font-weight: bold;
     }
+    thead th,
+  tfoot th,
+  tfoot td {
+    color: #000 !important;
+    background-color: #fff !important;
+  }
   
     .payroll-table td:first-child,
     .payroll-table th:first-child {
@@ -72,6 +79,22 @@
         size: A4 landscape;
         margin: 20mm;
       }
+      @media print {
+    @page {
+      size: A4 portrait;
+      margin: 0; /* Remove all default margin */
+    }
+
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    .print-format {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+  }
     }
   </style>
 <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 14px; gap: 40px;">
@@ -100,25 +123,25 @@
     <table class="no-padding-body table-fixed border-collapse border border-gray-300 w-full mb-4">
       <thead>
         <tr>
-            <th rowspan="2" class="w-[40px] text-[10px] font-bold text-center border">No.</th>
-            <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Month</th>
-            <th rowspan="2" class="w-[70px] text-[10px] font-bold text-left border">Basic Pay</th>
-            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Hardship Allowance</th>
+            <th rowspan="2" class="w-[40px] text-[11px] font-bold text-center border">No.</th>
+            <th rowspan="2" class="w-[80px] text-[11px] font-medium text-center border">Month</th>
+            <th rowspan="2" class="w-[70px] text-[11px] font-bold text-left border">Basic Pay</th>
+            <th rowspan="2" class="w-[60px] text-[11px] font-medium text-left border">Hardship Allowance</th>
             <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Commission</th>
-            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Overtime</th>
-            <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Duty</th>
-            <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Gross Pay</th>
-            <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Company Pension</th>
-            <th colspan="6" class="text-[10px] font-medium text-center border">Deductions</th>
-            <th rowspan="2" class="w-[80px] text-[10px] font-medium text-left border">Net Pay</th>
+            <th rowspan="2" class="w-[60px] text-[11px] font-medium text-center border">Overtime</th>
+            <th rowspan="2" class="w-[60px] text-[11px] font-medium text-center border">Duty</th>
+            <th rowspan="2" class="w-[70px] text-[11px] font-medium text-center border">Gross Pay</th>
+            <th rowspan="2" class="w-[60px] text-[11px] font-medium text-center border">Company Pension</th>
+            <th colspan="6" class="text-[11px] font-medium text-center border">Deductions</th>
+            <th rowspan="2" class="w-[80px] text-[11px] font-medium text-center border">Net Pay</th>
           </tr>
           <tr>
-            <th class="w-[75px] text-[10px] font-medium text-left border">Income Tax</th>
-            <th class="w-[70px] text-[10px] font-medium text-left border">Employee Pension</th>
-            <th class="w-[75px] text-[9px] font-medium text-left border">Salary Advance</th>
-            <th class="w-[60px] text-[9px] font-medium text-left border">Loan</th>
-            <th class="w-[60px] text-[9px] font-medium text-left border">Gym</th>
-            <th class="w-[75px] text-[9px] font-medium text-left border">Total Deduction</th>
+            <th class="w-[75px] text-[10px] font-medium text-center border">Income Tax</th>
+            <th class="w-[70px] text-[10px] font-medium text-center border">Employee Pension</th>
+            <th class="w-[75px] text-[10px] font-medium text-center border">Salary Advance</th>
+            <th class="w-[60px] text-[11px] font-medium text-center border">Loan</th>
+            <th class="w-[60px] text-[11px] font-medium text-center border">Gym</th>
+            <th class="w-[75px] text-[10px] font-medium text-center border">Total Deduction</th>
           </tr>
       </thead>
       
@@ -181,7 +204,7 @@
       </tbody>
       <tfoot>
         <tr><td colspan="9" style="height: 5px; border: none;"></td></tr>
-        <tr style="background-color: #fffafa; border-top: 2px solid #7e7d7d;">
+        <tr style="background-color: #fff; color: #000; border-top: 2px solid #000;">
           <th colspan="2" class="text-right py-2">Total:</th>
           <th class="py-2">{{ total_basic_salary.toFixed(2) }}</th>
           <th class="py-2">{{ total_hardship_allowance.toFixed(2) }}</th>

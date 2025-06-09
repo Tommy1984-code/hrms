@@ -4,7 +4,7 @@ from datetime import timedelta
 
 def execute(filters=None):
     columns = get_columns()
-    data = get_data(filters, columns)
+    data = get_data(filters)
     return columns, data
 
 def get_columns():
@@ -16,10 +16,9 @@ def get_columns():
     ]
 
 
-def get_data(filters, columns):
+def get_data(filters):
     from_date = getdate(filters.get("from_date"))
     to_date = getdate(filters.get("to_date"))
-    company = filters.get("company")
     earning_component = filters.get("earning_component")
     deduction_component = filters.get("deduction_component")
 
@@ -31,7 +30,8 @@ def get_data(filters, columns):
     ]
 
     data = []
-    dept_group = {}  # ✅ Moved outside the month loop
+    dept_group = {}
+    employee_month_map = {}  # {employee_id: {month: row}}
 
     for month in months:
         month_start = month.replace(day=1)
@@ -44,7 +44,6 @@ def get_data(filters, columns):
             JOIN `tabEmployee` e ON ss.employee = e.name
             JOIN `tabSalary Detail` sd ON sd.parent = ss.name
             WHERE ss.start_date <= %(month_end)s AND ss.end_date >= %(month_start)s
-              AND ss.company = %(company)s
               AND ss.docstatus = 1
               AND sd.salary_component = %(salary_component)s
               {employee_clause}
@@ -71,7 +70,6 @@ def get_data(filters, columns):
         params = {
             "month_start": month_start,
             "month_end": month_end,
-            "company": company,
             "salary_component": salary_component,
         }
 
@@ -90,39 +88,46 @@ def get_data(filters, columns):
 
         results = frappe.db.sql(query, params, as_dict=True)
 
-        # Pick only the latest slip per employee for the current month
+        # Keep only latest slip by payment_type order per employee per month
         latest_slips = {}
         for row in results:
             emp = row.employee_id
-            current_index = payment_order.index(row.payment_type) if row.payment_type in payment_order else -1
-            if emp not in latest_slips or current_index > payment_order.index(latest_slips[emp].payment_type):
+            current_priority = payment_order.index(row.payment_type) if row.payment_type in payment_order else -1
+            if emp not in latest_slips or current_priority < payment_order.index(latest_slips[emp].payment_type):
                 latest_slips[emp] = row
 
-        # Group by department (across all months)
-        for emp, row in latest_slips.items():
-            dept = row.get("department") or "No Department"
-            if dept not in dept_group:
-                dept_group[dept] = []
+        # Store by employee across months
+        for emp_id, row in latest_slips.items():
+            if emp_id not in employee_month_map:
+                employee_month_map[emp_id] = {
+                    "employee_id": row.employee_id,
+                    "employee_name": row.employee_name,
+                    "department": row.get("department") or "No Department",
+                    "amount": row.amount or 0
+                }
+            else:
+                employee_month_map[emp_id]["amount"] += row.amount or 0
 
-            row["month"] = row["end_date"].strftime("%Y-%m")
-            dept_group[dept].append({
-                "employee_id": row.employee_id,
-                "employee_name": row.employee_name,
-                "month": row.month,
-                "amount": row.amount or 0
-            })
+    # Group final results by department
+    for emp_data in employee_month_map.values():
+        dept = emp_data["department"]
+        if dept not in dept_group:
+            dept_group[dept] = []
 
-    # Build final data list with section headers (departments)
+        dept_group[dept].append({
+            "employee_id": emp_data["employee_id"],
+            "employee_name": emp_data["employee_name"],
+            "month": "",  # optional
+            "amount": emp_data["amount"]
+        })
+
     for dept, employees in dept_group.items():
-        # Add department header row
         data.append({
             "employee_id": f"▶ {dept}",
-            "amount":None
-            })
-        
-        # Add employee rows under the department
-        for emp_data in employees:
-            data.append(emp_data)
+            "amount": None
+        })
+        for row in employees:
+            data.append(row)
 
     return data
 

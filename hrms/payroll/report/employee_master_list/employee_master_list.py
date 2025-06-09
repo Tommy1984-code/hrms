@@ -217,7 +217,7 @@ def aggregate_salary_components(rows):
     }
 
     deductions_map = {
-        'IT': "income_tax", 'PS': "employee_pension", 'APNI': "salary_advance",
+        'IT': "income_tax", 'PS': "employee_pension", 'APNI': "salary_advance","ABT":"absence",
         'HL': "loan", 'csl': "loan", 'PNLTY': "penalty", 'UNI': "union", 'CS': "cost_sharing",
         'CRT': "court", 'BNK': "bank", 'CP': "credit_purchase", 'SVG': "saving",
         'PNLTY2': "penalty_2", 'MD2': "medical_2", 'CIA2': "cash_indemnity_2",
