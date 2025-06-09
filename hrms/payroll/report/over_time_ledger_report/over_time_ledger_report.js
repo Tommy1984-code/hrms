@@ -3,13 +3,7 @@
 
 frappe.query_reports["Over Time Ledger Report"] = {
 	"filters": [
-		{
-            "fieldname": "company",
-            "label": "Company",
-            "fieldtype": "Link",
-            "options": "Company",
-            "reqd": 1
-        },
+		
         {
             "fieldname": "employee",
             "label": "Employee",

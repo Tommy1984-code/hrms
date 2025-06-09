@@ -4,6 +4,8 @@
 import frappe
 from frappe.utils import getdate, add_months
 from datetime import timedelta
+from collections import defaultdict
+
 
 
 def execute(filters=None):
@@ -79,188 +81,175 @@ def get_data(filters):
     from_date = getdate(filters.get("from_date"))
     to_date = getdate(filters.get("to_date"))
     employee = filters.get("employee")
-    company = filters.get("company")
-    payment_type = filters.get("payment_type")
+    payment_type_filter = filters.get("payment_type")
     branch = filters.get("branch")
     department = filters.get("department")
     grade = filters.get("grade")
     job_title = filters.get("job_title")
     employee_type = filters.get("employee_type")
 
-    months = get_months_in_range(from_date, to_date)
-    data = []
     payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 
-    seen_departments = set()
+    query = f"""
+        SELECT
+            e.name AS employee, e.employee_name, e.department, e.branch, e.designation, e.cell_number,
+            e.employment_type, e.date_of_joining, e.gender, e.employee_tin_no, e.salary_mode, e.pension_id,
+            ss.name AS salary_slip, ss.start_date, ss.end_date, ss.gross_pay, ss.net_pay, ss.total_deduction,
+            ss.payment_type, sd.salary_component, sd.abbr, sd.amount, sd.parentfield
+        FROM `tabSalary Slip` ss
+        JOIN `tabEmployee` e ON ss.employee = e.name
+        JOIN `tabSalary Detail` sd ON sd.parent = ss.name
+        WHERE ss.start_date >= %(from_date)s
+          AND ss.end_date <= %(to_date)s
+          AND ss.docstatus = 1
+          {"AND ss.employee = %(employee)s" if employee else ""}
+          {"AND ss.payment_type = %(payment_type)s" if payment_type_filter else ""}
+          {"AND e.branch = %(branch)s" if branch else ""}
+          {"AND e.department = %(department)s" if department else ""}
+          {"AND e.grade = %(grade)s" if grade else ""}
+          {"AND e.designation = %(job_title)s" if job_title else ""}
+          {"AND e.employment_type = %(employee_type)s" if employee_type else ""}
+    """
 
-    for month in months:
-        month_start = month.replace(day=1)
-        month_end = add_months(month_start, 1) - timedelta(days=1)
-        month_label = month.strftime('%B %Y')
+    params = {
+        "from_date": from_date,
+        "to_date": to_date,
+    }
+    if employee:
+        params["employee"] = employee
+    if payment_type_filter:
+        params["payment_type"] = payment_type_filter
+    if branch:
+        params["branch"] = branch
+    if department:
+        params["department"] = department
+    if grade:
+        params["grade"] = grade
+    if job_title:
+        params["job_title"] = job_title
+    if employee_type:
+        params["employee_type"] = employee_type
 
-        query = """
-            SELECT
-                e.name AS employee, e.employee_name, e.department, e.branch, e.designation, e.cell_number,
-                e.employment_type, e.date_of_joining, e.gender, e.employee_tin_no, e.salary_mode, e.pension_id,
-                ss.name AS salary_slip, ss.start_date, ss.end_date, ss.gross_pay, ss.net_pay, ss.total_deduction,
-                ss.payment_type, sd.salary_component, sd.abbr, sd.amount, sd.parentfield
-            FROM `tabSalary Slip` ss
-            JOIN `tabEmployee` e ON ss.employee = e.name
-            JOIN `tabSalary Detail` sd ON sd.parent = ss.name
-            WHERE ss.start_date <= %(month_end)s
-              AND ss.end_date >= %(month_start)s
-              AND ss.docstatus = 1
-              {company_clause}
-              {employee_clause}
-              {payment_type_clause}
-              {branch_clause}
-              {department_clause}
-              {grade_clause}
-              {job_title_clause}
-              {employee_type_clause}
-            ORDER BY ss.end_date DESC
-        """.format(
-            company_clause="AND ss.company = %(company)s" if company else "",
-            employee_clause="AND ss.employee = %(employee)s" if employee else "",
-            payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
-            branch_clause = "AND e.branch = %(branch)s" if branch else "",
-            department_clause = "AND e.department = %(department)s" if department else "",
-            grade_clause = "AND e.grade = %(grade)s" if grade else "",
-            job_title_clause = "AND e.designation = %(job_title)s" if job_title else "",
-            employee_type_clause = "AND e.employment_type = %(employee_type)s" if employee_type else "",
-        )
+    results = frappe.db.sql(query, params, as_dict=True)
 
-        params = {
-            "month_start": month_start,
-            "month_end": month_end,
-            "company": company
-        }
-        # if employee:
-        #     params["employee"] = employee
-        # if payment_type:
-        #     params["payment_type"] = payment_type
+    # Group salary details by employee and salary slip
+    data_by_employee_slip = defaultdict(lambda: defaultdict(list))
+    for r in results:
+        emp = r.employee
+        slip = r.salary_slip
+        data_by_employee_slip[emp][slip].append(r)
 
-        optional_fields = [
-            "employee",
-            "payment_type",
-            "branch",
-            "department",
-            "grade",
-            "employee_type",
-        ]
+    grouped_data = defaultdict(list)  # key = department
 
-        for field in optional_fields:
-            value = locals().get(field)
-            if value:
-                params[field] = value
+    def process_employee(emp, slips):
+        if payment_type_filter:
+            all_rows = [row for slip_rows in slips.values() for row in slip_rows]
+        else:
+            slips_by_month = defaultdict(list)
+            for slip_rows in slips.values():
+                month_key = slip_rows[0].start_date.strftime("%Y-%m")
+                slips_by_month[month_key].append(slip_rows)
 
-        results = frappe.db.sql(query, params, as_dict=True)
+            all_rows = []
+            for slips_list in slips_by_month.values():
+                best_slip = None
+                best_priority = -1
+                latest_date = None
+                for slip_rows in slips_list:
+                    pt = slip_rows[0].payment_type
+                    prio = payment_order.index(pt) if pt in payment_order else -1
+                    slip_end_date = slip_rows[0].end_date or slip_rows[0].start_date
+                    if prio > best_priority or (prio == best_priority and slip_end_date > latest_date):
+                        best_priority = prio
+                        latest_date = slip_end_date
+                        best_slip = slip_rows
+                if best_slip:
+                    all_rows.extend(best_slip)
 
-        grouped = {}
-        for row in results:
-            dept = row.department or "No Department"
-            grouped.setdefault(dept, []).append(row)
+        if all_rows:
+            aggregated = aggregate_salary_components(all_rows)
+            base = all_rows[0]
+            dept = base.department or "Other"
 
-        for dept, rows in grouped.items():
-            # Skip departments with all zero amounts
-            if not any(r.amount for r in rows):
-                continue
+            aggregated.update({
+                "employee": emp,
+                "employee_name": base.employee_name,
+                "department": dept,
+                "branch": base.branch,
+                "job_title": base.designation,
+                "tele": base.cell_number or "",
+                "payment_mode": base.salary_mode,
+                "employment_type": base.employment_type,
+                "date_of_hire": base.date_of_joining or "",
+                "gender": base.gender or "",
+                "employee_id": emp,
+                "tin_no": base.employee_tin_no or "",
+                "pension_id": base.pension_id or "",
+                "period": f"{from_date.strftime('%d %b %Y')} - {to_date.strftime('%d %b %Y')}",
+            })
 
-            # Add department header only once
-            if dept not in seen_departments:
-                data.append({
-                    "is_group_header": 1,
-                    "employee_name": f" {dept}",
-                   "basic_pay": None, "overtime": None, "absence": None, "allowance": None, "net_benefit_gross_up": None,
-                    "attendance_incentive": None, "commission_incentive": None, "transport_allowance": None,
-                    "representative_allowance": None, "medical": None, "insurance": None, "bonus": None,
-                    "puagume_salary": None, "cash_indemnity_allowance": None, "housing_allowance": None,
-                    "acting_allowance": None, "responsibility_allowance": None, "skill_allowance": None,
-                    "total_benefit": None, "taxable_gross": None, "gross_pay": None,
-                    "company_pension": None, "income_tax": None, "employee_pension": None, "salary_advance": None,
-                    "loan": None, "penalty": None, "union": None, "cost_sharing": None, "court": None, "bank": None,
-                    "credit_purchase": None, "saving": None, "penalty_2": None, "medical_2": None,
-                    "cash_indemnity_2": None, "medical_loan_1": None, "credit_association": None, "refund": None,
-                    "social_health_insurance": None, "gym": None, "milk_sales": None, "red_cross": None,
-                    "credit_association_loan": None, "total_deduction": None, "net_pay": None
-                })
-                seen_departments.add(dept)
+            grouped_data[dept].append(aggregated)
 
-            latest_slips = {}
-            for row in rows:
-                emp = row.employee
-                current_index = payment_order.index(row.payment_type) if row.payment_type in payment_order else -1
-                if emp not in latest_slips or current_index > payment_order.index(latest_slips[emp].payment_type):
-                    latest_slips[emp] = row
+    for emp, slips in data_by_employee_slip.items():
+        process_employee(emp, slips)
 
-            for emp, base in latest_slips.items():
-                slip_data = [r for r in rows if r.salary_slip == base.salary_slip]
+    # Build final data list with department headers
+    final_data = []
+    for dept in sorted(grouped_data.keys()):
+        final_data.append({
+            "employee_name": f"{dept}",
+            "is_group": 1  # Optional: to mark group rows
+        })
+        final_data.extend(grouped_data[dept])
 
-                # Employee row with all keys, zeros allowed
-                row_dict = {
-                    "employee": base.employee,
-                    "employee_name": base.employee_name,
-                    "department": base.department,
-                    "branch": base.branch,
-                    "job_title": base.designation,
-                    "tele": base.cell_number or "",
-                    "payment_mode": base.salary_mode,
-                    "employment_type": base.employment_type,
-                    "date_of_hire": base.date_of_joining or "",
-                    "gender": base.gender or "",
-                    "employee_id": base.employee,
-                    "tin_no": base.employee_tin_no or "",
-                    "pension_id": base.pension_id or "",
-                    "period": month_label,
-                    "basic_pay": 0, "overtime": 0, "absence": 0, "allowance": 0, "net_benefit_gross_up": 0,
-                    "attendance_incentive": 0, "commission_incentive": 0, "transport_allowance": 0,
-                    "representative_allowance": 0, "medical": 0, "insurance": 0, "bonus": 0,
-                    "puagume_salary": 0, "cash_indemnity_allowance": 0, "housing_allowance": 0,
-                    "acting_allowance": 0, "responsibility_allowance": 0, "skill_allowance": 0,
-                    "total_benefit": 0, "taxable_gross": 0, "gross_pay": 0,
-                    "company_pension": 0, "income_tax": 0, "employee_pension": 0, "salary_advance": 0,
-                    "loan": 0, "penalty": 0, "union": 0, "cost_sharing": 0, "court": 0, "bank": 0,
-                    "credit_purchase": 0, "saving": 0, "penalty_2": 0, "medical_2": 0,
-                    "cash_indemnity_2": 0, "medical_loan_1": 0, "credit_association": 0, "refund": 0,
-                    "social_health_insurance": 0, "gym": 0, "milk_sales": 0, "red_cross": 0,
-                    "credit_association_loan": 0, "total_deduction": 0, "net_pay": 0
-                }
+    return final_data
 
-                earnings_map = {
-                    'B': "basic_pay", 'VB': "basic_pay", 'OT': "overtime", 'ABS': "absence",
-                    'ALL': "allowance", 'NBG': "net_benefit_gross_up", 'AIN': "attendance_incentive",
-                    'CIN': "commission_incentive", 'TA': "transport_allowance", 'RA': "representative_allowance",
-                    'MD': "medical", 'INS': "insurance", 'Bns': "bonus", 'PUG': "puagume_salary",
-                    'CIA': "cash_indemnity_allowance", 'HA': "housing_allowance", 'AA': "acting_allowance",
-                    'RS': "responsibility_allowance", 'SA': "skill_allowance"
-                }
+def aggregate_salary_components(rows):
+    result = defaultdict(float)
 
-                deductions_map = {
-                    'IT': "income_tax", 'PS': "employee_pension", 'APNI': "salary_advance",
-                    'HL': "loan", 'csl': "loan", 'PNLTY': "penalty", 'UNI': "union", 'CS': "cost_sharing",
-                    'CRT': "court", 'BNK': "bank", 'CP': "credit_purchase", 'SVG': "saving",
-                    'PNLTY2': "penalty_2", 'MD2': "medical_2", 'CIA2': "cash_indemnity_2",
-                    'MDL1': "medical_loan_1", 'CA': "credit_association", 'RFND': "refund",
-                    'SHI': "social_health_insurance", 'GM': "gym", 'MS': "milk_sales", 'RC': "red_cross",
-                    'CAL': "credit_association_loan"
-                }
+    earnings_map = {
+        'B': "basic_pay", 'VB': "basic_pay", 'OT': "overtime", 'ABS': "absence",
+        'ALL': "allowance", 'NBG': "net_benefit_gross_up", 'AIN': "attendance_incentive",
+        'CIN': "commission_incentive", 'TA': "transport_allowance", 'RA': "representative_allowance",
+        'MD': "medical", 'INS': "insurance", 'Bns': "bonus", 'PUG': "puagume_salary",
+        'CIA': "cash_indemnity_allowance", 'HA': "housing_allowance", 'AA': "acting_allowance",
+        'RS': "responsibility_allowance", 'SA': "skill_allowance"
+    }
 
-                for r in slip_data:
-                    amt = r.amount or 0
-                    comp = r.abbr or r.salary_component
-                    if r.parentfield == "earnings" and comp in earnings_map:
-                        row_dict[earnings_map[comp]] += amt
-                    elif r.parentfield == "deductions" and comp in deductions_map:
-                        row_dict[deductions_map[comp]] += amt
+    deductions_map = {
+        'IT': "income_tax", 'PS': "employee_pension", 'APNI': "salary_advance",
+        'HL': "loan", 'csl': "loan", 'PNLTY': "penalty", 'UNI': "union", 'CS': "cost_sharing",
+        'CRT': "court", 'BNK': "bank", 'CP': "credit_purchase", 'SVG': "saving",
+        'PNLTY2': "penalty_2", 'MD2': "medical_2", 'CIA2': "cash_indemnity_2",
+        'MDL1': "medical_loan_1", 'CA': "credit_association", 'RFND': "refund",
+        'SHI': "social_health_insurance", 'GM': "gym", 'MS': "milk_sales", 'RC': "red_cross",
+        'CAL': "credit_association_loan"
+    }
 
-                row_dict["gross_pay"] = base.gross_pay or 0
-                row_dict["total_deduction"] = base.total_deduction or 0
-                row_dict["net_pay"] = base.net_pay or 0
-                row_dict["company_pension"] = row_dict["basic_pay"] * 0.11
+    gross_pays = set()
+    net_pays = set()
+    total_deductions = set()
 
-                data.append(row_dict)
+    for r in rows:
+        amt = r.amount or 0
+        comp = r.abbr or r.salary_component
+        if r.parentfield == "earnings" and comp in earnings_map:
+            result[earnings_map[comp]] += amt
+        elif r.parentfield == "deductions" and comp in deductions_map:
+            result[deductions_map[comp]] += amt
 
-    return data
+        gross_pays.add((r.salary_slip, r.gross_pay or 0))
+        net_pays.add((r.salary_slip, r.net_pay or 0))
+        total_deductions.add((r.salary_slip, r.total_deduction or 0))
+
+    # Take latest values only once from each slip (to avoid duplication)
+    result["gross_pay"] = sum(v for k, v in gross_pays)
+    result["net_pay"] = sum(v for k, v in net_pays)
+    result["total_deduction"] = sum(v for k, v in total_deductions)
+
+    result["company_pension"] = result["basic_pay"] * 0.11
+
+    return result
 
 
 def get_months_in_range(start_date, end_date):

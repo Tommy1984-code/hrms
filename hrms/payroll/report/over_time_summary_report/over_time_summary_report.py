@@ -25,10 +25,13 @@ def get_columns():
         {"label": "Amount", "fieldname": "amount", "fieldtype": "Currency", "width": 100},
     ]
 
+from collections import defaultdict
+from datetime import timedelta
+from frappe.utils import getdate, add_months
+
 def get_data(filters):
     from_date = getdate(filters.get("from_date"))
     to_date = getdate(filters.get("to_date"))
-    company = filters.get("company")
     employee = filters.get("employee")
     payment_type = filters.get("payment_type")
     branch = filters.get("branch")
@@ -61,7 +64,8 @@ def get_data(filters):
                 ss.end_date,
                 ss.payment_type,
                 asl.working_hour,
-                asl.rate
+                asl.rate,
+                COALESCE(asl.payroll_date, asl.from_date) AS date
             FROM `tabSalary Slip` ss
             INNER JOIN `tabSalary Detail` sd ON sd.parent = ss.name
             LEFT JOIN `tabEmployee` e ON e.name = ss.employee
@@ -69,35 +73,41 @@ def get_data(filters):
                 asl.employee = ss.employee
                 AND asl.salary_component = 'OverTime'
                 AND asl.docstatus = 1
+                AND (
+                    (asl.payroll_date BETWEEN %(month_start)s AND %(month_end)s)
+                    OR (
+                        asl.from_date IS NOT NULL AND asl.to_date IS NOT NULL
+                        AND asl.from_date <= %(month_end)s
+                        AND asl.to_date >= %(month_start)s
+                    )
+                )
             WHERE
                 ss.docstatus = 1
                 AND sd.salary_component = 'OverTime'
                 AND ss.start_date <= %(month_end)s
                 AND ss.end_date >= %(month_start)s
-                {company_clause}
                 {employee_clause}
                 {branch_clause}
                 {department_clause}
                 {payment_type_clause}
                 {grade_clause}
                 {employment_type_clause}
-            ORDER BY ss.end_date DESC
+            ORDER BY ss.employee, ss.end_date DESC, 
+                FIELD(ss.payment_type, '{payment_order_str}')
         """.format(
-            company_clause="AND ss.company = %(company)s" if company else "",
             employee_clause="AND ss.employee = %(employee)s" if employee else "",
             branch_clause="AND e.branch = %(branch)s" if branch else "",
             department_clause="AND e.department = %(department)s" if department else "",
             payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
             grade_clause="AND e.grade = %(grade)s" if grade else "",
-            employment_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else ""
+            employment_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else "",
+            payment_order_str="','".join(payment_order)
         )
 
         params = {
             "month_start": month_start,
             "month_end": month_end,
         }
-        if company:
-            params["company"] = company
         if employee:
             params["employee"] = employee
         if branch:
@@ -113,16 +123,22 @@ def get_data(filters):
 
         data = frappe.db.sql(query, params, as_dict=True)
 
-        # Select latest salary slip per employee based on payment_type priority
-        latest_slips = {}
+        # For each employee, pick the latest salary slip by payment_type priority in this month
+        latest_slips_per_emp = {}
         for row in data:
             emp = row.employee
-            current_index = payment_order.index(row.payment_type) if row.payment_type in payment_order else -1
-            if emp not in latest_slips or current_index > payment_order.index(latest_slips[emp].payment_type):
-                latest_slips[emp] = row
+            if emp not in latest_slips_per_emp:
+                latest_slips_per_emp[emp] = row
+            else:
+                # Check if this row has higher priority payment_type than stored
+                current_priority = payment_order.index(latest_slips_per_emp[emp].payment_type) if latest_slips_per_emp[emp].payment_type in payment_order else -1
+                row_priority = payment_order.index(row.payment_type) if row.payment_type in payment_order else -1
+                # Higher index means later priority, so pick one with lower index
+                if row_priority < current_priority:
+                    latest_slips_per_emp[emp] = row
 
-        # Aggregate OT working hour and amount ONLY from latest slip per employee
-        for emp, row in latest_slips.items():
+        # Now sum base and OT only for employees who have OT in this month
+        for emp, row in latest_slips_per_emp.items():
             dept = row.department or "No Department"
             emp_key = row.employee_id
 
@@ -131,14 +147,19 @@ def get_data(filters):
                     "employee_name": row.employee_name,
                     "employee": row.employee_id,
                     "designation": row.designation,
-                    "base": row.base,
+                    "base": 0,
                     "ot_125": 0,
                     "ot_150": 0,
                     "ot_200": 0,
                     "ot_250": 0,
-                    "amount": 0
+                    "amount": 0,
+                    "date": None
                 }
 
+            # Add base salary for this month (only for employees with OT this month)
+            grouped[dept][emp_key]["base"] += row.base or 0
+
+            # Accumulate OT hours by rate
             rate = float(row.rate) if row.rate else 0
             working_hour = row.working_hour or 0
 
@@ -151,6 +172,7 @@ def get_data(filters):
             elif rate == 2.5:
                 grouped[dept][emp_key]["ot_250"] += working_hour
 
+            # Accumulate OT amount
             grouped[dept][emp_key]["amount"] += row.amount or 0
 
     # Prepare final output with department headers
@@ -164,7 +186,8 @@ def get_data(filters):
             "ot_150": None,
             "ot_200": None,
             "ot_250": None,
-            "amount": None
+            "amount": None,
+            "date": None
         })
         final_data.extend(employees.values())
 

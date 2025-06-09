@@ -62,13 +62,9 @@ def get_columns(employee_filter):
 			{"label": "Net Severance", "fieldname": "net_severance", "fieldtype": "Currency", "width": 150},
 		]
 
-
-
-
 def get_data(filters):
 	from_date = getdate(filters.get("from_date"))
 	to_date = getdate(filters.get("to_date"))
-	company = filters.get("company")
 	employee = filters.get("employee")
 
 	if not (from_date and to_date):
@@ -97,16 +93,12 @@ def get_data(filters):
 				WHERE
 					et.termination_date BETWEEN %(month_start)s AND %(month_end)s
 					AND et.employee = %(employee)s
-					{company_clause}
-			""".format(
-				company_clause="AND et.company = %(company)s" if company else ""
-			)
+			"""
 
 			params = {
 				"month_start": month_start,
 				"month_end": month_end,
 				"employee": employee,
-				"company": company
 			}
 
 			results = frappe.db.sql(query, params, as_dict=True)
@@ -139,15 +131,11 @@ def get_data(filters):
 					`tabEmployee Termination` et
 				WHERE
 					et.termination_date BETWEEN %(month_start)s AND %(month_end)s
-					{company_clause}
-			""".format(
-				company_clause="AND et.company = %(company)s" if company else ""
-			)
+			"""
 
 			params = {
 				"month_start": month_start,
 				"month_end": month_end,
-				"company": company
 			}
 
 			results = frappe.db.sql(query, params, as_dict=True)
