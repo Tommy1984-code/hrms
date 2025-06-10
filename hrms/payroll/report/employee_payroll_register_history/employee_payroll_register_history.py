@@ -62,6 +62,7 @@ def get_columns():
 def get_data(filters):
 	from_date = getdate(filters.get("from_date"))
 	to_date = getdate(filters.get("to_date"))
+	company = filters.get("company")
 	employee = filters.get("employee")
 	payment_type = filters.get("payment_type")
 
@@ -87,12 +88,12 @@ def get_data(filters):
 			WHERE ss.start_date <= %(month_end)s AND ss.end_date >= %(month_start)s
 			  AND ss.docstatus = 1
 			  {employee_clause}
-			  
+			  {company_clause}
 			  {payment_type_clause}
 			ORDER BY ss.end_date DESC
 		""".format(
 			employee_clause="AND ss.employee = %(employee)s" if employee else "",
-			
+			company_clause = "AND ss.company = %(company)s" if company else "",
 			payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
 		)
 

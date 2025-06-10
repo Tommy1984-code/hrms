@@ -80,6 +80,7 @@ def get_columns():
 def get_data(filters):
     from_date = getdate(filters.get("from_date"))
     to_date = getdate(filters.get("to_date"))
+    company = filters.get("company")
     employee = filters.get("employee")
     payment_type_filter = filters.get("payment_type")
     branch = filters.get("branch")
@@ -102,6 +103,7 @@ def get_data(filters):
         WHERE ss.start_date >= %(from_date)s
           AND ss.end_date <= %(to_date)s
           AND ss.docstatus = 1
+          {"AND ss.company = %(company)s" if company else ""}
           {"AND ss.employee = %(employee)s" if employee else ""}
           {"AND ss.payment_type = %(payment_type)s" if payment_type_filter else ""}
           {"AND e.branch = %(branch)s" if branch else ""}
@@ -114,6 +116,7 @@ def get_data(filters):
     params = {
         "from_date": from_date,
         "to_date": to_date,
+        "company":company
     }
     if employee:
         params["employee"] = employee

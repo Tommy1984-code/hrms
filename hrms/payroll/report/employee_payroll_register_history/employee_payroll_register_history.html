@@ -26,16 +26,20 @@
   
   <!-- Date Range -->
   <div style="text-align: center; margin: 10px 0 20px 0; font-size: 15px;">
-    {% 
+    {%
       let from = new Date(filters.from_date);
       let to = new Date(filters.to_date);
       let fromMonth = from.toLocaleString('default', { month: 'long' });
       let toMonth = to.toLocaleString('default', { month: 'long' });
       let fromYear = from.getFullYear();
       let toYear = to.getFullYear();
-      let isBankSelected = filters.mode_of_payment && filters.mode_of_payment === 'Bank';
     %}
-    For the period: {{ fromMonth }} {{ fromYear }} to {{toMonth}}  {{toYear}}
+    For the period:
+    {% if fromMonth === toMonth && fromYear === toYear %}
+      {{ fromMonth }} {{ fromYear }}
+    {% else %}
+      {{ fromMonth }} {{ fromYear }} to {{ toMonth }} {{ toYear }}
+    {% endif %}
   </div>
   
   <style>

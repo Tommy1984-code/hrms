@@ -26,16 +26,20 @@
   
   <!-- Date Range -->
   <div style="text-align: center; margin: 10px 0 20px 0; font-size: 15px;">
-    {% 
+    {%
       let from = new Date(filters.from_date);
       let to = new Date(filters.to_date);
       let fromMonth = from.toLocaleString('default', { month: 'long' });
       let toMonth = to.toLocaleString('default', { month: 'long' });
       let fromYear = from.getFullYear();
       let toYear = to.getFullYear();
-      let isBankSelected = filters.mode_of_payment && filters.mode_of_payment === 'Bank';
     %}
-    For the period: {{ fromMonth }} {{ fromYear }}
+    For the period:
+    {% if fromMonth === toMonth && fromYear === toYear %}
+      {{ fromMonth }} {{ fromYear }}
+    {% else %}
+      {{ fromMonth }} {{ fromYear }} to {{ toMonth }} {{ toYear }}
+    {% endif %}
   </div>
   
   <style>
@@ -49,6 +53,11 @@
       border: 1px solid #ccc;
       padding: 6px;
       text-align: right;
+    }
+    .payroll-table th {
+    background-color: #000 !important; /* Force black background */
+    color: #fff !important;            /* Force white text */
+    font-weight: bold;
     }
   
     .payroll-table th {
@@ -80,7 +89,7 @@
       <thead>
         <tr>
           <th rowspan="2" class="w-[40px] text-[10px] font-bold text-center border">No.</th>
-          <th rowspan="2" class="w-[100px] text-[12px] font-bold text-left border">Employee Name</th>
+          <th rowspan="2" class="w-[100px] text-[12px] font-bold text-left  border">Employee Name</th>
           {% if isBankSelected %}
           <th rowspan="2" class="w-[60px] text-[10px] font-bold text-left border">Title</th> 
           {% endif %}

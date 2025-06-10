@@ -4,6 +4,14 @@
 frappe.query_reports["Over Time Summary Report"] = {
 	"filters": [
         {
+            "fieldname": "company",
+            "label": "Company",
+            "fieldtype": "Link",
+            "options": "Company",
+            "reqd": 1
+        },
+		
+        {
             "fieldname": "employee",
             "label": "Employee",
             "fieldtype": "Link",

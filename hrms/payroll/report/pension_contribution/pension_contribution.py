@@ -26,6 +26,7 @@ def get_columns():
 		{"label":"Total in Birr","fieldname":"total_pension","fieldtype":"Currency","width": 150},
 	]
 
+
 def get_grouped_data(filters=None):
     from_date = filters.get("from_date")
     to_date = filters.get("to_date")
@@ -42,36 +43,37 @@ def get_grouped_data(filters=None):
 
     months = get_months_in_range(from_date, to_date)
     grouped = defaultdict(list)
+    employee_totals = {}
 
     for month in months:
         month = getdate(month)
         month_start = month.replace(day=1)
         month_end = (add_months(month_start, 1) - timedelta(days=1))
 
+        # Fetch latest salary slip per employee for this month
         query = """
             SELECT
+                ss.name as salary_slip,
+                ss.employee,
                 e.employee_name,
                 e.employee_tin_no,
                 e.department,
                 d.department_name,
-                sd.amount AS basic_salary,
-                ss.end_date,
-                ss.employee
+                ss.end_date
             FROM `tabSalary Slip` ss
             JOIN `tabEmployee` e ON ss.employee = e.name
-            JOIN `tabSalary Detail` sd ON sd.parent = ss.name
             LEFT JOIN `tabDepartment` d ON d.name = e.department
             WHERE ss.start_date <= %(month_end)s
-                AND ss.end_date >= %(month_start)s
-                AND ss.docstatus = 1
-                AND sd.abbr IN ('B', 'VB')
+              AND ss.end_date >= %(month_start)s
+              AND ss.docstatus = 1
               {company_clause}
               {employee_clause}
               {branch_clause}
               {department_clause}
               {grade_clause}
+              {job_title_clause}
               {employee_type_clause}
-              
+            ORDER BY ss.end_date DESC
         """.format(
             company_clause="AND ss.company = %(company)s" if company else "",
             employee_clause="AND ss.employee = %(employee)s" if employee else "",
@@ -80,68 +82,73 @@ def get_grouped_data(filters=None):
             grade_clause="AND e.grade = %(grade)s" if grade else "",
             job_title_clause="AND e.designation = %(job_title)s" if job_title else "",
             employee_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else "",
-            
         )
 
         params = {
             "month_start": month_start,
             "month_end": month_end,
-            "company" :company
+            "company": company,
         }
 
-        optional_fields = [
-            "employee",
-            "payment_type",
-            "branch",
-            "department",
-            "grade",
-            "job_title",
-            "employee_type",
-        ]
-
+        optional_fields = ["employee", "branch", "department", "grade", "job_title", "employee_type"]
         for field in optional_fields:
             value = locals().get(field)
             if value:
                 params[field] = value
 
-        results = frappe.db.sql(query, params, as_dict=True)
- 
-        # Group results by employee to ensure we're getting the latest salary slip
-        employee_latest_slip = {}
+        salary_slips = frappe.db.sql(query, params, as_dict=True)
 
-        for row in results:
-            employee_id = row.employee
-            if employee_id not in employee_latest_slip:
-                # For each employee, store the first result we encounter (latest based on end_date)
-                employee_latest_slip[employee_id] = row
-            else:
-                # If this result has a later end_date, update the entry
-                existing_row = employee_latest_slip[employee_id]
-                if row.end_date > existing_row['end_date']:
-                    employee_latest_slip[employee_id] = row
+        seen_employees = set()
 
-        # Now process the latest salary slips
-        for row in employee_latest_slip.values():
-            department_name = row.department_name or "No Department"
-            base_salary = row.basic_salary
-            employee_pension = base_salary * 0.07
-            company_pension = base_salary * 0.11
-            total_pension = employee_pension + company_pension
+        for slip in salary_slips:
+            emp = slip.employee
+            if emp in seen_employees:
+                continue  # only latest per employee for this month
+            seen_employees.add(emp)
 
-            grouped[department_name].append({
-                "employee_name": row.employee_name,
-                "tin_number": row.employee_tin_no,
-                "employee_pension": employee_pension,
-                "company_pension": company_pension,
-                "total_pension": total_pension,
-                "month": month.strftime("%B %Y")
-            })
+            # Fetch BASIC or VBASIC
+            base = frappe.db.sql("""
+                SELECT amount FROM `tabSalary Detail`
+                WHERE parent = %s AND abbr IN ('B', 'VB') AND parentfield = 'earnings'
+                ORDER BY amount DESC LIMIT 1
+            """, (slip.salary_slip,), as_dict=True)
 
-    # Flatten into a list, inserting a row with only department as header
+            if not base:
+                continue
+
+            base_salary = base[0].amount
+            emp_pension = base_salary * 0.07
+            comp_pension = base_salary * 0.11
+            total_pension = emp_pension + comp_pension
+
+            if emp not in employee_totals:
+                employee_totals[emp] = {
+                    "employee_name": slip.employee_name,
+                    "tin_number": slip.employee_tin_no,
+                    "department_name": slip.department_name or "No Department",
+                    "employee_pension": 0,
+                    "company_pension": 0,
+                    "total_pension": 0
+                }
+
+            employee_totals[emp]["employee_pension"] += emp_pension
+            employee_totals[emp]["company_pension"] += comp_pension
+            employee_totals[emp]["total_pension"] += total_pension
+
+    # Final formatting
+    for emp_data in employee_totals.values():
+        dept = emp_data["department_name"]
+        grouped[dept].append({
+            "employee_name": emp_data["employee_name"],
+            "tin_number": emp_data["tin_number"],
+            "employee_pension": emp_data["employee_pension"],
+            "company_pension": emp_data["company_pension"],
+            "total_pension": emp_data["total_pension"],
+        })
+
     final_data = []
     for dept, employees in grouped.items():
         final_data.append({
-            
             "employee_name": f"▶ {dept}",
             "tin_number": "",
             "employee_pension": None,

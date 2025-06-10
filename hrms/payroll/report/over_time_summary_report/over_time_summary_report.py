@@ -25,13 +25,11 @@ def get_columns():
         {"label": "Amount", "fieldname": "amount", "fieldtype": "Currency", "width": 100},
     ]
 
-from collections import defaultdict
-from datetime import timedelta
-from frappe.utils import getdate, add_months
 
 def get_data(filters):
     from_date = getdate(filters.get("from_date"))
     to_date = getdate(filters.get("to_date"))
+    company = filters.get("company")
     employee = filters.get("employee")
     payment_type = filters.get("payment_type")
     branch = filters.get("branch")
@@ -86,6 +84,7 @@ def get_data(filters):
                 AND sd.salary_component = 'OverTime'
                 AND ss.start_date <= %(month_end)s
                 AND ss.end_date >= %(month_start)s
+                {company_clause}
                 {employee_clause}
                 {branch_clause}
                 {department_clause}
@@ -95,6 +94,7 @@ def get_data(filters):
             ORDER BY ss.employee, ss.end_date DESC, 
                 FIELD(ss.payment_type, '{payment_order_str}')
         """.format(
+            company_clause="AND ss.company = %(company)s" if company else "",
             employee_clause="AND ss.employee = %(employee)s" if employee else "",
             branch_clause="AND e.branch = %(branch)s" if branch else "",
             department_clause="AND e.department = %(department)s" if department else "",
@@ -107,6 +107,7 @@ def get_data(filters):
         params = {
             "month_start": month_start,
             "month_end": month_end,
+            "company":company
         }
         if employee:
             params["employee"] = employee

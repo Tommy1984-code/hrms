@@ -1,3 +1,4 @@
+<script src="https://cdn.tailwindcss.com"></script>
 <div style="width: 100%; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
     <!-- Logo aligned to the left -->
     <div style="width: 150px; display: flex; justify-content: flex-start;">
@@ -9,21 +10,36 @@
       <h2 style="margin: 0; font-size: 28px; font-weight: semi-bold;">{{ filters.company }}</h2> <!-- Larger font size for company name -->
       <h3 style="margin: 4px 0; font-size: 24px;">Pension Contribution </h3> <!-- Title with smaller font -->
     </div>
+     <!-- Report Generated Date -->
+     <div style="width: 200px; font-size: 12px; text-align: right; margin-top: 10px;">
+      {% 
+        let now = new Date();
+        let genDate = now.toLocaleString('default', {
+          year: 'numeric', month: 'long', day: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      %}
+      Generated on:<br> {{ genDate }}
+    </div>
   </div>
-  
-  <!-- Date for the month of the filter, placed outside but centered -->
-  <div style="text-align: center; margin-top: 10px; margin-bottom: 8px; font-size: 16px;">
-    {% 
-      let date = new Date(filters.from_date);
-      let month = date.toLocaleString('default', { month: 'long' });
-      let year = date.getFullYear();
+
+  <!-- Date Range -->
+  <div style="text-align: center; margin: 10px 0 20px 0; font-size: 15px;">
+    {%
+      let from = new Date(filters.from_date);
+      let to = new Date(filters.to_date);
+      let fromMonth = from.toLocaleString('default', { month: 'long' });
+      let toMonth = to.toLocaleString('default', { month: 'long' });
+      let fromYear = from.getFullYear();
+      let toYear = to.getFullYear();
     %}
-    For the month of {{ month }} {{ year }}
+    For the period:
+    {% if fromMonth === toMonth && fromYear === toYear %}
+      {{ fromMonth }} {{ fromYear }}
+    {% else %}
+      {{ fromMonth }} {{ fromYear }} to {{ toMonth }} {{ toYear }}
+    {% endif %}
   </div>
-  
-  
-  
-  
 
 <style>
     .main-table {
@@ -51,7 +67,7 @@
   <table class="main-table" style="border-collapse: collapse; width: 100%;">
     <thead>
       <tr>
-        <th style="text-align: left; padding: 4px; border-bottom: 2px solid #000;">No.</th>
+        <th style="text-align: left; padding: 4px; border-bottom: 2px solid #353535;">No.</th>
         {% for (let col of columns) { %}
           {% if (col.fieldname !== "department") { %}
             <th style="text-align: left; padding: 4px; border-bottom: 2px solid #000;">{{ col.label }}</th>

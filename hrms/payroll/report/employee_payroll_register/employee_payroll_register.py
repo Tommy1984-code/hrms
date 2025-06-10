@@ -31,11 +31,12 @@ def get_columns(filters=None):
         columns.append({"label": "Signature", "fieldname": "signature", "fieldtype": "Data", "width": 100})
     return columns
 
+
 def get_data(filters, columns):
     from_date = getdate(filters.get("from_date"))
     to_date = getdate(filters.get("to_date"))
-    company = filters.get("company")
     mode_of_payment = filters.get("mode_of_payment")
+    company = filters.get("company")
     employee = filters.get("employee")
     payment_type = filters.get("payment_type")
     branch = filters.get("branch")
@@ -52,145 +53,149 @@ def get_data(filters, columns):
     payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
     num_columns = len(columns)
 
-    department_rows = {}
-
+    # 1) Fetch all relevant salary detail rows for the range
+    all_results = []
     for month in months:
         month_start = month.replace(day=1)
         month_end = add_months(month_start, 1) - timedelta(days=1)
 
         query = """
-            SELECT e.name AS employee, e.employee_name, e.department, e.designation, e.branch, e.grade, e.bank_name, e.employment_type,
-                   ss.name AS salary_slip, ss.gross_pay, ss.net_pay, ss.mode_of_payment, ss.payment_type,
-                   ss.total_deduction, ss.end_date,
+            SELECT e.name AS employee, e.employee_name, e.department, e.designation, e.branch, e.grade,
+                   ss.bank_name AS bank, ss.mode_of_payment, ss.payment_type,
+                   ss.name AS salary_slip, ss.gross_pay, ss.net_pay, ss.total_deduction,
+                   ss.end_date,
                    sd.salary_component, sd.abbr, sd.amount, sd.parentfield
             FROM `tabSalary Slip` ss
             JOIN `tabEmployee` e ON ss.employee = e.name
             JOIN `tabSalary Detail` sd ON sd.parent = ss.name
-            WHERE ss.start_date <= %(month_end)s AND ss.end_date >= %(month_start)s
+            WHERE ss.start_date <= %(month_end)s
+              AND ss.end_date >= %(month_start)s
               AND ss.docstatus = 1
-              {company_clause}
-              {payment_mode_clause}
-              {employee_clause}
-              {payment_type_clause}
-              {branch_clause}
-              {department_clause}
-              {grade_clause}
-              {job_title_clause}
-              {employee_type_clause}
-              {bank_clause}
+              {clauses}
             ORDER BY ss.end_date DESC
-        """.format(
-            company_clause="AND ss.company = %(company)s" if company else "",
-            payment_mode_clause="AND ss.mode_of_payment = %(mode_of_payment)s" if mode_of_payment else "",
-            employee_clause="AND ss.employee = %(employee)s" if employee else "",
-            payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
-            branch_clause="AND e.branch = %(branch)s" if branch else "",
-            department_clause="AND e.department = %(department)s" if department else "",
-            grade_clause="AND e.grade = %(grade)s" if grade else "",
-            job_title_clause="AND e.designation = %(job_title)s" if job_title else "",
-            employee_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else "",
-            bank_clause="AND ss.bank_name = %(bank)s" if bank else ""
-        )
+        """.format(clauses=" ".join([
+            "AND ss.company = %(company)s" if company else "",
+            "AND ss.mode_of_payment = %(mode_of_payment)s" if mode_of_payment else "",
+            "AND ss.employee = %(employee)s" if employee else "",
+            "AND ss.payment_type = %(payment_type)s" if payment_type else "",
+            "AND e.branch = %(branch)s" if branch else "",
+            "AND e.department = %(department)s" if department else "",
+            "AND e.grade = %(grade)s" if grade else "",
+            "AND e.designation = %(job_title)s" if job_title else "",
+            "AND e.employment_type = %(employee_type)s" if employee_type else "",
+            "AND ss.bank_name = %(bank)s" if bank else "",
+        ]))
 
         params = {
             "month_start": month_start,
             "month_end": month_end,
-            "company": company,
+            **({ "company": company } if company else {}),
+            **({ "mode_of_payment": mode_of_payment } if mode_of_payment else {}),
+            **({ "employee": employee } if employee else {}),
+            **({ "payment_type": payment_type } if payment_type else {}),
+            **({ "branch": branch } if branch else {}),
+            **({ "department": department } if department else {}),
+            **({ "grade": grade } if grade else {}),
+            **({ "job_title": job_title } if job_title else {}),
+            **({ "employee_type": employee_type } if employee_type else {}),
+            **({ "bank": bank } if bank else {}),
         }
 
-        optional_fields = [
-            "mode_of_payment",
-            "employee",
-            "payment_type",
-            "branch",
-            "department",
-            "grade",
-            "job_title",
-            "employee_type",
-            "bank"
-        ]
+        rows = frappe.db.sql(query, params, as_dict=True)
+        all_results.extend(rows)
 
-        for field in optional_fields:
-            value = locals().get(field)
-            if value:
-                params[field] = value
+    # 2) Select one slip per employee per month based on priority and aggregate components
+    monthly_slips = {}  # key = emp + YYYY-MM, value = dict with amounts & priority
+    for row in all_results:
+        emp = row.employee
+        month_key = f"{emp}-{row.end_date.strftime('%Y-%m')}"
+        priority = payment_order.index(row.payment_type) if row.payment_type in payment_order else -1
 
-        results = frappe.db.sql(query, params, as_dict=True)
+        if month_key not in monthly_slips or priority > monthly_slips[month_key]["_priority"]:
+            monthly_slips[month_key] = {
+                "employee": emp,
+                "employee_name": " ".join(row.employee_name.split()[:2]),
+                "department": row.department or "No Department",
+                "designation": row.designation,
+                "mode_of_payment": row.mode_of_payment,
+                "bank": row.bank,
+                "basic": 0, "hardship": 0, "overtime": 0,
+                "commission": 0, "incentive": 0,
+                "income_tax": 0, "employee_pension": 0,
+                "absence": 0, "other_deduction": 0,
+                "gross_pay": row.gross_pay,
+                "net_pay": row.net_pay,
+                "total_deduction": row.total_deduction,
+                "_priority": priority
+            }
 
-        # Get latest salary slip per employee for that month
-        latest_slips = {}
-        for row in results:
-            emp = row.employee
-            current_index = payment_order.index(row.payment_type) if row.payment_type in payment_order else -1
-            if emp not in latest_slips or current_index > payment_order.index(latest_slips[emp].payment_type):
-                latest_slips[emp] = row
-
-        grouped_data = {}
-        for row in results:
-            if row.employee not in latest_slips or row.salary_slip != latest_slips[row.employee].salary_slip:
-                continue
-
-            if row.salary_slip not in grouped_data:
-                grouped_data[row.salary_slip] = {
-                    "employee_name": " ".join(row.employee_name.split()[:2]),
-                    "department": row.department,
-                    "designation": row.designation,
-                    "month_label": row.end_date.strftime("%B"),  # <-- Show month
-                    "gross_pay": row.gross_pay,
-                    "net_pay": row.net_pay,
-                    "total_deduction": row.total_deduction,
-                    "basic": 0, "hardship": 0, "overtime": 0, "commission": 0,
-                    "incentive": 0, "income_tax": 0, "employee_pension": 0,
-                    "absence": 0, "other_deduction": 0
-                }
-
+        # If this slip is the one selected (highest priority)
+        if monthly_slips[month_key]["_priority"] == priority:
+            amt = row.amount or 0
             comp = row.abbr or row.salary_component
-            val = row.amount or 0
-            field = row.parentfield
-
-            if field == "earnings":
-                if comp in ('B', 'VB'):
-                    grouped_data[row.salary_slip]["basic"] += val
-                elif comp == 'HDA':
-                    grouped_data[row.salary_slip]["hardship"] += val
-                elif comp == 'OT':
-                    grouped_data[row.salary_slip]["overtime"] += val
-                elif comp == 'C':
-                    grouped_data[row.salary_slip]["commission"] += val
-                elif comp == 'PP':
-                    grouped_data[row.salary_slip]["incentive"] += val
-            elif field == "deductions":
-                if comp == 'IT':
-                    grouped_data[row.salary_slip]["income_tax"] += val
-                elif comp == 'PS':
-                    grouped_data[row.salary_slip]["employee_pension"] += val
-                elif comp == 'ABT':
-                    grouped_data[row.salary_slip]["absence"] += val
+            pf = row.parentfield
+            tgt = monthly_slips[month_key]
+            if pf == "earnings":
+                if comp in ("B", "VB"):
+                    tgt["basic"] += amt
+                elif comp == "HDA":
+                    tgt["hardship"] += amt
+                elif comp == "OT":
+                    tgt["overtime"] += amt
+                elif comp == "C":
+                    tgt["commission"] += amt
+                elif comp == "PP":
+                    tgt["incentive"] += amt
+            elif pf == "deductions":
+                if comp == "IT":
+                    tgt["income_tax"] += amt
+                elif comp == "PS":
+                    tgt["employee_pension"] += amt
+                elif comp == "ABT":
+                    tgt["absence"] += amt
                 else:
-                    grouped_data[row.salary_slip]["other_deduction"] += val
+                    tgt["other_deduction"] += amt
 
-        # Merge rows under department
-        for slip, g in grouped_data.items():
-            g["company_pension"] = g["basic"] * 0.11
-            g["taxable_gross"] = g["gross_pay"]
-            dept = g.get("department") or "No Department"
-            if dept not in department_rows:
-                department_rows[dept] = []
-            department_rows[dept].append(g)
+    # 3) Sum up across months per employee
+    final_emps = {}
+    for data in monthly_slips.values():
+        emp = data["employee"]
+        if emp not in final_emps:
+            final_emps[emp] = data.copy()
+        else:
+            tgt = final_emps[emp]
+            for field in [
+                "basic", "hardship", "overtime", "commission", "incentive",
+                "income_tax", "employee_pension", "absence", "other_deduction",
+                "gross_pay", "net_pay", "total_deduction"
+            ]:
+                tgt[field] += data[field]
 
-    # Now create final data table
+    # 4) Build department-based output table
+    department_rows = {}
+    for emp_data in final_emps.values():
+        emp_data["company_pension"] = emp_data["basic"] * 0.11
+        emp_data["taxable_gross"] = emp_data["gross_pay"]
+        dept = emp_data["department"]
+        department_rows.setdefault(dept, []).append(emp_data)
+
+    # 5) Format final data
     data = []
-    for dept, employees in sorted(department_rows.items()):
+    for dept in sorted(department_rows.keys()):
         data.append([f"▶ {dept}"] + [None] * (num_columns - 1))
-        for g in employees:
+        for g in department_rows[dept]:
             row = [
-                f"{g['employee_name']}",
+                g["employee_name"],
                 g["basic"], g["absence"], g["hardship"], g["overtime"],
                 g["commission"], g["incentive"], g["taxable_gross"], g["gross_pay"],
                 g["company_pension"], g["income_tax"], g["employee_pension"],
                 g["other_deduction"], g["total_deduction"], g["net_pay"]
             ]
-            row.append(g["designation"] if mode_of_payment == "Bank" else "")
+            # Add designation only for Bank payment mode
+            if mode_of_payment == "Bank":
+                row.append(g["designation"])
+            else:
+                row.append("")
             data.append(row)
 
     return data

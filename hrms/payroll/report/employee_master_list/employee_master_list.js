@@ -3,6 +3,13 @@
 
 frappe.query_reports["Employee Master List"] = {
 	"filters": [
+        {
+            "fieldname": "company",
+            "label": "Company",
+            "fieldtype": "Link",
+            "options": "Company",
+            "reqd": 1
+        },
 		{
             "fieldname": "employee",
             "label": "Employee",

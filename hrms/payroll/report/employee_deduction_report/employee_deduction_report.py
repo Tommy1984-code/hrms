@@ -39,6 +39,7 @@ def get_columns():
 def get_data(filters):
     from_date = getdate(filters.get("from_date"))
     to_date = getdate(filters.get("to_date"))
+    company = filters.get("company")
     mode_of_payment = filters.get("mode_of_payment")
     employee = filters.get("employee")
     payment_type = filters.get("payment_type")
@@ -68,6 +69,7 @@ def get_data(filters):
             JOIN `tabSalary Detail` sd ON sd.parent = ss.name
             WHERE ss.start_date <= %(month_end)s AND ss.end_date >= %(month_start)s
               AND ss.docstatus = 1
+              {company_clause}
               {payment_mode_clause}
               {employee_clause}
               {payment_type_clause}
@@ -80,6 +82,7 @@ def get_data(filters):
             ORDER BY ss.end_date DESC
         """.format(
             payment_mode_clause="AND ss.mode_of_payment = %(mode_of_payment)s" if mode_of_payment else "",
+            company_clause="AND ss.company = %(company)s" if company else "",
             employee_clause="AND ss.employee = %(employee)s" if employee else "",
             payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
             branch_clause="AND e.branch = %(branch)s" if branch else "",
@@ -93,6 +96,7 @@ def get_data(filters):
         params = {
             "month_start": month_start,
             "month_end": month_end,
+            "company":company
         }
 
         for field in [
