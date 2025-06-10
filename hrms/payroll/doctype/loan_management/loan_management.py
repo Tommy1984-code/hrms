@@ -55,7 +55,7 @@ class LoanManagement(Document):
 			return
 
 		# Fetch the selected loan component from Salary Component
-		loan_component_name = frappe.get_value("Salary Component", {"name": loan_component}, "name")
+		loan_component_name = frappe.get_value("Salary Component", {"name": loan_component}, ["name","salary_component_abbr"])
 		if not loan_component_name:
 			return  # Exit if no corresponding salary component exists
 
@@ -75,7 +75,8 @@ class LoanManagement(Document):
 			existing_entry.amount = adjusted_deduction  # Update existing deduction
 		else:
 			self.append("deductions", {
-				"salary_component": loan_component_name,
+				"salary_component": loan_component_name[0],
+				"abbr": loan_component_name[1],
 				"amount": adjusted_deduction
 			})
 

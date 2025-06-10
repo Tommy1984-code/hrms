@@ -45,7 +45,7 @@ class AbsentEmployee(Document):
 
     def add_absent_salary_component(self):
         """Fetch and add the 'Absent' salary component to the Deductions child table."""
-        absent_component = frappe.get_value("Salary Component", {"name": "Absent"}, ["name", "amount"])
+        absent_component = frappe.get_value("Salary Component", {"name": "Absent"}, ["name","salary_component_abbr","amount"])
 
         if absent_component:
             # Check if the component is already in the deductions table
@@ -53,20 +53,23 @@ class AbsentEmployee(Document):
                 # Create a new entry for the child table
                 deduction_entry = {
                     'salary_component': absent_component[0],  # Name of the component
+                    'abbr': absent_component[1],
                     'amount': self.total_deduction  # Default amount
                 }
                 # Append to the child table
+                
                 self.append('deductions', deduction_entry)
 
 @frappe.whitelist()
 def add_absent_salary_component(docname):
     """Fetch and add the 'Absent' salary component to the Salary Detail child table."""
     absent_employee = frappe.get_doc("Absent Employee", docname)
-    absent_component = frappe.get_value("Salary Component", {"name": "Absent"}, ["name", "default_amount"])
+    absent_component = frappe.get_value("Salary Component", {"name": "Absent"}, ["name","abbr", "default_amount"])
 
     if absent_component:
         absent_component_data = {
             'salary_component': absent_component[0],  # Name of the component
+            'abbr': absent_component[1],
             'amount': absent_employee.total_deduction  # Set to the total deduction
         }
 

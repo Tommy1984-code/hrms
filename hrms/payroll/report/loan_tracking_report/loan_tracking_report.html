@@ -61,7 +61,36 @@
    padding: 3px !important;
    margin: 0 !important;
  }
+ 
+
+ @media print {
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    html, body, .print-format {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    h1, h2, h3, h4, h5, h6, table, p {
+      margin: 0;
+      padding: 0;
+    }
+  }
+ 
 </style>
+
 
 <table class="main-table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #000;">
     <tr>
