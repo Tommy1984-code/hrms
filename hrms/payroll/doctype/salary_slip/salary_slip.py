@@ -688,54 +688,114 @@ class SalarySlip(TransactionBase):
 
     #my code adding my loan components
 	def add_loan_deductions(self, employee_id, component_type=None):
-		"""Fetch all loan salary components from Salary Detail using Loan Management IDs for an employee"""
+		"""Fetch loan components from Loan Management for first slip of month;
+		reuse from first slip for the rest of the payments."""
 
-		# Get all active loans for the given employee
-		active_loans = frappe.get_all(
-			"Loan Management",
-			filters={"employee": employee_id, "status": "Ongoing"},
-			fields=["name", "monthly_deduction","loan_type"]
+		payment_priority = [
+			"Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"
+		]
+
+		if not self.payment_type:
+			return
+
+		# Define current month date boundaries
+		month_start = frappe.utils.get_first_day(self.start_date)
+		month_end = frappe.utils.get_last_day(self.end_date)
+
+		# Fetch all slips for the employee in this month
+		slips = frappe.get_all(
+			"Salary Slip",
+			filters={
+				"employee": employee_id,
+				"start_date": ["between", [month_start, month_end]],
+				"docstatus": 1
+			},
+			fields=["name", "payment_type", "start_date"]
 		)
 
-		if not active_loans:
-			
-			return  # No active loans, nothing to process
+		# Include current slip in sorting
+		slips.append({"name": self.name, "payment_type": self.payment_type, "start_date": self.start_date})
 
-		loan_ids = [loan["name"] for loan in active_loans]
-		
-		# Loan Type Mapping (Replace with actual Salary Component names)
-		loan_component_map = {
-			"Healthy Loan": "Healthy Loan",
-			"Coast Sharing Loan": "Coast Sharing Loan"
-		}
-
-		# Fetch loan salary components from Salary Detail where loan_management_id matches
-		loan_components = frappe.get_all(
-			"Salary Detail",
-			filters={"parent": ["in", loan_ids]},  # Loan Management is the parent
-			fields=["salary_component", "amount", "parentfield"]
+		# Sort by payment type priority
+		sorted_slips = sorted(
+			[s for s in slips if s["payment_type"] in payment_priority],
+			key=lambda x: payment_priority.index(x["payment_type"])
 		)
 
-		# Process each active loan
-		for loan in active_loans:
-			mapped_component = loan_component_map.get(frappe.get_value("Loan Type", loan["loan_type"], "loan_type"))
-			if not mapped_component:
-				continue  # Skip if loan type is not mapped
+		# Determine if current slip is the first one
+		first_slip = sorted_slips[0]
+		is_first_payment = self.name == first_slip["name"]
 
-			# Loop through loan components and add them dynamically based on component_type
-			for loan_component in loan_components:
-				if loan_component["salary_component"] == mapped_component and (
-                component_type is None or loan_component["parentfield"] == component_type
-            ):
-					# Avoid duplicate components
-					if any(d.salary_component == mapped_component for d in self.get(component_type)):
-						continue
+		if is_first_payment:
+			# ✅ Original logic: fetch from Loan Management
+			active_loans = frappe.get_all(
+				"Loan Management",
+				filters={"employee": employee_id, "status": "Ongoing"},
+				fields=["name", "monthly_deduction", "loan_type"]
+			)
 
-					# Add component to salary slip
-					self.add_structure_component(
-						frappe._dict({"salary_component": mapped_component, "amount": loan_component["amount"]}),
-						component_type
-					)
+			if not active_loans:
+				return
+
+			loan_ids = [loan["name"] for loan in active_loans]
+
+			# Loan type to salary component mapping
+			loan_component_map = {
+				"Healthy Loan": "Healthy Loan",
+				"Coast Sharing Loan": "Coast Sharing Loan"
+			}
+
+			# Fetch loan components from Loan Management child table
+			loan_components = frappe.get_all(
+				"Salary Detail",
+				filters={"parent": ["in", loan_ids]},
+				fields=["salary_component", "amount", "parentfield"]
+			)
+
+			for loan in active_loans:
+				mapped_component = loan_component_map.get(
+					frappe.get_value("Loan Type", loan["loan_type"], "loan_type")
+				)
+				if not mapped_component:
+					continue
+
+				for loan_component in loan_components:
+					if loan_component["salary_component"] == mapped_component and (
+						component_type is None or loan_component["parentfield"] == component_type
+					):
+						if any(d.salary_component == mapped_component for d in self.get(component_type)):
+							continue
+
+						self.add_structure_component(
+							frappe._dict({
+								"salary_component": mapped_component,
+								"amount": loan_component["amount"]
+							}),
+							component_type
+						)
+
+		else:
+			# ✅ For subsequent slips: copy loan components from first slip of the month
+			salary_details = frappe.get_all(
+				"Salary Detail",
+				filters={
+					"parent": first_slip["name"],
+					"parentfield": component_type
+				},
+				fields=["salary_component", "amount"]
+			)
+
+			for row in salary_details:
+				if any(d.salary_component == row.salary_component for d in self.get(component_type)):
+					continue
+
+				self.add_structure_component(
+					frappe._dict({
+						"salary_component": row.salary_component,
+						"amount": row.amount
+					}),
+					component_type
+				)
 
 	def track_loan_payment(self):
 		"""Tracks loan deductions from Salary Slip and updates Loan Payment History in Loan Management."""
