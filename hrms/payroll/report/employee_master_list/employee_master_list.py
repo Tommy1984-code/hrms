@@ -201,7 +201,16 @@ def get_data(filters):
     for dept in sorted(grouped_data.keys()):
         final_data.append({
             "employee_name": f"{dept}",
-            "is_group": 1  # Optional: to mark group rows
+            "basic_pay":None,"overtime":None,"absence":None,"allowance":None,"net_benefit_gross_up":None,"attendance_incentive":None,
+            "commission_incentive":None,"transport_allowance":None,"representative_allowance":None,"medical":None,"insurance":None,
+            "bonus":None,"puagume_salary":None,"cash_indemnity_allowance":None,"housing_allowance":None,"acting_allowance":None,
+            "responsibility_allowance":None,"kill_allowance":None,"income_tax":None,"employee_pension":None,"salary_advance":None,
+            "absence":None,"loan":None,"penalty":None,"union":None,"cost_sharing":None,"court":None,"bank":None,"credit_purchase":None,
+            "saving":None,"penalty_2":None,"medical_2":None,"cash_indemnity_2":None,"medical_loan_1":None,"credit_association":None,
+            "refund":None,"social_health_insurance":None,"gym":None,"milk_sales":None,"red_cross":None,"credit_association_loan":None,
+            "gross_pay":None,"net_pay":None,"total_deduction":None,"company_pension":None,"skill_allowance":None,"total_benefit":None,
+            "taxable_gross":None
+
         })
         final_data.extend(grouped_data[dept])
 
@@ -216,17 +225,17 @@ def aggregate_salary_components(rows):
         'CIN': "commission_incentive", 'TA': "transport_allowance", 'RA': "representative_allowance",
         'MD': "medical", 'INS': "insurance", 'Bns': "bonus", 'PUG': "puagume_salary",
         'CIA': "cash_indemnity_allowance", 'HA': "housing_allowance", 'AA': "acting_allowance",
-        'RS': "responsibility_allowance", 'SA': "skill_allowance"
+        'RS': "responsibility_allowance", 'SA': "skill_allowance","TB":"total_benefit"
     }
 
     deductions_map = {
         'IT': "income_tax", 'PS': "employee_pension", 'APNI': "salary_advance","ABT":"absence",
-        'HL': "loan", 'csl': "loan", 'PNLTY': "penalty", 'UNI': "union", 'CS': "cost_sharing",
+        'HL': "loan",'PNLTY': "penalty", 'UNI': "union", 'csl': "cost_sharing",
         'CRT': "court", 'BNK': "bank", 'CP': "credit_purchase", 'SVG': "saving",
         'PNLTY2': "penalty_2", 'MD2': "medical_2", 'CIA2': "cash_indemnity_2",
         'MDL1': "medical_loan_1", 'CA': "credit_association", 'RFND': "refund",
         'SHI': "social_health_insurance", 'GM': "gym", 'MS': "milk_sales", 'RC': "red_cross",
-        'CAL': "credit_association_loan"
+        'CAL': "credit_association_loan","TG":"taxable_gross"
     }
 
     gross_pays = set()
