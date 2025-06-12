@@ -22,6 +22,7 @@ frappe.query_reports["Employee Deduction Type Report"] = {
                     }
                 };
             }
+            
         },
         {
             fieldname: "deduction_component",
@@ -35,6 +36,7 @@ frappe.query_reports["Employee Deduction Type Report"] = {
                     }
                 };
             }
+            
         },
         {
             "fieldname": "employee",

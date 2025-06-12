@@ -16,14 +16,14 @@ frappe.query_reports["Loan Tracking Report"] = {
             "label": "Employee",
             "fieldtype": "Link",
             "options": "Employee",
-            "reqd": 0
+            "reqd": 1
         },
 		{
 			"fieldname": "loan_type",
 			"label": "Loan Type",
 			"fieldtype": "Link",
 			"options": "Loan Type",
-			"reqd": 0
+			"reqd": 1
 		},
    
 	]

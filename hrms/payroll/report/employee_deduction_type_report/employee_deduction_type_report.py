@@ -36,6 +36,7 @@ def get_data(filters):
     for month in months:
         month_start = month.replace(day=1)
         month_end = add_months(month_start, 1) - timedelta(days=1)
+        month_label = month.strftime("%B %Y") 
 
         query = """
             SELECT e.name AS employee_id, e.employee_name, e.department, e.branch, e.grade, e.designation AS job_title,
@@ -117,7 +118,7 @@ def get_data(filters):
         dept_group[dept].append({
             "employee_id": emp_data["employee_id"],
             "employee_name": emp_data["employee_name"],
-            "month": "",  # optional
+            "month": month_label,
             "amount": emp_data["amount"]
         })
 

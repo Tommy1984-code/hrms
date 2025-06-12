@@ -15,7 +15,7 @@ frappe.query_reports["Employee payroll Register history"] = {
             "label": "Employee",
             "fieldtype": "Link",
             "options": "Employee",
-            "reqd": 0
+            "reqd": 1
         },
         {
             "fieldname": "payment_type",
