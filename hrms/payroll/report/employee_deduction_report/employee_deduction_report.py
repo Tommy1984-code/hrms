@@ -158,7 +158,7 @@ def get_data(filters):
             data["loan"] += amount
         elif abbr == "GM":
             data["gym"] += amount
-        elif abbr == "C":
+        elif abbr == "CD":
             data["commission"] += amount
         elif abbr == "csl":
             data["cost_sharing"] += amount

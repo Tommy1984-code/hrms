@@ -56,6 +56,7 @@
         .payroll-table th {
           background-color: #f0f0f0;
           font-weight: bold;
+          color: black !important;
         }
       
         .payroll-table td:first-child,
@@ -67,6 +68,7 @@
         .no-padding-body  th, td {
         padding: 3px !important;
         margin: 0 !important;
+        color: black !important;
       }
       
         @media print {
@@ -75,6 +77,9 @@
             margin: 20mm;
           }
         }
+        .report-table th {
+    color: black !important;
+  }
       </style>
 
 {% let current_group = null; %}
@@ -82,7 +87,7 @@
 {% let rowNo = 0; %}
 {% let grand_gross = 0, grand_tax = 0, grand_net = 0; %}
 
-<table class="table-auto w-full border-collapse mb-4">
+<table class="report-table table-auto w-full border-collapse mb-4">
   <thead class="bg-gray-100 border-b border-gray-300">
     <tr>
       <th class="text-left font-bold px-2 py-1 border-b border-gray-300 w-[40px]">No.</th>

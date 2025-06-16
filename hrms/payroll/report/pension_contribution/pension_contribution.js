@@ -8,7 +8,8 @@ frappe.query_reports["Pension Contribution"] = {
             "label": "Company",
             "fieldtype": "Link",
             "options": "Company",
-            "reqd": 1
+            "reqd": 1,
+            "default": "ASKU PLC"
         },
         {
             "fieldname": "employee",

@@ -8,7 +8,8 @@ frappe.query_reports["Severance Report"] = {
             "label": "Company",
             "fieldtype": "Link",
             "options": "Company",
-            "reqd": 1
+            "reqd": 1,
+            "default": "ASKU PLC"
         },
         {
             "fieldname": "employee",

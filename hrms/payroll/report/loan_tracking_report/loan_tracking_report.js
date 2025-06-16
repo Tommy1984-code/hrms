@@ -9,7 +9,8 @@ frappe.query_reports["Loan Tracking Report"] = {
             "label": "Company",
             "fieldtype": "Link",
             "options": "Company",
-            "reqd": 1
+            "reqd": 1,
+            "default": "ASKU PLC"
         },
 		{
             "fieldname": "employee",

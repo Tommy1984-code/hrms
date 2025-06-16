@@ -200,7 +200,7 @@ def get_data(filters):
     final_data = []
     for dept in sorted(grouped_data.keys()):
         final_data.append({
-            "employee_name": f"{dept}",
+            "employee_name": f"▶{dept}",
             "basic_pay":None,"overtime":None,"absence":None,"allowance":None,"net_benefit_gross_up":None,"attendance_incentive":None,
             "commission_incentive":None,"transport_allowance":None,"representative_allowance":None,"medical":None,"insurance":None,
             "bonus":None,"puagume_salary":None,"cash_indemnity_allowance":None,"housing_allowance":None,"acting_allowance":None,

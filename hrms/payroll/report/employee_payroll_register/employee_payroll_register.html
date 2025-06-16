@@ -76,6 +76,7 @@
     .no-padding-body  th, td {
     padding: 3px !important;
     margin: 0 !important;
+    color:black !important
   }
   
     @media print {
@@ -93,28 +94,28 @@
           <th rowspan="2" class="w-[40px] text-[10px] font-bold text-center border">No.</th>
           <th rowspan="2" class="w-[100px] text-[12px] font-bold text-left  border">Employee Name</th>
           {% if isBankSelected %}
-          <th rowspan="2" class="w-[70px] text-[10px] font-bold text-left border">Title</th> 
+          <th rowspan="2" class="w-[70px] text-[14px] text-center font-bold text-left border">Title</th> 
           {% endif %}
-          <th rowspan="2" class="w-[70px] text-[10px] font-bold text-left border">Basic Pay</th>
-          <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Absence</th>
-          <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Hardship Allowance</th>
-          <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Overtime</th>
+          <th rowspan="2" class="w-[70px] text-[12px] font-bold text-left border">Basic Pay</th>
+          <th rowspan="2" class="w-[60px] text-[12px] font-medium text-left border">Absence</th>
+          <th rowspan="2" class="w-[60px] text-[12px] font-medium text-left border">Hardship Allowance</th>
+          <th rowspan="2" class="w-[60px] text-[12px] font-medium text-left border">Overtime</th>
           <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Commission</th>
-          <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Incentive</th>
-          <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Taxable Gross</th>
-          <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Gross Pay</th>
-          <th rowspan="2" class="w-[60px] text-[10px] font-medium text-left border">Company Pension</th>
-          <th colspan="4" class="w-[225px] text-[10px] font-medium text-center border">Deductions</th>
-          <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Net Pay</th>
+          <th rowspan="2" class="w-[70px] text-[12px] font-medium text-left border">Incentive</th>
+          <th rowspan="2" class="w-[70px] text-[12px] font-medium text-left border">Taxable Gross</th>
+          <th rowspan="2" class="w-[70px] text-[12px] font-medium text-left border">Gross Pay</th>
+          <th rowspan="2" class="w-[60px] text-[12px] font-medium text-left border">Company Pension</th>
+          <th colspan="4" class="w-[225px] text-[12px] font-medium text-center border">Deductions</th>
+          <th rowspan="2" class="w-[70px] text-[12px] font-medium text-left border">Net Pay</th>
           {% if not isBankSelected %}
-          <th rowspan="2" class="w-[70px] text-[10px] font-medium text-left border">Signature</th>
+          <th rowspan="2" class="w-[70px] text-[12px] font-medium text-left border">Signature</th>
           {% endif %}
         </tr>
         <tr>
-          <th class="w-[75px] text-[10px] font-medium text-left border">Income Tax</th>
-          <th class="w-[70px] text-[10px] font-medium text-left border">Employee Pension</th>
-          <th class="w-[75px] text-[9px] font-medium text-left border">Other Deduction</th>
-          <th class="w-[75px] text-[9px] font-medium text-left border">Total Deduction</th>
+          <th class="w-[75px] text-[12px] font-medium text-left border">Income Tax</th>
+          <th class="w-[70px] text-[11px] font-medium text-left border">Employee Pension</th>
+          <th class="w-[75px] text-[11px] font-medium text-left border">Other Deduction</th>
+          <th class="w-[75px] text-[11px] font-medium text-left border">Total Deduction</th>
         </tr>
       </thead>
       <tbody>

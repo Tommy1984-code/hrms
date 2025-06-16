@@ -53,6 +53,7 @@
     }
     .main-table th {
         background-color: #f2f2f2;
+        color:black !important
     }
     .main-table td {
         background-color: #fff;
@@ -67,10 +68,10 @@
   <table class="main-table" style="border-collapse: collapse; width: 100%;">
     <thead>
       <tr>
-        <th style="text-align: left; padding: 4px; border-bottom: 2px solid #353535;">No.</th>
+        <th style="text-align: center; padding: 4px; border-bottom: 2px solid #353535;">No.</th>
         {% for (let col of columns) { %}
           {% if (col.fieldname !== "department") { %}
-            <th style="text-align: left; padding: 4px; border-bottom: 2px solid #000;">{{ col.label }}</th>
+            <th style="text-align: center; padding: 4px; border-bottom: 2px solid #000;">{{ col.label }}</th>
           {% } %}
         {% } %}
       </tr>
@@ -107,18 +108,18 @@
 
       <!-- Total Row -->
       <tr style="font-weight: bold;">
-        <td style="padding: 4px; border-top: 2px solid #000;"></td> <!-- No. column -->
+        <td style="padding: 4px;border: none;"></td> <!-- No. column -->
         {% let col_counter = 1; %}
         {% for (let col of columns) { %}
           {% if (col.fieldname !== "department") { %}
             {% if (col_counter === 2) { %}
-              <td style="padding: 4px; border-top: 2px solid #000;">Total</td>
+              <td style="padding: 4px;border: none; ">Total</td>
             {% } else if (typeof totals[col.fieldname] === "number") { %}
-              <td style="padding: 4px; border-top: 2px solid #000; text-align: center;">
+              <td style="padding: 4px; text-align: center;border: none;">
                 {{ totals[col.fieldname].toFixed(2) }}
               </td>
             {% } else { %}
-              <td style="padding: 4px; border-top: 2px solid #000;"></td>
+              <td style="padding: 4px;border: none;"></td>
             {% } %}
             {% col_counter++; %}
           {% } %}
