@@ -26,6 +26,7 @@
   "do_not_include_in_total",
   "remove_if_zero_valued",
   "disabled",
+  "loan_component",
   "section_break_5",
   "accounts",
   "configure_component_tab",
@@ -262,12 +263,19 @@
    "fieldname": "remove_if_zero_valued",
    "fieldtype": "Check",
    "label": "Remove if Zero Valued"
+  },
+  {
+   "default": "0",
+   "fieldname": "loan_component",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Loan Component"
   }
  ],
  "icon": "fa fa-flag",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-21 15:03:07.777414",
+ "modified": "2025-06-19 08:41:03.168663",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Salary Component",

@@ -39,19 +39,13 @@ class LoanManagement(Document):
 	def add_loan_salary_component(self):
 		"""Update the 'Loan' salary component inside the Loan Management doctype's child table (Deductions)."""
 
-		loan_type_id = self.loan_type
-		loan_type = frappe.get_value("Loan Type", loan_type_id, "loan_type") 
+		# Assume loan_type is the Salary Component name directly
+		loan_component = self.loan_type  # This is a Link field to Salary Component
 
-
-		# Define the salary component for each loan type
-		loan_components = {
-			"Healthy Loan": "Healthy Loan", 
-			"Coast Sharing Loan": "Coast Sharing Loan" 
-		}
-
-		loan_component = loan_components.get(loan_type)
-		if not loan_component:
-			frappe.msgprint("Invalid loan type selected.")
+		# Make sure it's a valid loan component
+		is_loan_component = frappe.get_value("Salary Component", loan_component, "loan_component")
+		if not is_loan_component:
+			frappe.msgprint(f"Selected Salary Component '{loan_component}' is not marked as a loan component.")
 			return
 
 		# Fetch the selected loan component from Salary Component

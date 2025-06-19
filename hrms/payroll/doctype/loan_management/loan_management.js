@@ -4,6 +4,15 @@ frappe.ui.form.on("Loan Management", {
 
     onload:function(frm){
 
+         // Filter the main form's Loan Type field to show only components where loan_component is 1
+         frm.set_query("loan_type", function() {
+            return {
+                filters: {
+                    loan_component: 1
+                }
+            };
+        });
+
         // Disable  adding rows in the deductions child table
 
         frm.fields_dict['deductions'].grid.add_new_row = false;// prevent adding new rows
