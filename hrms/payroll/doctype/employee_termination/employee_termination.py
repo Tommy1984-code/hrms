@@ -122,6 +122,18 @@ class EmployeeTermination(Document):
 		net_severance = self.total_severance - self.severance_tax
 		self.net_severance = round(net_severance, 2)
 
+		# Clear the earnings and deductions table before inserting new rows
+		self.clear_salary_component_tables()
+
+		# Insert Severance Gross into earnings_table
+		if self.total_severance:
+			self.insert_salary_component("earnings", "sevr", self.total_severance)
+
+		# Insert Severance Tax into deductions_table
+		if self.severance_tax:
+			self.insert_salary_component("deductions", "sevrinc", self.severance_tax)
+
+
 
 	def calculate_tax(self,income):
 		"""Calculate the tax based on the Ethiopian tax system, using a simplified approach."""
@@ -167,6 +179,15 @@ class EmployeeTermination(Document):
 		self.annual_leave_tax = round(leave_tax, 2)
 		self.net_annual_leave_payment = round(net_leave_compensation, 2)
 
+		# Insert Annual Leave Gross into earnings_table
+		if self.gross_annual_leave_payment:
+			self.insert_salary_component("earnings", "annlev", self.gross_annual_leave_payment)
+
+		# Insert Annual Leave Tax into deductions_table
+		if self.annual_leave_tax:
+			self.insert_salary_component("deductions", "annlevtax", self.annual_leave_tax)
+
+
 	def update_final_settlement(self):
 		"""Update the total severance amount in the final settlement section."""
 
@@ -180,6 +201,26 @@ class EmployeeTermination(Document):
 			frappe.msgprint(f"Total severance amount exceeds the allowed limit. It has been capped to: {max_allowed_severance}")
 
 		self.total_severance = total
+
+	
+	
+	def clear_salary_component_tables(self):
+		"""Clear previous entries in earnings and deductions tables."""
+		self.set("earnings", [])
+		self.set("deductions", [])
+
+	def insert_salary_component(self, table_name, component_abbr, amount):
+		"""Insert a salary component into the specified table based on abbreviation."""
+		salary_component = frappe.get_value("Salary Component", {"salary_component_abbr": component_abbr}, "name")
+		if not salary_component:
+			frappe.throw(f"Salary Component with abbreviation '{component_abbr}' not found.")
+
+		self.append(table_name, {
+			"salary_component": salary_component,
+			"abbr":component_abbr,
+			"amount": round(amount, 2)
+		})
+
 		
 
 

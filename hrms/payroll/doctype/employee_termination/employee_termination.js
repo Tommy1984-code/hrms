@@ -6,6 +6,12 @@ frappe.ui.form.on("Employee Termination", {
         // Refresh severance table after save
         frm.refresh_field("severance_table");
         frappe.msgprint("Severance Table has been updated!");
+        // Clear unsaved flag after changes applied by server
+        setTimeout(() => {
+            frm.dirty = false;
+            frm.save_disabled = false;
+            frm.page.set_indicator("");
+        }, 500);  // delay to allow any async updates to finish
     },
     termination_date: function(frm) {
         // Call the server-side method when Termination Date is set
@@ -94,8 +100,8 @@ function update_severance_total(frm) {
             total += row.amount || 0;
         }
     });
-
+    if (frm.doc.total_severance !== total) {
     frm.set_value("total_severance", total);
     frm.refresh_field('total_severance');
-   
+    }
 }

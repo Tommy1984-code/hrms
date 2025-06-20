@@ -31,14 +31,18 @@
   "final_settlement_section",
   "base_pension",
   "company_pension",
-  "column_break_epcp",
   "total_severance",
+  "column_break_epcp",
   "severance_tax",
   "net_severance",
   "section_break_pwqb",
   "gross_annual_leave_payment",
   "annual_leave_tax",
-  "net_annual_leave_payment"
+  "column_break_xgad",
+  "net_annual_leave_payment",
+  "section_break_xnhz",
+  "earnings",
+  "deductions"
  ],
  "fields": [
   {
@@ -219,11 +223,31 @@
    "fieldname": "gross_annual_leave_payment",
    "fieldtype": "Currency",
    "label": "Gross Annual Leave Payment"
+  },
+  {
+   "fieldname": "column_break_xgad",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_xnhz",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "earnings",
+   "fieldtype": "Table",
+   "label": "Earnings",
+   "options": "Salary Detail"
+  },
+  {
+   "fieldname": "deductions",
+   "fieldtype": "Table",
+   "label": "Deductions",
+   "options": "Salary Detail"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-24 08:34:19.061681",
+ "modified": "2025-06-20 09:27:15.049708",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Employee Termination",
