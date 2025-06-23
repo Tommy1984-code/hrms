@@ -60,7 +60,8 @@ def get_data(filters, columns):
         month_end = add_months(month_start, 1) - timedelta(days=1)
 
         query = """
-            SELECT e.name AS employee, e.employee_name, e.department, e.designation, e.branch, e.grade,
+            SELECT e.name AS employee, e.employee_name, e.department, e.designation, e.branch, 
+            e.tax_free_transportation_amount AS tax_free_transport,
                    ss.bank_name AS bank, ss.mode_of_payment, ss.payment_type,
                    ss.name AS salary_slip, ss.gross_pay, ss.net_pay, ss.total_deduction,
                    ss.end_date,
@@ -135,6 +136,18 @@ def get_data(filters, columns):
             comp = row.abbr or row.salary_component
             pf = row.parentfield
             tgt = monthly_slips[month_key]
+
+            # Convert the tax-free transport amount only once for each slip
+            raw = row.tax_free_transport or ""
+            if raw == "2200":
+                tax_free = 2200.0
+            elif raw == "600":
+                tax_free = 600.0
+            else:
+                tax_free = 0.0  # For "All Tax" or blank
+
+            tgt["tax_free_transport"] = tax_free
+
             if pf == "earnings":
                 if comp in ("B", "VB"):
                     tgt["basic"] += amt
@@ -156,6 +169,7 @@ def get_data(filters, columns):
                 else:
                     tgt["other_deduction"] += amt
 
+
     # 3) Sum up across months per employee
     final_emps = {}
     for data in monthly_slips.values():
@@ -175,7 +189,7 @@ def get_data(filters, columns):
     department_rows = {}
     for emp_data in final_emps.values():
         emp_data["company_pension"] = emp_data["basic"] * 0.11
-        emp_data["taxable_gross"] = emp_data["gross_pay"]
+        emp_data["taxable_gross"] = emp_data["gross_pay"] - (emp_data.get("tax_free_transport") or 0)
         dept = emp_data["department"]
         department_rows.setdefault(dept, []).append(emp_data)
 

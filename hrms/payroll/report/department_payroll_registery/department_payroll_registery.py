@@ -49,8 +49,6 @@ def get_data(filters=None):
 	grouped_data = {}
 	processed_slips = set()
 	
-
-
 	for month in months:
 		month_start = month.replace(day=1)
 		month_end = add_months(month_start, 1) - timedelta(days=1)
@@ -60,6 +58,7 @@ def get_data(filters=None):
 				e.name AS employee,
 				e.employee_name,
 				e.department,
+				e.tax_free_transportation_amount AS tax_free_transport,
 				ss.name AS salary_slip,
 				ss.gross_pay,
 				ss.net_pay,
@@ -126,12 +125,23 @@ def get_data(filters=None):
 					"gross": 0, "net_pay": 0, "total_deduction": 0,
 					"basic": 0, "hardship": 0, "overtime": 0, "commission": 0,
 					"incentive": 0, "income_tax": 0, "employee_pension": 0,
-					"absence": 0, "other_deduction": 0
+					"absence": 0, "other_deduction": 0,
+					"tax_free_transport": 0
 				}
 
 			comp = row.abbr or row.salary_component
 			val = row.amount or 0
 			field = row.parentfield
+			
+			raw = row.tax_free_transport or ""
+			if raw == "2200":
+				tax_free = 2200.0
+			elif raw == "600":
+				tax_free = 600.0
+			else:
+				tax_free = 0.0  # "All Tax" or empty
+
+			grouped_data[row.employee]["tax_free_transport"] = tax_free
 
 			if field == "earnings":
 				if comp in ('B', 'VB'):
@@ -172,7 +182,7 @@ def get_data(filters=None):
 			dept_group[dept] = []
 
 		g["company_pension"] = g["basic"] * 0.11
-		g["taxable_gross"] = g["gross"]
+		g["taxable_gross"] = g["gross"] - g.get("tax_free_transport", 0)
 
 		dept_group[dept].append(g)
 
