@@ -155,35 +155,49 @@ class EmployeeTermination(Document):
 		return tax
 
 	def calculate_annual_leave(self):
-		"""Calculate tax on unused annual leave compensation."""
+		"""Calculate annual leave compensation and tax, prorated by worked days."""
 		if not self.basic_salary or not self.worked_days or not self.annual_leave:
 			return
-		
-		# Calculate per-day salary
-		daily_salary = self.basic_salary / 30  # 26 working days per month
 
-		# Prorate annual leave based on worked days
-		eligible_leave_days = (self.annual_leave / self.worked_days) * self.payment_days
+		# Step 1: Set default 365-day year
+		self.payment_days = 365
 
-		# Calculate annual leave pay
-		leave_compensation = eligible_leave_days * daily_salary
+		# Step 2: Calculate per-day salary from monthly base
+		daily_salary = self.basic_salary / 30
 
-		# Calculate tax on annual leave pay
-		leave_tax = self.calculate_tax(leave_compensation)
+		# Step 3: Prorate eligible leave days if worked less than 365
+		eligible_leave_days = (self.annual_leave / 365) * self.worked_days
 
-		# Calculate net leave compensation (Gross Leave Compensation - Tax)
-		net_leave_compensation = leave_compensation - leave_tax
+		# Step 4: Calculate Gross Leave Payment
+		gross_annual_leave_payment = eligible_leave_days * daily_salary
 
-		# Store in doctype fields
-		self.gross_annual_leave_payment = round(leave_compensation,2)
-		self.annual_leave_tax = round(leave_tax, 2)
-		self.net_annual_leave_payment = round(net_leave_compensation, 2)
+		# Step 5: Monthly leave compensation (used for tax adjustment)
+		monthly_leave_compensation = gross_annual_leave_payment / 12
 
-		# Insert Annual Leave Gross into earnings_table
+		# Step 6: Base tax on normal salary
+		base_salary_tax = self.calculate_tax(self.basic_salary)
+
+		# Step 7: Tax on (base + monthly leave)
+		combined_tax = self.calculate_tax(self.basic_salary + monthly_leave_compensation)
+
+		# Step 8: Difference in tax per month
+		monthly_tax_difference = combined_tax - base_salary_tax
+
+		# Step 9: Annual leave tax = monthly diff * 12
+		annual_leave_tax = monthly_tax_difference * 12
+
+		# Step 10: Net leave = gross - tax
+		net_annual_leave_payment = gross_annual_leave_payment - annual_leave_tax
+
+		# Step 11: Save values to the document
+		self.gross_annual_leave_payment = round(gross_annual_leave_payment, 2)
+		self.annual_leave_tax = round(annual_leave_tax, 2)
+		self.net_annual_leave_payment = round(net_annual_leave_payment, 2)
+
+		# Step 12: Insert into earnings and deductions tables
 		if self.gross_annual_leave_payment:
 			self.insert_salary_component("earnings", "annlev", self.gross_annual_leave_payment)
 
-		# Insert Annual Leave Tax into deductions_table
 		if self.annual_leave_tax:
 			self.insert_salary_component("deductions", "annlevtax", self.annual_leave_tax)
 

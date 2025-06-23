@@ -839,6 +839,44 @@ class SalarySlip(TransactionBase):
 				)
 
 		frappe.db.commit()
+	
+	#my code for employee termination
+	def get_termination_salary_component(self, employee_id, component_type=None):
+		"""Fetch salary components from Salary Detail table of Employee Termination for terminated employees."""
+
+		termination_id = frappe.get_value("Employee Termination", {"employee": employee_id}, "name")
+
+		if not termination_id:
+			return  # No termination found
+
+		termination_date = frappe.get_value("Employee Termination", termination_id, "termination_date")
+		if not termination_date:
+			return
+
+		# Compare only by Year-Month
+		termination_month = getdate(termination_date).strftime('%Y-%m')
+		slip_month = getdate(self.actual_start_date).strftime('%Y-%m')
+
+		if termination_month != slip_month:
+			return  # Skip if not in same month
+
+		# Fetch salary details from the Employee Termination's Salary Detail child table
+		salary_details = frappe.get_all(
+			"Salary Detail",
+			filters={"parent": termination_id},
+			fields=["salary_component", "amount", "parentfield"]
+		)
+
+		for detail in salary_details:
+			if component_type and detail.parentfield != component_type:
+				continue
+
+			struct_row = frappe._dict({
+				"salary_component": detail.salary_component,
+				"amount": detail.amount
+			})
+
+			self.add_structure_component(struct_row, component_type)
 
 	def pull_sal_struct(self):
 		from hrms.payroll.doctype.salary_structure.salary_structure import make_salary_slip
@@ -1729,6 +1767,7 @@ class SalarySlip(TransactionBase):
 		self.data, self.default_data = self.get_data_for_eval()
 		self.get_salary_components(self.employee,component_type)#my code adding the fetched on to the salary structure
 		self.get_absent_salary_component(self.employee,component_type) # my code adding the fetched absent salary component to salary structure
+		self.get_termination_salary_component(self.employee,component_type)
 		self.add_loan_deductions(self.employee,component_type) # my code adding the loan component
 		for struct_row in self._salary_structure_doc.get(component_type):
 			self.add_structure_component(struct_row, component_type)
