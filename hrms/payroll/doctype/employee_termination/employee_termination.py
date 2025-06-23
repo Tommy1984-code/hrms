@@ -224,16 +224,29 @@ class EmployeeTermination(Document):
 		self.set("deductions", [])
 
 	def insert_salary_component(self, table_name, component_abbr, amount):
-		"""Insert a salary component into the specified table based on abbreviation."""
+		"""Insert or update a salary component in the specified earnings or deductions table."""
+
+		# Get salary component name from abbreviation
 		salary_component = frappe.get_value("Salary Component", {"salary_component_abbr": component_abbr}, "name")
 		if not salary_component:
 			frappe.throw(f"Salary Component with abbreviation '{component_abbr}' not found.")
 
-		self.append(table_name, {
-			"salary_component": salary_component,
-			"abbr":component_abbr,
-			"amount": round(amount, 2)
-		})
+		# Check if component already exists in the table
+		found = False
+		for row in self.get(table_name):
+			if row.abbr == component_abbr:
+				row.amount = round(amount, 2)
+				found = True
+				break
+
+		# If not found, insert new row
+		if not found:
+			self.append(table_name, {
+				"salary_component": salary_component,
+				"abbr": component_abbr,
+				"amount": round(amount, 2)
+			})
+
 
 		
 

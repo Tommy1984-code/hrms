@@ -2,6 +2,22 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("Employee Termination", {
+    onload:function(frm){
+
+        // Disable  adding rows in the deductions child table
+        frm.fields_dict['earnings'].grid.add_new_row = false;
+        frm.fields_dict['deductions'].grid.add_new_row = false;// prevent adding new rows
+       
+        // frm.fields_dict['deductions'].grid.get_field('salary_component').get_query = 
+        // function() { 
+        //     return {
+        //         filters:{
+        //             'name':'Absent'
+        //         }
+        //     };
+            
+        // };
+    },
     on_update: function(frm) {
         // Refresh severance table after save
         frm.refresh_field("severance_table");
