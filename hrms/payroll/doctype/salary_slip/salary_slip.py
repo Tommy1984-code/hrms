@@ -877,6 +877,41 @@ class SalarySlip(TransactionBase):
 			})
 
 			self.add_structure_component(struct_row, component_type)
+	#my code for Duty pay
+	def get_duty_salary_component(self, employee_id, component_type=None):
+		"""Fetch Duty Pay salary components from Duty Pay for the given employee if it matches the slip month."""
+
+		duty_id = frappe.get_value("Duty Pay", {"employee": employee_id}, "name")
+		if not duty_id:
+			return  # No duty pay record
+
+		payroll_month = frappe.get_value("Duty Pay", duty_id, "payroll_month")
+		if not payroll_month:
+			return
+
+		duty_month = getdate(payroll_month).strftime('%Y-%m')
+		slip_month = getdate(self.start_date).strftime('%Y-%m')
+
+		if duty_month != slip_month:
+			return  # Different month, skip
+
+		# Fetch Duty Pay salary components
+		salary_details = frappe.get_all(
+			"Salary Detail",
+			filters={"parent": duty_id},
+			fields=["salary_component", "amount", "parentfield"]
+		)
+
+		for detail in salary_details:
+			if component_type and detail.parentfield != component_type:
+				continue
+
+			component_row = frappe._dict({
+				"salary_component": detail.salary_component,
+				"amount": detail.amount
+			})
+
+			self.add_structure_component(component_row, component_type)
 
 	def pull_sal_struct(self):
 		from hrms.payroll.doctype.salary_structure.salary_structure import make_salary_slip
@@ -891,7 +926,7 @@ class SalarySlip(TransactionBase):
 			self.add_earning_for_hourly_wages(self, self._salary_structure_doc.salary_component, wages_amount)
 
 		make_salary_slip(self._salary_structure_doc.name, self)
-
+	
 	def get_working_days_details(self, lwp=None, for_preview=0):
 		payroll_settings = frappe.get_cached_value(
 			"Payroll Settings",
@@ -1768,6 +1803,7 @@ class SalarySlip(TransactionBase):
 		self.get_salary_components(self.employee,component_type)#my code adding the fetched on to the salary structure
 		self.get_absent_salary_component(self.employee,component_type) # my code adding the fetched absent salary component to salary structure
 		self.get_termination_salary_component(self.employee,component_type)
+		self.get_duty_salary_component(self.employee,component_type)
 		self.add_loan_deductions(self.employee,component_type) # my code adding the loan component
 		for struct_row in self._salary_structure_doc.get(component_type):
 			self.add_structure_component(struct_row, component_type)
