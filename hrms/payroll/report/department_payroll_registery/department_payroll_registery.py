@@ -18,7 +18,7 @@ def get_columns():
         {"label": "Department", "fieldname": "department_name", "fieldtype": "Data", "width": 150},
         {"label": "Basic Pay", "fieldname": "basic", "fieldtype": "Currency", "width": 100},
         {"label": "Absence", "fieldname": "absence", "fieldtype": "Currency", "width": 100},
-        {"label": "Hardship Allowance", "fieldname": "hardship", "fieldtype": "Currency", "width": 120},
+        {"label": "Total Benefits", "fieldname": "total_benefits", "fieldtype": "Currency", "width": 120},
         {"label": "Overtime", "fieldname": "overtime", "fieldtype": "Currency", "width": 100},
         {"label": "Commission", "fieldname": "commission", "fieldtype": "Currency", "width": 100},
         {"label": "Incentive", "fieldname": "incentive", "fieldtype": "Currency", "width": 100},
@@ -123,7 +123,7 @@ def get_data(filters=None):
 					"employee_name": row.employee_name,
 					"department": row.department,
 					"gross": 0, "net_pay": 0, "total_deduction": 0,
-					"basic": 0, "hardship": 0, "overtime": 0, "commission": 0,
+					"basic": 0, "total_benefits": 0, "overtime": 0, "commission": 0,
 					"incentive": 0, "income_tax": 0, "employee_pension": 0,
 					"absence": 0, "other_deduction": 0,
 					"tax_free_transport": 0
@@ -146,14 +146,15 @@ def get_data(filters=None):
 			if field == "earnings":
 				if comp in ('B', 'VB'):
 					grouped_data[row.employee]["basic"] += val
-				elif comp == 'HDA':
-					grouped_data[row.employee]["hardship"] += val
 				elif comp == 'OT':
 					grouped_data[row.employee]["overtime"] += val
 				elif comp == 'C':
 					grouped_data[row.employee]["commission"] += val
 				elif comp == 'PP':
 					grouped_data[row.employee]["incentive"] += val
+				else:
+					grouped_data[row.employee]["total_benefits"] += val
+				
 
 			elif field == "deductions":
 				if comp == 'IT':
@@ -191,7 +192,7 @@ def get_data(filters=None):
 	for dept, records in dept_group.items():
 		summary = {
 			"department_name": dept,
-			"basic": 0, "absence": 0, "hardship": 0, "overtime": 0,
+			"basic": 0, "absence": 0, "total_benefits": 0, "overtime": 0,
 			"commission": 0, "incentive": 0, "taxable_gross": 0,
 			"gross": 0, "company_pension": 0, "income_tax": 0,
 			"employee_pension": 0, "other_deduction": 0,
