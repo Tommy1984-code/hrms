@@ -88,7 +88,7 @@
                 <th rowspan="2" class="w-[100px]  text-[14px] font-bold text-left border p-0">Department</th>
                 <th rowspan="2" class="w-[70px]  text-[14px] font-bold text-left border p-0">Basic Pay</th>
                 <th rowspan="2" class="w-[60px]  text-[14px] font-medium text-left border p-0">Absence</th>
-                <th rowspan="2" class="w-[60px]  text-[12px] font-medium text-left border p-0">Hardship Allowance</th>
+                <th rowspan="2" class="w-[60px]  text-[12px] font-medium text-left border p-0">Total Benefits</th>
                 <th rowspan="2" class="w-[60px]  text-[13px] font-medium text-left border p-0">Overtime</th>
                 <th rowspan="2" class="w-[60px]  text-[10px] font-medium text-left border p-0 ">Commission</th>
                 <th rowspan="2" class="w-[70px]  text-[13px] font-medium text-left border p-0"> Incentive</th>
@@ -109,7 +109,7 @@
             {% 
                 var total_basic_salary = 0;
                 var total_absence = 0;
-                var total_hardship_allowance = 0;
+                var total_total_benefits = 0;
                 var total_overtime = 0;
                 var total_commission = 0;
                 var total_incentive = 0;
@@ -123,9 +123,20 @@
                 var total_net_pay = 0;
         
                 for (var i = 0; i < data.length; i++) {
+                  if (data[i].department_name.startsWith("▶")) {
+                    var branch_name = data[i].department_name.replace("▶", "").trim();
+                    %}
+                          <tr>
+                            <td colspan="16" class="text-left text-[13px] bg-gray-100 border px-2 py-1">
+                              {{ branch_name }}
+                            </td>
+                          </tr>
+                    {% 
+                          continue;
+                    }
                   total_basic_salary += data[i].basic|| 0;
                   total_absence += data[i].absence || 0;
-                  total_hardship_allowance += data[i].hardship|| 0;
+                  total_total_benefits += data[i].total_benefits|| 0;
                   total_overtime += data[i].overtime  || 0;
                   total_commission += data[i].commission || 0;
                   total_incentive += data[i].incentive || 0;
@@ -143,7 +154,7 @@
             <td class="text-[11px] text-left  border p-0">{{data[i].department_name }}</td>
             <td class=" text-[11px] text-left border p-0">{{data[i].basic || 0.0 }}</td>
             <td class=" text-[10px] text-left border p-0">{{data[i].absence.toFixed(2) || 0.0 }}</td>
-            <td class=" text-[11px] text-right border p-0">{{ data[i].hardship.toFixed(2) || 0.0}}</td>
+            <td class=" text-[11px] text-right border p-0">{{ data[i].total_benefits.toFixed(2) || 0.0}}</td>
             <td class=" text-[11px] text-right border p-0">{{ data[i].overtime.toFixed(2) || 0.0 }}</td>
             <td class=" text-[11px] text-right border p-0">{{ data[i].commission.toFixed(2) || 0.0  }}</td>
             <td class=" text-[11px] text-right border p-0">{{ data[i].incentive.toFixed(2) || 0.0 }}</td>
@@ -169,7 +180,7 @@
                 <th colspan="2" style="text-align: right; padding: 10px 0;">Total:</th>
                 <th style="padding: 10px 0;">{{ total_basic_salary.toFixed(2) }}</th>
                 <th style="padding: 10px 0;">{{ total_absence.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_hardship_allowance.toFixed(2) }}</th>
+                <th style="padding: 10px 0;">{{ total_total_benefits.toFixed(2) }}</th>
                 <th style="padding: 10px 0;">{{ total_overtime.toFixed(2) }}</th>
                 <th style="padding: 10px 0;">{{ total_commission.toFixed(2) }}</th>
                 <th style="padding: 10px 0;">{{ total_incentive.toFixed(2) }}</th>

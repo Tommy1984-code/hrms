@@ -11,6 +11,12 @@ frappe.query_reports["Department Payroll Registery"] = {
             "reqd": 1
         },
         {
+			"fieldname": "branch",
+			"label": "Branch",
+			"fieldtype": "Link",
+			"options": "Branch"
+		},
+        {
             "fieldname": "department",
             "label": "Department",
             "fieldtype": "Link",

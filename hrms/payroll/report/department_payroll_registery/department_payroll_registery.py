@@ -71,31 +71,36 @@ def get_data(filters=None):
 			FROM `tabSalary Slip` ss
 			JOIN `tabEmployee` e ON ss.employee = e.name
 			JOIN `tabSalary Detail` sd ON sd.parent = ss.name
+			JOIN `tabDepartment` d ON e.department = d.name
 			WHERE ss.start_date <= %(month_end)s
 			  AND ss.end_date >= %(month_start)s
 			  AND ss.docstatus = 1
+			  
 			  {company_clause}
 			  {department_clause}
 			  {payment_type_clause}
+			  {branch_clause}
 			ORDER BY ss.end_date DESC
 		""".format(
 			company_clause="AND ss.company = %(company)s" if company else "",
-			department_clause = "AND ss.department = %(department)s" if department else "",
-			payment_type_clause = "AND ss.payment_type = %(payment_type)s" if payment_type else ""
-			)
+			department_clause="AND ss.department = %(department)s" if department else "",
+			payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
+			branch_clause = "AND d.branch = %(branch)s" if branch else ""
+		)
 		
 		params = {
-            "month_start": month_start,
-            "month_end": month_end,
-            "company": company
-        }
-
+			"month_start": month_start,
+			"month_end": month_end,
+			"company": company
+		}
 		if department:
 			params["department"] = department
 		if payment_type:
 			params["payment_type"] = payment_type
+		if branch:
+			params["branch"] = branch
 
-		results = frappe.db.sql(query,params, as_dict=True)
+		results = frappe.db.sql(query, params, as_dict=True)
 
 		# Get latest slip per employee
 		latest_slips = {}
@@ -154,7 +159,6 @@ def get_data(filters=None):
 					grouped_data[row.employee]["incentive"] += val
 				else:
 					grouped_data[row.employee]["total_benefits"] += val
-				
 
 			elif field == "deductions":
 				if comp == 'IT':
@@ -173,8 +177,6 @@ def get_data(filters=None):
 				grouped_data[row.employee]["total_deduction"] += row.total_deduction or 0
 				processed_slips.add(row.salary_slip)
 
-		
-
 	# Group by department
 	dept_group = {}
 	for emp, g in grouped_data.items():
@@ -187,8 +189,14 @@ def get_data(filters=None):
 
 		dept_group[dept].append(g)
 
-	# Summarize by department
-	department_summary = []
+	# Fetch branch info for each department
+	department_branches = {}
+	departments = frappe.get_all("Department", fields=["name", "branch"])
+	for dept in departments:
+		department_branches[dept.name] = dept.branch or "No Branch"
+
+	# Summarize departments
+	branch_group = {}
 	for dept, records in dept_group.items():
 		summary = {
 			"department_name": dept,
@@ -202,7 +210,24 @@ def get_data(filters=None):
 			for key in summary.keys():
 				if key != "department_name":
 					summary[key] += r.get(key, 0)
-		department_summary.append(summary)
+
+		branch = department_branches.get(dept, "No Branch")
+		if branch not in branch_group:
+			branch_group[branch] = []
+		branch_group[branch].append(summary)
+
+	# Flatten result with branch headers
+	department_summary = []
+	for branch, dept_summaries in sorted(branch_group.items()):
+		department_summary.append({
+			"department_name": f"▶ {branch}","basic": None, "absence": None, 
+			"total_benefits": None, "overtime": None,
+			"commission": None, "incentive": None, "taxable_gross": None,
+			"gross": None, "company_pension": None, "income_tax": None,
+			"employee_pension": None, "other_deduction": None,
+			"total_deduction": None, "net_pay": None
+		})
+		department_summary.extend(dept_summaries)
 
 	return department_summary
 
