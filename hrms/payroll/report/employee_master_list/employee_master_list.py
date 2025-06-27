@@ -8,12 +8,18 @@ from collections import defaultdict
 
 
 def execute(filters=None):
-    columns = get_columns()
-    data = get_data(filters)
+    if filters is None:
+        filters = {}
+
+    selected_earnings = frappe.parse_json(filters.get("selected_earnings") or "[]")
+    selected_deductions = frappe.parse_json(filters.get("selected_deductions") or "[]")
+
+    columns = get_columns(selected_earnings, selected_deductions)
+    data = get_data(filters, selected_earnings, selected_deductions)
     return columns, data
 
 
-def get_columns():
+def get_columns(selected_earnings=None, selected_deductions=None):
     fixed_columns = [
         {"label": "Employee Name", "fieldname": "employee_name", "fieldtype": "Data", "width": 150},
         {"label": "Employee ID", "fieldname": "employee", "fieldtype": "Data", "width": 120},
@@ -31,7 +37,7 @@ def get_columns():
         {"label": "Period", "fieldname": "period", "fieldtype": "Data", "width": 120},
     ]
 
-    earnings, deductions = get_dynamic_salary_components()
+    earnings, deductions = get_dynamic_salary_components(selected_earnings, selected_deductions)
 
     total_columns = [
         {"label": "Total Benefit", "fieldname": "total_benefit", "fieldtype": "Currency", "width": 130},
@@ -44,8 +50,7 @@ def get_columns():
 
     return fixed_columns + earnings + deductions + total_columns
 
-
-def get_dynamic_salary_components():
+def get_dynamic_salary_components(selected_earnings=None, selected_deductions=None):
     components = frappe.get_all(
         "Salary Component",
         filters={"statistical_component": 0, "disabled": 0},
@@ -61,19 +66,18 @@ def get_dynamic_salary_components():
         if abbr in seen:
             continue
         seen.add(abbr)
-        # Skip company pension if it's a defined component — we calculate it manually
-        if frappe.scrub(abbr) == "CP":
+
+        if frappe.scrub(abbr) == "cp":
             continue
 
         if abbr in ("B", "VB"):
             if not basic_salary_added:
-                column = {
+                earnings.insert(0, {
                     "label": "Basic Salary",
                     "fieldname": "basic_pay",
                     "fieldtype": "Currency",
                     "width": 140
-                }
-                earnings.insert(0, column)  # Ensure it's first
+                })
                 basic_salary_added = True
             continue
 
@@ -83,10 +87,13 @@ def get_dynamic_salary_components():
             "fieldtype": "Currency",
             "width": 140
         }
+
         if comp.type == "Earning":
-            earnings.append(column)
+            if not selected_earnings or comp.name in selected_earnings:
+                earnings.append(column)
         elif comp.type == "Deduction":
-            deductions.append(column)
+            if not selected_deductions or comp.name in selected_deductions:
+                deductions.append(column)
 
     return earnings, deductions
 
@@ -108,7 +115,7 @@ def get_active_component_map():
     return earning_abbrs, deduction_abbrs
 
 
-def aggregate_salary_components(rows):
+def aggregate_salary_components(rows, allowed_fields=None):
     result = defaultdict(float)
     earnings_map, deductions_map = get_active_component_map()
 
@@ -128,7 +135,8 @@ def aggregate_salary_components(rows):
         elif r.parentfield == "deductions" and abbr in deductions_map:
             fieldname = deductions_map[abbr]
 
-        if fieldname:
+        # Only aggregate if field is allowed
+        if fieldname and (not allowed_fields or fieldname in allowed_fields):
             result[fieldname] += amt
 
         gross_pays.add((r.salary_slip, r.gross_pay or 0))
@@ -139,13 +147,32 @@ def aggregate_salary_components(rows):
     result["net_pay"] = sum(v for _, v in net_pays)
     result["total_deduction"] = sum(v for _, v in total_deductions)
 
-    # Only add company_pension if it's not already defined
     if "company_pension" not in result:
         result["company_pension"] = result.get("basic_pay", 0) * 0.11
 
     return result
 
-def get_data(filters):
+def get_tax_free_transportation_map(employee_names):
+    result = {}
+    if not employee_names:
+        return result
+
+    employees = frappe.get_all("Employee",
+        filters={"name": ["in", employee_names]},
+        fields=["name", "tax_free_transportation_amount"]
+    )
+    for emp in employees:
+        val = emp.tax_free_transportation_amount
+        try:
+            # Try to convert to float if possible
+            num_val = float(val)
+        except (ValueError, TypeError):
+            # If conversion fails (e.g., "All Tax"), treat as zero
+            num_val = 0
+        result[emp.name] = num_val
+    return result
+
+def get_data(filters, selected_earnings=None, selected_deductions=None):
     from_date = getdate(filters.get("from_date"))
     to_date = getdate(filters.get("to_date"))
     company = filters.get("company")
@@ -209,7 +236,14 @@ def get_data(filters):
         slip = r.salary_slip
         data_by_employee_slip[emp][slip].append(r)
 
+    # Prepare tax free transport map once for all employees
+    employee_names = list(data_by_employee_slip.keys())
+    tax_free_transport_map = get_tax_free_transportation_map(employee_names)
+
     grouped_data = defaultdict(list)
+
+    earnings, deductions = get_dynamic_salary_components(selected_earnings, selected_deductions)
+    component_fieldnames = [c["fieldname"] for c in earnings + deductions]
 
     def process_employee(emp, slips):
         if payment_type_filter:
@@ -237,9 +271,12 @@ def get_data(filters):
                     all_rows.extend(best_slip)
 
         if all_rows:
-            aggregated = aggregate_salary_components(all_rows)
+            aggregated = aggregate_salary_components(all_rows, allowed_fields=component_fieldnames)
             base = all_rows[0]
             dept = base.department or "Other"
+            
+            # Get tax-free transport amount for this employee
+            tax_free_transport = tax_free_transport_map.get(emp, 0)
 
             aggregated.update({
                 "employee": emp,
@@ -256,6 +293,8 @@ def get_data(filters):
                 "tin_no": base.employee_tin_no or "",
                 "pension_id": base.pension_id or "",
                 "period": f"{from_date.strftime('%d %b %Y')} - {to_date.strftime('%d %b %Y')}",
+                # Calculate taxable_gross = gross_pay - tax_free_transportation_amount
+                "taxable_gross": aggregated.get("gross_pay", 0) - tax_free_transport,
             })
 
             grouped_data[dept].append(aggregated)
@@ -265,14 +304,11 @@ def get_data(filters):
 
     final_data = []
 
-    earnings, deductions = get_dynamic_salary_components()
-    component_fieldnames = [c["fieldname"] for c in earnings + deductions]
-
     total_fields = [
         "gross_pay", "net_pay", "total_deduction",
         "company_pension", "total_benefit", "taxable_gross"
     ]
-    
+
     for dept in sorted(grouped_data.keys()):
         dept_row = {"employee_name": f"{dept}"}
         for field in component_fieldnames + total_fields:
@@ -282,7 +318,6 @@ def get_data(filters):
         final_data.extend(grouped_data[dept])
 
     return final_data
-
 
 def get_months_in_range(start_date, end_date):
     months = []
