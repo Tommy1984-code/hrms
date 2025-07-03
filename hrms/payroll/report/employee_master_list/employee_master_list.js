@@ -115,6 +115,7 @@ frappe.query_reports["Employee Master List"] = {
       
         const earningNames = earnings.map(e => e.name);
         const deductionNames = deductions.map(d => d.name);
+
       
         // Delay setting values until filter UI is ready
         frappe.after_ajax(() => {

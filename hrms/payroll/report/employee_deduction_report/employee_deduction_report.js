@@ -84,22 +84,6 @@ frappe.query_reports["Employee Deduction Report"] = {
             "fieldtype": "Date",
             "default": frappe.datetime.month_end()
         },
-        {
-            fieldname: "deduction_components",
-            label: "Deduction Components",
-            fieldtype: "MultiSelectList",
-            get_data: function(txt) {
-              return frappe.db.get_link_options('Salary Component', txt, {
-                type: "Deduction"
-              });
-            }
-          }
 	],
-    onload: function(report) {
-        const default_values = [
-          "Income Tax", "Pension", "Salary Advance", "Loan", "GYM", "Commission Deduction",
-          "Cost Sharing", "Court", "Bank", "Credit Purchase", "Saving", "Penalty", "Medical"
-        ];
-        report.set_filter_value("deduction_components", default_values);
-      }
+   
 };
