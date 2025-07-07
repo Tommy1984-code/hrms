@@ -160,7 +160,8 @@ def get_data(filters=None):
             basic_salary = earnings.get('B') or earnings.get('VB') or 0
             transport_salary = earnings.get('TA', 0)
             employee_bonus = earnings.get('OT', 0)
-            tax_free_transportation_amount = float(latest_slip.tax_free_transportation_amount or 0)
+            tax_free_transportation_amount = safe_float(latest_slip.tax_free_transportation_amount)
+            # tax_free_transportation_amount = float(latest_slip.tax_free_transportation_amount or 0)
             transport_pension = max(transport_salary - tax_free_transportation_amount, 0)
 
             excluded_abbrs = ['B', 'VB', 'TA', 'Bns']
@@ -211,3 +212,8 @@ def get_months_in_range(start_date, end_date):
 
     return months
     
+def safe_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0

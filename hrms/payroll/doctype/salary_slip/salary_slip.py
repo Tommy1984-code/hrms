@@ -727,7 +727,7 @@ class SalarySlip(TransactionBase):
 		if is_first_payment:
 			active_loans = frappe.get_all(
 				"Loan Management",
-				filters={"employee": employee_id, "status": "Ongoing"},
+				filters={"employee": employee_id, "status": ["not in", ["Completed", "Paused"]]},
 				fields=["name", "monthly_deduction", "loan_type"]
 			)
 
@@ -795,9 +795,9 @@ class SalarySlip(TransactionBase):
 
 		active_loans = frappe.get_all("Loan Management",
 			filters={
-				"employee": self.employee,
-				"status": "Ongoing"
-			},
+			"employee": self.employee,
+			"status": ["not in", ["Completed", "Paused"]]
+		},
 			fields=["name", "loan_type"]
 		)
 
