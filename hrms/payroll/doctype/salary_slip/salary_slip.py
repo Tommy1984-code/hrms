@@ -6,6 +6,7 @@ from frappe import _
 import unicodedata
 from datetime import date
 from datetime import datetime,timedelta
+from frappe.utils import flt
 from frappe import _, msgprint
 from frappe.model.naming import make_autoname
 from frappe.query_builder import Order
@@ -877,41 +878,144 @@ class SalarySlip(TransactionBase):
 			})
 
 			self.add_structure_component(struct_row, component_type)
-	#my code for Duty pay
-	def get_duty_salary_component(self, employee_id, component_type=None):
-		"""Fetch Duty Pay salary components from Duty Pay for the given employee if it matches the slip month."""
+			
+	def calculate_tax(self, gross):
+		"""Calculate Ethiopian income tax with employee's tax-free transportation deduction."""
 
-		duty_id = frappe.get_value("Duty Pay", {"employee": employee_id}, "name")
-		if not duty_id:
-			return  # No duty pay record
+		# Fetch employee's tax-free transportation amount, default to '0' if not set
+		tax_free_transportation_amount = frappe.db.get_value("Employee", self.employee, "tax_free_transportation_amount") or '0'
 
-		payroll_month = frappe.get_value("Duty Pay", duty_id, "payroll_month")
-		if not payroll_month:
+		# Convert to int (assuming string like '2200', '600', or '0')
+		try:
+			tax_free = int(tax_free_transportation_amount)
+		except:
+			tax_free = 0
+
+		# Calculate taxable income after transport allowance
+		taxable = gross - tax_free
+		if taxable <= 0:
+			return 0
+
+		tax = 0
+		if taxable <= 600:
+			return 0
+		if taxable <= 1650:
+			tax += (taxable - 600) * 0.10
+		elif taxable <= 3200:
+			tax += (1650 - 600) * 0.10
+			tax += (taxable - 1650) * 0.15
+		elif taxable <= 5250:
+			tax += (1650 - 600) * 0.10
+			tax += (3200 - 1650) * 0.15
+			tax += (taxable - 3200) * 0.20
+		elif taxable <= 7800:
+			tax += (1650 - 600) * 0.10
+			tax += (3200 - 1650) * 0.15
+			tax += (5250 - 3200) * 0.20
+			tax += (taxable - 5250) * 0.25
+		elif taxable <= 10900:
+			tax += (1650 - 600) * 0.10
+			tax += (3200 - 1650) * 0.15
+			tax += (5250 - 3200) * 0.20
+			tax += (7800 - 5250) * 0.25
+			tax += (taxable - 7800) * 0.30
+		else:
+			tax += (1650 - 600) * 0.10
+			tax += (3200 - 1650) * 0.15
+			tax += (5250 - 3200) * 0.20
+			tax += (7800 - 5250) * 0.25
+			tax += (10900 - 7800) * 0.30
+			tax += (taxable - 10900) * 0.35
+
+		return round(tax, 2)
+
+	
+	def net_from_gross(self, gross):
+		tax = self.calculate_tax(gross)
+		net = gross - tax
+		return net
+
+	def find_new_gross(self, base_gross, base_net, base_tax, duty_net, tolerance=0.01, max_iterations=50):
+		
+		fixed_deductions = base_gross - base_net - base_tax
+		new_net = base_net + duty_net
+
+		low = base_gross
+		high = base_gross + (duty_net * 3)  # upper bound estimate
+		iteration = 0
+
+		while iteration < max_iterations:
+			mid = (low + high) / 2
+			tax = self.calculate_tax(mid)
+			net = mid - tax - fixed_deductions
+
+			diff = net - new_net
+
+			if abs(diff) <= tolerance:
+				return round(mid, 2), round(tax, 2), round(mid - base_gross, 2)
+
+			if diff < 0:
+				low = mid  # net too low, increase gross
+			else:
+				high = mid  # net too high, decrease gross
+
+			iteration += 1
+
+		frappe.msgprint("Could not find new gross within tolerance.")
+		return None, None, None
+
+	def apply_duty_pay_component(self):
+		
+		duty_net = frappe.db.get_value("Duty Pay", {
+			"employee": self.employee,
+			"payroll_month": ["between", [self.start_date, self.end_date]],
+			"docstatus": 1
+		}, "amount")
+
+		if not duty_net:
 			return
+    
+		duty_net = flt(duty_net, 2)
+		current_net = flt(self.net_pay or 0)
+		current_gross = flt(self.gross_pay or 0)
 
-		duty_month = getdate(payroll_month).strftime('%Y-%m')
-		slip_month = getdate(self.start_date).strftime('%Y-%m')
+		frappe.msgprint(f"this is duty net ${duty_net}")
+		frappe.msgprint(f"this is duty net ${current_net}")
+		frappe.msgprint(f"this is duty net ${current_gross}")
 
-		if duty_month != slip_month:
-			return  # Different month, skip
+		# YOU MUST ADD THIS (provide base income tax)
+		base_income_tax = flt(self.get_income_tax_component() or 0)
+		frappe.msgprint(f"this is base in come tax ${base_income_tax}")
 
-		# Fetch Duty Pay salary components
-		salary_details = frappe.get_all(
-			"Salary Detail",
-			filters={"parent": duty_id},
-			fields=["salary_component", "amount", "parentfield"]
+		new_gross, new_tax, duty_gross = self.find_new_gross(
+			base_gross=current_gross,
+			base_net=current_net,
+			base_tax=base_income_tax,
+			duty_net=duty_net
 		)
 
-		for detail in salary_details:
-			if component_type and detail.parentfield != component_type:
-				continue
+		# if not new_gross or duty_gross <= 0:
+		# 	frappe.msgprint("Duty Pay gross could not be calculated.")
+		# 	return
 
-			component_row = frappe._dict({
-				"salary_component": detail.salary_component,
-				"amount": detail.amount
-			})
+		frappe.msgprint(f"Duty Net: {duty_net}")
+		frappe.msgprint(f"New Gross: {new_gross}")
+		frappe.msgprint(f"New Tax: {new_tax}")
+		frappe.msgprint(f"Duty Gross Component: {duty_gross}")
 
-			self.add_structure_component(component_row, component_type)
+		# Add duty gross as salary component
+		duty_row = frappe._dict({
+			"salary_component": "Duty Gross",
+			"amount": duty_gross
+		})
+		self.add_structure_component(duty_row, "earnings")
+
+	def get_income_tax_component(self):
+		"""Return the amount of income tax from existing salary slip earnings/deductions."""
+		for row in self.deductions:
+			if row.salary_component == "Income Tax":
+				return row.amount
+		return 0
 
 	def pull_sal_struct(self):
 		from hrms.payroll.doctype.salary_structure.salary_structure import make_salary_slip
@@ -1466,6 +1570,16 @@ class SalarySlip(TransactionBase):
 
 		self.set_precision_for_component_amounts()
 		self.set_net_pay()
+
+		self.apply_duty_pay_component()
+		 # ✅ Recompute gross/net because duty pay was added
+		set_gross_pay_and_base_gross_pay()
+		# *** Recalculate deductions again so that income tax updates ***
+		if self.salary_structure:
+			self.calculate_component_amounts("deductions")
+
+		self.set_net_pay()
+
 		if not skip_tax_breakup_computation:
 			self.compute_income_tax_breakup()
 
@@ -1798,17 +1912,15 @@ class SalarySlip(TransactionBase):
 	
 		
     #this is the method that add the fetched component to the default salary structure
-	def add_structure_components(self, component_type):
+	def add_structure_components(self, component_type,skip_duty_pay=False):
 		self.data, self.default_data = self.get_data_for_eval()
 		self.get_salary_components(self.employee,component_type)#my code adding the fetched on to the salary structure
 		self.get_absent_salary_component(self.employee,component_type) # my code adding the fetched absent salary component to salary structure
 		self.get_termination_salary_component(self.employee,component_type)
-		self.get_duty_salary_component(self.employee,component_type)
 		self.add_loan_deductions(self.employee,component_type) # my code adding the loan component
 		for struct_row in self._salary_structure_doc.get(component_type):
 			self.add_structure_component(struct_row, component_type)
-		# for struct_row in self._employee_salary_structure.get(component_type):
-		# 	self.add_structure_component(struct_row,component_type)
+		
 			
 
 	def add_structure_component(self, struct_row, component_type):
