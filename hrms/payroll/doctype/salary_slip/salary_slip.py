@@ -976,17 +976,12 @@ class SalarySlip(TransactionBase):
 			return
     
 		duty_net = flt(duty_net, 2)
-		current_net = flt(self.net_pay or 0)
-		current_gross = flt(self.gross_pay or 0)
-
-		frappe.msgprint(f"this is duty net ${duty_net}")
-		frappe.msgprint(f"this is duty net ${current_net}")
-		frappe.msgprint(f"this is duty net ${current_gross}")
+		current_net = flt(self.net_pay or 0, 2)
+		current_gross = flt(self.gross_pay or 0, 2)
 
 		# YOU MUST ADD THIS (provide base income tax)
 		base_income_tax = flt(self.get_income_tax_component() or 0)
-		frappe.msgprint(f"this is base in come tax ${base_income_tax}")
-
+		
 		new_gross, new_tax, duty_gross = self.find_new_gross(
 			base_gross=current_gross,
 			base_net=current_net,
@@ -994,14 +989,9 @@ class SalarySlip(TransactionBase):
 			duty_net=duty_net
 		)
 
-		# if not new_gross or duty_gross <= 0:
-		# 	frappe.msgprint("Duty Pay gross could not be calculated.")
-		# 	return
-
-		frappe.msgprint(f"Duty Net: {duty_net}")
-		frappe.msgprint(f"New Gross: {new_gross}")
-		frappe.msgprint(f"New Tax: {new_tax}")
-		frappe.msgprint(f"Duty Gross Component: {duty_gross}")
+		if not new_gross or duty_gross <= 0:
+			frappe.msgprint("Duty Pay gross could not be calculated.")
+			return
 
 		# Add duty gross as salary component
 		duty_row = frappe._dict({

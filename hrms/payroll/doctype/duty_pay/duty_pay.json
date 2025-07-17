@@ -14,9 +14,7 @@
   "employee_type",
   "payroll_month",
   "amount",
-  "section_break_lgzc",
-  "earnings",
-  "deductions",
+  "column_break_qcse",
   "amended_from"
  ],
  "fields": [
@@ -68,22 +66,6 @@
    "label": "Amount"
   },
   {
-   "fieldname": "section_break_lgzc",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "earnings",
-   "fieldtype": "Table",
-   "label": "Earnings",
-   "options": "Salary Detail"
-  },
-  {
-   "fieldname": "deductions",
-   "fieldtype": "Table",
-   "label": "Deductions",
-   "options": "Salary Detail"
-  },
-  {
    "default": "Today",
    "fieldname": "payroll_month",
    "fieldtype": "Date",
@@ -98,12 +80,16 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "column_break_qcse",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-06-25 10:59:30.521299",
+ "modified": "2025-07-17 08:53:35.862756",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Duty Pay",
