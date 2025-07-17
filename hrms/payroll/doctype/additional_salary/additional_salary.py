@@ -32,30 +32,67 @@ class AdditionalSalary(Document):
 			frappe.throw(_("Amount should not be less than zero"))
 		if self.salary_component == "OverTime":
 			self.calculate_overtime()
-		
 
 	def calculate_overtime(self):
-		"""Calculate Overtime if the selected salary component is 'Overtime'"""
-		if self.salary_component == "OverTime":
-			if not self.rate or not self.working_hour:
-				frappe.throw(_("Rate and Working Hour are required for Overtime calculations."))
+		if self.salary_component != "OverTime":
+			return
 
-			base_salary = frappe.db.get_value("Employee", self.employee, "base")
+		# Get base salary
+		base_salary = frappe.db.get_value("Employee", self.employee, "base")
+		if not base_salary:
+			frappe.throw(_("Base Salary is missing for Employee: {0}").format(self.employee))
 
-			if not base_salary:
-				frappe.throw(_("Base Salary is missing for Employee: {0}").format(self.employee))
-
-				# Convert base_salary to float, handling currency formatting if necessary
+		# Clean base salary if string
 		if isinstance(base_salary, str):
-			base_salary = float(base_salary.replace(',', '').replace('ETB', '').strip())  # Adjust as per your currency format
+			base_salary = float(base_salary.replace(',', '').replace('ETB', '').strip())
 
-		# Ensure working_hour is a float
-		self.working_hour = float(self.working_hour)
+		# Define rates
+		rate_map = {
+			"ot_125": 1.25,
+			"ot_150": 1.5,
+			"ot_200": 2.0,
+			"ot_250": 2.5
+		}
 
-		# Convert rate to float
-		self.rate = float(self.rate)  # Ensure rate is a float
+		total_hours = 0
+		total_amount = 0
 
-		self.amount = (base_salary / 208) * self.working_hour * self.rate
+		for row in self.overtime_details:  # child table fieldname
+			row_total = 0
+			for field, rate in rate_map.items():
+				hours = getattr(row, field) or 0
+				row_total += (base_salary / 208) * hours * rate
+				total_hours += hours
+
+			row.total = total_hours  # optional: total hours in row
+			total_amount += row_total
+
+		self.amount = round(total_amount, 2)
+
+		
+
+	# def calculate_overtime(self):
+	# 	"""Calculate Overtime if the selected salary component is 'Overtime'"""
+	# 	if self.salary_component == "OverTime":
+	# 		if not self.rate or not self.working_hour:
+	# 			frappe.throw(_("Rate and Working Hour are required for Overtime calculations."))
+
+	# 		base_salary = frappe.db.get_value("Employee", self.employee, "base")
+
+	# 		if not base_salary:
+	# 			frappe.throw(_("Base Salary is missing for Employee: {0}").format(self.employee))
+
+	# 			# Convert base_salary to float, handling currency formatting if necessary
+	# 	if isinstance(base_salary, str):
+	# 		base_salary = float(base_salary.replace(',', '').replace('ETB', '').strip())  # Adjust as per your currency format
+
+	# 	# Ensure working_hour is a float
+	# 	self.working_hour = float(self.working_hour)
+
+	# 	# Convert rate to float
+	# 	self.rate = float(self.rate)  # Ensure rate is a float
+
+	# 	self.amount = (base_salary / 208) * self.working_hour * self.rate
 
 	def validate_salary_structure(self):
 		if not frappe.db.exists("Salary Structure Assignment", {"employee": self.employee}):

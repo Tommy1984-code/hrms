@@ -1,0 +1,56 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{OT}-{####}",
+ "creation": "2025-07-17 09:26:24.759978",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "ot_125",
+  "ot_150",
+  "ot_200",
+  "ot_250",
+  "total"
+ ],
+ "fields": [
+  {
+   "fieldname": "ot_125",
+   "fieldtype": "Float",
+   "label": "OT 1.25"
+  },
+  {
+   "fieldname": "ot_150",
+   "fieldtype": "Float",
+   "label": "OT 1.50"
+  },
+  {
+   "fieldname": "ot_200",
+   "fieldtype": "Float",
+   "label": "OT 2.00"
+  },
+  {
+   "fieldname": "ot_250",
+   "fieldtype": "Float",
+   "label": "OT 2.50"
+  },
+  {
+   "fieldname": "total",
+   "fieldtype": "Float",
+   "label": "Total"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-07-17 10:52:09.790063",
+ "modified_by": "Administrator",
+ "module": "Payroll",
+ "name": "Overtime detail",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
