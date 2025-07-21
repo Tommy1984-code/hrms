@@ -110,23 +110,6 @@ frappe.ui.form.on("Additional Salary", {
 			frm.trigger("calculate_overtime");
 		}
 	},
-	toggle_overtime_fields: function (frm) {
-		let is_overtime = frm.doc.salary_component === "OverTime";
-
-		// Show fields only if Overtime is selected
-		frm.set_df_property("rate", "hidden", !is_overtime);
-		frm.set_df_property("working_hour", "hidden", !is_overtime);
-
-		// Make them mandatory only for Overtime
-		frm.set_df_property("rate", "reqd", is_overtime);
-		frm.set_df_property("working_hour", "reqd", is_overtime);
-
-		// If not overtime, clear the values
-		if (!is_overtime) {
-			frm.set_value("rate", "");
-			frm.set_value("working_hour", "");
-		}
-	},
 
 	calculate_overtime: function (frm) {
 		if (frm.doc.salary_component !== "OverTime") return;
