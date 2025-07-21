@@ -331,7 +331,85 @@
  {% } %}
 </div>
 </div>
-  
+<div class="last-page-container" style="page-break-inside: avoid;"> 
+  <div class="fixed-header bg-white text-sm">
+    <div class="flex w-full border border-black h-32 items-center">
+
+      <!-- Left Logo -->
+      <div class="border-r border-black flex items-center justify-center w-1/6 h-full p-2">
+        <img src="/private/files/Emblem_of_Ethiopia.svg" class="h-full max-h-24 object-contain" />
+      </div>
+
+      <!-- Federal Government Text -->
+      <div class="border-r border-black p-2 text-center flex flex-col justify-center w-2/5 h-full">
+        <div class="text-xl font-semibold leading-tight">ኢትዮጵያ ፌዴራላዊ ዴሞክራሲያዊ ሪፐብሊክ</div>
+        <div class="text-xl font-semibold leading-tight">የኢትዮጵያ ገቢዎችና ጉምሩክ ባለስልጣን</div>
+      </div>
+
+      <!-- Pension Form Title -->
+      <div class="border-r border-black p-2 text-center flex flex-col justify-center w-2/5 h-full">
+        <div class="text-base font-semibold leading-snug">የሠንጠረዥ "ሀ" የስራ ግብር ክፍያ ማስታወቂያ ቅፅ (ለቀጣሪዎች)</div>
+        <div class="text-base font-medium leading-snug">(የገቢ ግብር አዋጅ ቁጥር 286/1996 እና ገቢ ግብር ደንብ ቁጥር 78/1994)</div>
+      </div>
+
+      <!-- Right Logo -->
+      <div class="flex items-center justify-center w-1/6 h-full p-2">
+        <img src="/private/files/addis ababa transparent logo.png" class="h-full max-h-24 object-contain" />
+      </div>
+
+    </div>
+  </div>
+
+  <div class="company-info-table">
+    <h1 class="company-info-title" style="text-align:center; margin-top: 20px; margin-bottom: 10px;">
+      ክፍል 1.የግብር ከፋይ ዝርዝር መረጃ
+    </h1>
+
+    <table class="main-table" style="margin-bottom: 20px;">
+      <tr>
+        <th>የድርጅቱ ስም</th>
+        <th>የድርጅቱ የግብር ከፋይ መለያ ቁጥር</th>
+        <th>የግብር ሂሳብ ቁጥር</th>
+        <th>የክፍያ ጊዜ</th>
+        <th colspan="2">Page List</th>
+      </tr>
+      <tr>
+        <td>{{ data[0].company_name }}</td>
+        <td>{{ data[0].organization_tin_number }}</td>
+        <td>{{ data[0].tax_account_number }}</td>
+        <td>{{ data[0].period_for_payment }}</td>
+        <td colspan="2">Page {{ page + 1 }} of {{ page_count }}</td>
+      </tr>
+      <tr>
+        <th>2.a ክልል</th>
+        <th colspan="2">2.b ዞን/ክፍለ ከተማ</th>
+        <th colspan="2">5 የግብር ሰብሳቢ ቢሮ ስም</th>
+        <th>የሰነድ ቁጥር (ለቢሮ አገልግሎት ብቻ)</th>
+      </tr>
+      <tr>
+        <td>{{ data[0].region }}</td>
+        <td colspan="2">{{ data[0].zonesub_district }}</td>
+        <td colspan="2">{{ data[0].name_of_the_tax_collector }}</td>
+        <td>{{ data[0].document_number_for_office_use_only }}</td>
+      </tr>
+      <tr>
+        <th>2.c ወረዳ</th>
+        <th>2.d የቀበሌ/ገበሬዎች ማህበር</th>
+        <th>2.e የቤት ቁጥር</th>
+        <th>6 ስልክ ቁጥር</th>
+        <th>7 ፋክስ ቁጥር</th>
+        <th></th>
+      </tr>
+      <tr>
+        <td>{{ data[0].woreda }}</td>
+        <td>{{ data[0].kebele }}</td>
+        <td>{{ data[0].house_number }}</td>
+        <td>{{ data[0].phone }}</td>
+        <td>{{ data[0].fax }}</td>
+        <td></td>
+      </tr>
+    </table>
+  </div>
 <div class="no-break "  style="display: flex; justify-content: space-between; margin-top: 50px; gap: 20px;">
     <!-- Left: Summary Table (Label and Data Side by Side) -->
     <div style="width: 30%;">
@@ -461,5 +539,5 @@
     </div>
   </div>
 </div>
-
+</div> 
 {% endif %}
