@@ -897,35 +897,28 @@ class SalarySlip(TransactionBase):
 			return 0
 
 		tax = 0
-		if taxable <= 600:
+		if taxable <= 2000:
 			return 0
-		if taxable <= 1650:
-			tax += (taxable - 600) * 0.10
-		elif taxable <= 3200:
-			tax += (1650 - 600) * 0.10
-			tax += (taxable - 1650) * 0.15
-		elif taxable <= 5250:
-			tax += (1650 - 600) * 0.10
-			tax += (3200 - 1650) * 0.15
-			tax += (taxable - 3200) * 0.20
-		elif taxable <= 7800:
-			tax += (1650 - 600) * 0.10
-			tax += (3200 - 1650) * 0.15
-			tax += (5250 - 3200) * 0.20
-			tax += (taxable - 5250) * 0.25
-		elif taxable <= 10900:
-			tax += (1650 - 600) * 0.10
-			tax += (3200 - 1650) * 0.15
-			tax += (5250 - 3200) * 0.20
-			tax += (7800 - 5250) * 0.25
-			tax += (taxable - 7800) * 0.30
+		if taxable <= 4000:
+			tax += (taxable - 2000) * 0.15
+		elif taxable <= 7000:
+			tax += (4000 - 2000) * 0.15
+			tax += (taxable - 4000) * 0.20
+		elif taxable <= 10000:
+			tax += (4000 - 2000) * 0.15
+			tax += (7000 - 4000) * 0.20
+			tax += (taxable - 7000) * 0.25
+		elif taxable <= 14000:
+			tax += (4000 - 2000) * 0.15
+			tax += (7000 - 4000) * 0.20
+			tax += (10000 - 7000) * 0.25
+			tax += (taxable - 10000) * 0.30
 		else:
-			tax += (1650 - 600) * 0.10
-			tax += (3200 - 1650) * 0.15
-			tax += (5250 - 3200) * 0.20
-			tax += (7800 - 5250) * 0.25
-			tax += (10900 - 7800) * 0.30
-			tax += (taxable - 10900) * 0.35
+			tax += (4000 - 2000) * 0.15
+			tax += (7000 - 4000) * 0.20
+			tax += (10000 - 7000) * 0.25
+			tax += (14000 - 10000) * 0.30
+			tax += (taxable - 14000) * 0.35
 
 		return round(tax, 2)
 

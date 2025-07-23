@@ -134,23 +134,20 @@ class EmployeeTermination(Document):
 			self.insert_salary_component("deductions", "sevrinc", self.severance_tax)
 
 
-
-	def calculate_tax(self,income):
-		"""Calculate the tax based on the Ethiopian tax system, using a simplified approach."""
-		if income >= 0 and income <= 600:
-			tax = income * 0  # No tax for income <= 600
-		elif income > 600 and income <= 1650:
-			tax = income * 0.10 - 60
-		elif income > 1650 and income <= 3200:
-			tax = income * 0.15 - 142.5
-		elif income > 3200 and income <= 5250:
-			tax = income * 0.20 - 302.5
-		elif income > 5250 and income <= 7800:
-			tax = income * 0.25 - 565
-		elif income > 7800 and income <= 10900:
-			tax = income * 0.30 - 955
-		else:  # income > 10900
-			tax = income * 0.35 - 1500
+	def calculate_tax(self, income):
+		"""Calculate the tax based on the updated Ethiopian tax system."""
+		if income >= 0 and income <= 2000:
+			tax = 0  # No tax for income <= 2000
+		elif income > 2000 and income <= 4000:
+			tax = income * 0.15 - 300
+		elif income > 4000 and income <= 7000:
+			tax = income * 0.20 - 500
+		elif income > 7000 and income <= 10000:
+			tax = income * 0.25 - 850
+		elif income > 10000 and income <= 14000:
+			tax = income * 0.30 - 1350
+		else:  # income > 14000
+			tax = income * 0.35 - 2050
 
 		return tax
 
@@ -201,7 +198,6 @@ class EmployeeTermination(Document):
 		if self.annual_leave_tax:
 			self.insert_salary_component("deductions", "annlevtax", self.annual_leave_tax)
 
-
 	def update_final_settlement(self):
 		"""Update the total severance amount in the final settlement section."""
 
@@ -215,9 +211,7 @@ class EmployeeTermination(Document):
 			frappe.msgprint(f"Total severance amount exceeds the allowed limit. It has been capped to: {max_allowed_severance}")
 
 		self.total_severance = total
-
-	
-	
+		
 	def clear_salary_component_tables(self):
 		"""Clear previous entries in earnings and deductions tables."""
 		self.set("earnings", [])

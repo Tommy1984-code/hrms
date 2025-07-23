@@ -81,39 +81,7 @@ def add_absent_salary_component(docname):
             
     return None
 
-# def get_salary_component(doctype, txt, searchfield, start, page_len, filters):
-#     sc = frappe.qb.DocType("Salary Component")
-#     sca = frappe.qb.DocType("Salary Component Account")
 
-#     # Parse the filters from JSON string to dictionary
-#     if isinstance(filters, str):
-#         filters = json.loads(filters) if filters else {}
-
-#     # Fetch only the "Absent" salary component
-#     salary_components = (
-#         frappe.qb.from_(sc)
-#         .left_join(sca)
-#         .on(sca.parent == sc.name)
-#         .select(sc.name, sca.account, sca.company,sc.type)
-#         .where(
-#             (sc.name == "Absent")
-#             & (sc.disabled == 0)
-#             & (sc[searchfield].like(f"%{txt}%") | sc.name.like(f"%{txt}%"))
-#         )
-#         .limit(page_len)
-#         .offset(start)
-#     ).run(as_dict=True)
-
-#     accounts = []
-#     for component in salary_components:
-#         if not component.company:
-#             accounts.append((component.name, component.account, component.company))
-#         else:
-#             if component.company == filters.get("company"):  # Use .get() to avoid KeyError
-#                 accounts.append((component.name, component.account, component.company))
-
-#     return accounts
-    
     
                   
     
