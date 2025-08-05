@@ -72,9 +72,49 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Report",
+   "link_count": 0,
+   "link_to": "Report",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Additional Salary",
+   "link_count": 0,
+   "link_to": "Additional Salary",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Employee Termination",
+   "link_count": 0,
+   "link_to": "Employee Termination",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Duty Pay",
+   "link_count": 0,
+   "link_to": "Duty Pay",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2025-02-03 13:14:24.573071",
+ "modified": "2025-07-24 10:36:20.990251",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Payroll",
