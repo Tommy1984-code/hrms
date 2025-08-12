@@ -153,14 +153,35 @@ class EmployeeTermination(Document):
 
 	def calculate_annual_leave(self):
 		"""Calculate annual leave compensation and tax, prorated by worked days."""
-		if not self.basic_salary or not self.worked_days or not self.annual_leave:
+		if not self.basic_salary or not self.annual_leave:
 			return
+		
+		dates = frappe.db.get_value("Employee",
+							self.employee, ["date_of_joining", "relieving_date"], as_dict=True)
+		if not dates or not dates.date_of_joining or not dates.relieving_date:
+			frappe.throw("Employee joining date or relieving date is missing.")
 
-		# Step 1: Set default 365-day year
-		self.payment_days = 365
+		date_of_joining = dates.date_of_joining
+		relieving_date = dates.relieving_date
+
+		# Convert to datetime if not already
+		if not isinstance(date_of_joining, datetime):
+			start_date = datetime.strptime(str(date_of_joining), "%Y-%m-%d")
+		else:
+			start_date = date_of_joining
+
+		if not isinstance(relieving_date, datetime):
+			end_date = datetime.strptime(str(relieving_date), "%Y-%m-%d")
+		else:
+			end_date = relieving_date
+
+		# Calculate worked days capped at 365
+		worked_days = (end_date - start_date).days + 1
+		self.worked_days = min(worked_days, 365)
+		
 
 		# Step 2: Calculate per-day salary from monthly base
-		daily_salary = self.basic_salary / 30
+		daily_salary = self.basic_salary / 26
 
 		# Step 3: Prorate eligible leave days if worked less than 365
 		eligible_leave_days = (self.annual_leave / 365) * self.worked_days

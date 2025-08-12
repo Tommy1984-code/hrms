@@ -6,15 +6,15 @@ from frappe.model.document import Document
 from frappe.utils import getdate
 
 
-class DutyPay(Document):
+class NetBenefitGrossUp(Document):
 
 	def validate(self):
-		self.check_duplicate_duty_record()
+		self.check_duplicate_net_benefit_gross_up_record()
 
-	def check_duplicate_duty_record(self):
+	def check_duplicate_net_benefit_gross_up_record(self):
 		payroll_month = getdate(self.payroll_month).strftime('%Y-%m')
 		existing_record = frappe.get_value(
-			'Duty Pay',
+			'Net Benefit Gross Up',
 			{
 				'employee': self.employee,
 				'payroll_month': ['like', f'{payroll_month}%'],
@@ -23,7 +23,7 @@ class DutyPay(Document):
 			'name'
 		)
 		if existing_record:
-			frappe.throw(f"Duty Pay record for this employee already exists for the month: {payroll_month}.")
+			frappe.throw(f"Net Benefit Gross Up record for this employee already exists for the month: {payroll_month}.")
 
 
 

@@ -928,13 +928,13 @@ class SalarySlip(TransactionBase):
 		net = gross - tax
 		return net
 
-	def find_new_gross(self, base_gross, base_net, base_tax, duty_net, tolerance=0.01, max_iterations=50):
+	def find_new_gross(self, base_gross, base_net, base_tax, net_ben_gross_up, tolerance=0.01, max_iterations=50):
 		
 		fixed_deductions = base_gross - base_net - base_tax
-		new_net = base_net + duty_net
+		new_net = base_net + net_ben_gross_up
 
 		low = base_gross
-		high = base_gross + (duty_net * 3)  # upper bound estimate
+		high = base_gross + (net_ben_gross_up * 3)  # upper bound estimate
 		iteration = 0
 
 		while iteration < max_iterations:
@@ -957,41 +957,41 @@ class SalarySlip(TransactionBase):
 		frappe.msgprint("Could not find new gross within tolerance.")
 		return None, None, None
 
-	def apply_duty_pay_component(self):
+	def apply_net_ben_gross_up_component(self):
 		
-		duty_net = frappe.db.get_value("Duty Pay", {
+		net_ben_gross_up = frappe.db.get_value("Net Benefit Gross Up", {
 			"employee": self.employee,
 			"payroll_month": ["between", [self.start_date, self.end_date]],
 			"docstatus": 1
 		}, "amount")
 
-		if not duty_net:
+		if not net_ben_gross_up:
 			return
     
-		duty_net = flt(duty_net, 2)
+		net_ben_gross_up = flt(net_ben_gross_up, 2)
 		current_net = flt(self.net_pay or 0, 2)
 		current_gross = flt(self.gross_pay or 0, 2)
 
 		# YOU MUST ADD THIS (provide base income tax)
 		base_income_tax = flt(self.get_income_tax_component() or 0)
 		
-		new_gross, new_tax, duty_gross = self.find_new_gross(
+		new_gross, new_tax, net_ben_gross = self.find_new_gross(
 			base_gross=current_gross,
 			base_net=current_net,
 			base_tax=base_income_tax,
-			duty_net=duty_net
+			net_ben_gross_up=net_ben_gross_up
 		)
 
-		if not new_gross or duty_gross <= 0:
+		if not new_gross or net_ben_gross <= 0:
 			frappe.msgprint("Duty Pay gross could not be calculated.")
 			return
 
 		# Add duty gross as salary component
-		duty_row = frappe._dict({
-			"salary_component": "Duty Gross",
-			"amount": duty_gross
+		net_ben_row = frappe._dict({
+			"salary_component": "Net Ben Gross Up",
+			"amount": net_ben_gross
 		})
-		self.add_structure_component(duty_row, "earnings")
+		self.add_structure_component(net_ben_row, "earnings")
 
 	def get_income_tax_component(self):
 		"""Return the amount of income tax from existing salary slip earnings/deductions."""
@@ -1554,7 +1554,7 @@ class SalarySlip(TransactionBase):
 		self.set_precision_for_component_amounts()
 		self.set_net_pay()
 
-		self.apply_duty_pay_component()
+		self.apply_net_ben_gross_up_component()
 		 # ✅ Recompute gross/net because duty pay was added
 		set_gross_pay_and_base_gross_pay()
 		# *** Recalculate deductions again so that income tax updates ***

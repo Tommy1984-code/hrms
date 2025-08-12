@@ -102,6 +102,7 @@
    "label": "Posting Date"
   },
   {
+   "fetch_from": "employee.relieving_date",
    "fieldname": "termination_date",
    "fieldtype": "Date",
    "label": "Termination Date",
@@ -120,7 +121,7 @@
   },
   {
    "fieldname": "annual_leave",
-   "fieldtype": "Int",
+   "fieldtype": "Float",
    "label": "Annual Leave"
   },
   {
@@ -216,7 +217,7 @@
   },
   {
    "fieldname": "worked_days",
-   "fieldtype": "Int",
+   "fieldtype": "Float",
    "label": "worked_days"
   },
   {
@@ -247,7 +248,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-06-20 09:27:15.049708",
+ "modified": "2025-08-12 09:23:02.106008",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Employee Termination",

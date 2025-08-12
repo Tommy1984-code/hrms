@@ -92,7 +92,7 @@
  "modified": "2025-07-17 08:53:35.862756",
  "modified_by": "Administrator",
  "module": "Payroll",
- "name": "Duty Pay",
+ "name": "Net Benefit Gross Up",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [

@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestDutyPay(FrappeTestCase):
+class TestNetBenefitGrossUp(FrappeTestCase):
 	pass
