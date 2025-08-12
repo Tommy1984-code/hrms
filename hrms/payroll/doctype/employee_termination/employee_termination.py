@@ -27,20 +27,17 @@ class EmployeeTermination(Document):
 		if not self.date_of_employment or not self.basic_salary:
 			frappe.throw("Joining Date and Base Salary are required!!!!.")
 
-		
 		base_salary = self.basic_salary
-
-		
 
 		# Calculate employee and company pension
 		employee_pension = base_salary * 0.07  # 7% of base salary
 		company_pension = base_salary * 0.11   # 11% of base salary
 
-		self.base_pension = round(employee_pension,2)
-		self.company_pension = round(company_pension,2)
+		self.base_pension = round(employee_pension, 2)
+		self.company_pension = round(company_pension, 2)
 
 		def parse_date(date_str):
-			return datetime.strptime(date_str,"%Y-%m-%d").date() if isinstance(date_str, str) else date_str
+			return datetime.strptime(date_str, "%Y-%m-%d").date() if isinstance(date_str, str) else date_str
 		
 		joining_date = parse_date(self.date_of_employment)
 		termination_date = parse_date(self.termination_date)
@@ -59,77 +56,64 @@ class EmployeeTermination(Document):
 		year_count = 1
 
 		while current_start_date < termination_date:
-			# Calculate next year's end date
 			next_year_date = current_start_date + relativedelta(years=1) - timedelta(days=1)
 
 			if next_year_date > termination_date:
 				next_year_date = termination_date  # Ensure we don't exceed termination date
 
-			year_duration = (next_year_date - current_start_date).days + 1
-			
-			if year_duration >= 365:
-				percent = 1.0 if year_count == 1 else 1/3  # First year: 100%, others: 1/3
-				no_of_days = (next_year_date - current_start_date).days + 1
+			days_diff = (next_year_date - current_start_date).days
+
+			# If full year (365 days counting inclusive), add +1 day
+			if days_diff >= 364:
+				year_duration = days_diff + 1
+				percent = 1.0 if year_count == 1 else 1/3
 				salary_amount = round(base_salary * percent, 2)
 			else:
-				percent=1/3 
-				no_of_days = (next_year_date - current_start_date).days + 1
+				# Partial last year: do NOT add +1 day
+				year_duration = days_diff
+				percent = 1/3
 				salary_amount = round((base_salary / 3) * (year_duration / 365), 2)
-				
+
 			grant = existing_grants.get(f"{year_count} year", 0)
 
-			# Append to severance table
 			self.append("severance_table", {
 				"year": f"{year_count} year",
 				"date_from": current_start_date,
 				"date_to": next_year_date,
-				"no_of_days": no_of_days,
+				"no_of_days": year_duration,
 				"percent": round(percent * 100, 2),
 				"amount": salary_amount,
 				"grant": grant
 			})
 
-			# Move to the next year
 			current_start_date = next_year_date + timedelta(days=1)
 			year_count += 1
 
-		
-
-		# After generation, we also update the final severance details
+		# After generation, update final severance details
 		self.update_final_settlement()
-		# Calculate the first part of severance tax (integer part of the rate)
+
 		tax_rate = self.total_severance / base_salary
-		
+
 		first_severance_tax_part = int(tax_rate)
-		
-		remaining_fraction = round(tax_rate - first_severance_tax_part,2)  # The fractional part
-		
-		 # 1st part: Tax for the integer part (first_severance_tax_part)
+		remaining_fraction = round(tax_rate - first_severance_tax_part, 2)
+
 		first_income_tax = base_salary * first_severance_tax_part
 		first_tax = self.calculate_tax(first_income_tax)
-		
-		# 2nd part: Tax for the fractional part (remaining_fraction)
+
 		second_tax_income = base_salary * remaining_fraction
-		
-		second_tax = self.calculate_tax(second_tax_income) 
-         
-		# Total severance taxP
+		second_tax = self.calculate_tax(second_tax_income)
+
 		total_severance_tax = first_tax + second_tax
-		# Update the total severance tax
 		self.severance_tax = round(total_severance_tax, 2)
 
-		 # Calculate net severance (gross severance - severance tax)
 		net_severance = self.total_severance - self.severance_tax
 		self.net_severance = round(net_severance, 2)
 
-		# Clear the earnings and deductions table before inserting new rows
 		self.clear_salary_component_tables()
 
-		# Insert Severance Gross into earnings_table
 		if self.total_severance:
 			self.insert_salary_component("earnings", "sevr", self.total_severance)
 
-		# Insert Severance Tax into deductions_table
 		if self.severance_tax:
 			self.insert_salary_component("deductions", "sevrinc", self.severance_tax)
 

@@ -20,11 +20,9 @@
   "annual_leave",
   "compensation",
   "column_break_lrbq",
-  "worked_days",
-  "payment_days",
-  "column_break_bvjd",
   "reason",
   "remark",
+  "column_break_bvjd",
   "section_break_gnhn",
   "severance_table",
   "tab_2_tab",
@@ -134,11 +132,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "payment_days",
-   "fieldtype": "Int",
-   "label": "Payment Days"
-  },
-  {
    "fieldname": "column_break_bvjd",
    "fieldtype": "Column Break"
   },
@@ -216,11 +209,6 @@
    "label": "Annual Leave Tax"
   },
   {
-   "fieldname": "worked_days",
-   "fieldtype": "Float",
-   "label": "worked_days"
-  },
-  {
    "fieldname": "gross_annual_leave_payment",
    "fieldtype": "Currency",
    "label": "Gross Annual Leave Payment"
@@ -248,7 +236,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-12 09:23:02.106008",
+ "modified": "2025-08-12 10:49:33.040423",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Employee Termination",
