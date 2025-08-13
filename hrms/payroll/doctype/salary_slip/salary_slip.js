@@ -172,6 +172,7 @@ frappe.ui.form.on("Salary Slip", {
 			[
 				"base_hour_rate",
 				"base_gross_pay",
+				"base_taxable_gross_pay",
 				"base_total_deduction",
 				"base_net_pay",
 				"base_rounded_total",
@@ -187,6 +188,7 @@ frappe.ui.form.on("Salary Slip", {
 			[
 				"hour_rate",
 				"gross_pay",
+				"taxable_gross_pay",
 				"total_deduction",
 				"net_pay",
 				"rounded_total",
@@ -204,6 +206,7 @@ frappe.ui.form.on("Salary Slip", {
 				"exchange_rate",
 				"base_hour_rate",
 				"base_gross_pay",
+				"base_taxable_gross_pay",
 				"base_total_deduction",
 				"base_net_pay",
 				"base_rounded_total",
@@ -451,3 +454,4 @@ frappe.ui.form.on("Salary Detail", {
 		}
 	},
 });
+

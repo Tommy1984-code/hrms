@@ -34,6 +34,8 @@ import erpnext
 from erpnext.accounts.utils import get_fiscal_year
 from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
 from erpnext.utilities.transaction_base import TransactionBase
+from decimal import Decimal, ROUND_HALF_UP, getcontext
+getcontext().prec = 10  # enough precision for payroll
 
 from hrms.hr.utils import validate_active_employee
 from hrms.payroll.doctype.additional_salary.additional_salary import get_additional_salaries
@@ -135,6 +137,8 @@ class SalarySlip(TransactionBase):
 				self.__actual_end_date = self.relieving_date
 
 		return self.__actual_end_date
+
+	
 
 	def validate(self):
 		self.check_salary_withholding()
@@ -928,24 +932,33 @@ class SalarySlip(TransactionBase):
 		net = gross - tax
 		return net
 
-	def find_new_gross(self, base_gross, base_net, base_tax, net_ben_gross_up, tolerance=0.01, max_iterations=50):
-		
+	def find_new_gross(self, base_gross, base_net, base_tax, net_ben_gross_up, tolerance=Decimal("0.01"), max_iterations=50):
+		"""
+		Find the gross pay needed so that the net pay increases by `net_ben_gross_up`
+		while keeping other deductions fixed. All calculations use Decimal for precision.
+		"""
+		base_gross = Decimal(str(base_gross))
+		base_net = Decimal(str(base_net))
+		base_tax = Decimal(str(base_tax))
+		net_ben_gross_up = Decimal(str(net_ben_gross_up))
+		tolerance = Decimal(str(tolerance))
+
 		fixed_deductions = base_gross - base_net - base_tax
 		new_net = base_net + net_ben_gross_up
 
 		low = base_gross
-		high = base_gross + (net_ben_gross_up * 3)  # upper bound estimate
+		high = base_gross + (net_ben_gross_up * Decimal("3"))
 		iteration = 0
 
 		while iteration < max_iterations:
-			mid = (low + high) / 2
-			tax = self.calculate_tax(mid)
+			mid = (low + high) / Decimal("2")
+			tax = Decimal(str(self.calculate_tax(float(mid))))  # calculate_tax still returns float
 			net = mid - tax - fixed_deductions
 
 			diff = net - new_net
 
 			if abs(diff) <= tolerance:
-				return round(mid, 2), round(tax, 2), round(mid - base_gross, 2)
+				return mid, tax, mid - base_gross  # no rounding, pure Decimal
 
 			if diff < 0:
 				low = mid  # net too low, increase gross
@@ -958,38 +971,57 @@ class SalarySlip(TransactionBase):
 		return None, None, None
 
 	def apply_net_ben_gross_up_component(self):
-		
-		net_ben_gross_up = frappe.db.get_value("Net Benefit Gross Up", {
-			"employee": self.employee,
-			"payroll_month": ["between", [self.start_date, self.end_date]],
-			"docstatus": 1
-		}, "amount")
+
+		TARGET_COMPONENT = "Net Ben Gross Up"
+
+		# If this component already exists in earnings, skip recalculation
+		for row in self.earnings:
+			if row.salary_component == TARGET_COMPONENT:
+				return
+
+		# Get the approved Net Ben Gross Up amount
+		net_ben_gross_up = frappe.db.get_value(
+			"Net Benefit Gross Up",
+			{
+				"employee": self.employee,
+				"payroll_month": ["between", [self.start_date, self.end_date]],
+				"docstatus": 1
+			},
+			"amount"
+		)
 
 		if not net_ben_gross_up:
 			return
-    
-		net_ben_gross_up = flt(net_ben_gross_up, 2)
-		current_net = flt(self.net_pay or 0, 2)
-		current_gross = flt(self.gross_pay or 0, 2)
 
-		# YOU MUST ADD THIS (provide base income tax)
-		base_income_tax = flt(self.get_income_tax_component() or 0)
-		
+		net_ben_gross_up = Decimal(str(net_ben_gross_up))
+
+		# Calculate base values excluding any Net Ben Gross Up
+		base_gross = Decimal(str(sum(flt(e.amount) for e in self.earnings if e.salary_component != TARGET_COMPONENT)))
+		base_income_tax = Decimal(str(self.get_income_tax_component() or 0))
+		base_deductions_other = Decimal(str(sum(
+			flt(d.amount) for d in self.deductions if d.salary_component != "Income Tax"
+		)))
+		base_net = base_gross - base_income_tax - base_deductions_other
+
+		# Find the required new gross
 		new_gross, new_tax, net_ben_gross = self.find_new_gross(
-			base_gross=current_gross,
-			base_net=current_net,
+			base_gross=base_gross,
+			base_net=base_net,
 			base_tax=base_income_tax,
 			net_ben_gross_up=net_ben_gross_up
 		)
 
 		if not new_gross or net_ben_gross <= 0:
-			frappe.msgprint("Duty Pay gross could not be calculated.")
+			frappe.msgprint("Net Ben Gross Up could not be calculated.")
 			return
 
-		# Add duty gross as salary component
+		# Quantize to exactly 2 decimal places with bankers rounding
+		net_ben_gross = net_ben_gross.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+		# Add the component
 		net_ben_row = frappe._dict({
-			"salary_component": "Net Ben Gross Up",
-			"amount": net_ben_gross
+			"salary_component": TARGET_COMPONENT,
+			"amount": float(net_ben_gross)  # ERPNext expects float for storage
 		})
 		self.add_structure_component(net_ben_row, "earnings")
 
@@ -1039,7 +1071,15 @@ class SalarySlip(TransactionBase):
 
 		# working_days = date_diff(self.end_date, self.start_date) + 1
 		# making it fixed woking days that's 26 default working days
-		working_days = 26
+		start_date = getdate(self.start_date)
+		end_date = getdate(self.end_date)
+
+		working_days = 0
+		for n in range((end_date - start_date).days + 1):
+			current_day = start_date + timedelta(days=n)
+			if current_day.weekday() != 6:  # exclude Sundays
+				working_days += 1
+
 		if for_preview:
 			self.total_working_days = working_days
 			self.payment_days = working_days
@@ -1213,8 +1253,9 @@ class SalarySlip(TransactionBase):
 
 		worked_days = date_diff(self.actual_end_date,self.actual_start_date) + 1
 
+
 		# If employee worked full month, set to 26, else prorate
-		payment_days = min(worked_days, 26) 
+		payment_days = worked_days
 
 		# Check if employee is new (joining date within the payroll period)
 		if emp_joining_date > emp_start_date:
@@ -1333,7 +1374,7 @@ class SalarySlip(TransactionBase):
 		lwp = 0
 		absent = 0
 		#my code total working day
-		total_working_days = 26 # Default working days in a month
+		# total_working_days = 26 # Default working days in a month
 
 		leave_type_map = self.get_leave_type_map()
 		attendance_details = self.get_employee_attendance(
@@ -1527,6 +1568,13 @@ class SalarySlip(TransactionBase):
 			self.base_gross_pay = flt(
 				flt(self.gross_pay) * flt(self.exchange_rate), self.precision("base_gross_pay")
 			)
+			
+		def set_taxable_gross_pay_and_base_taxable_gross_pay():
+			self.taxable_gross_pay = self.get_component_totals("earnings", depends_on_payment_days=1)
+			self.base_taxable_gross_pay = flt(
+				flt(self.taxable_gross_pay )* flt(self.exchange_rate), self.precision("base_taxable_gross_pay")
+			)
+			
 
 		if self.salary_structure:
 			# self.get_salary_components(self.employee) #my code adding the salary component of earnings
@@ -1545,6 +1593,9 @@ class SalarySlip(TransactionBase):
 			)[1]
 
 		set_gross_pay_and_base_gross_pay()
+		set_taxable_gross_pay_and_base_taxable_gross_pay()
+
+		
 
 		if self.salary_structure:
 			self.calculate_component_amounts("deductions")
@@ -1557,6 +1608,7 @@ class SalarySlip(TransactionBase):
 		self.apply_net_ben_gross_up_component()
 		 # ✅ Recompute gross/net because duty pay was added
 		set_gross_pay_and_base_gross_pay()
+		set_taxable_gross_pay_and_base_taxable_gross_pay()
 		# *** Recalculate deductions again so that income tax updates ***
 		if self.salary_structure:
 			self.calculate_component_amounts("deductions")
@@ -1578,11 +1630,18 @@ class SalarySlip(TransactionBase):
 
 		emp_base = self.get_employee_base_salary()
 							
+		start_date = getdate(self.start_date)
+		end_date = getdate(self.end_date)
 
+		working_days = 0
+		for n in range((end_date - start_date).days + 1):
+			current_day = start_date + timedelta(days=n)
+			if current_day.weekday() != 6:  # exclude Sundays
+				working_days += 1
 	
 
 		#Subtract absent days from net pay
-		total_working_days = 26  # Always 26 days per month
+		total_working_days = working_days  # Always 26 days per month
 		total_absent_days = self.absent_days 
 		if total_absent_days > 0:
 			self.net_pay -= (emp_base / total_working_days) * total_absent_days
@@ -1903,6 +1962,7 @@ class SalarySlip(TransactionBase):
 		self.add_loan_deductions(self.employee,component_type) # my code adding the loan component
 		for struct_row in self._salary_structure_doc.get(component_type):
 			self.add_structure_component(struct_row, component_type)
+		
 		
 			
 
@@ -2765,6 +2825,7 @@ class SalarySlip(TransactionBase):
 	def set_totals(self):
 
 		self.gross_pay = 0.0
+		self.taxable_gross_pay = 0.0
 
 		if self.salary_slip_based_on_timesheet == 1:
 			self.calculate_total_for_salary_slip_based_on_timesheet()
@@ -2773,6 +2834,9 @@ class SalarySlip(TransactionBase):
 			if hasattr(self, "earnings"):
 				for earning in self.earnings:
 					self.gross_pay += flt(earning.amount, earning.precision("amount"))
+					# Add only taxable earnings to taxable_gross_pay
+					if getattr(earning, "is_tax_applicable", 0) == 1:
+						self.taxable_gross_pay += flt(earning.amount, earning.precision("amount"))
 			if hasattr(self, "deductions"):
 				for deduction in self.deductions:
 					self.total_deduction += flt(deduction.amount, deduction.precision("amount"))
@@ -2783,6 +2847,7 @@ class SalarySlip(TransactionBase):
 
 	def set_base_totals(self):
 		self.base_gross_pay = flt(self.gross_pay) * flt(self.exchange_rate)
+		self.base_taxable_gross_pay = flt(self.taxable_gross_pay) * flt(self.exchange_rate)
 		self.base_total_deduction = flt(self.total_deduction) * flt(self.exchange_rate)
 		self.rounded_total = rounded(self.net_pay or 0)
 		self.base_net_pay = flt(self.net_pay) * flt(self.exchange_rate)
@@ -2807,6 +2872,9 @@ class SalarySlip(TransactionBase):
 				if earning.salary_component == salary_component:
 					self.earnings[i].amount = wages_amount
 				self.gross_pay += flt(self.earnings[i].amount, earning.precision("amount"))
+				# Add to taxable_gross_pay if earning is taxable
+				if getattr(earning, "is_tax_applicable", 0) == 1:
+					self.taxable_gross_pay += flt(self.earnings[i].amount, earning.precision("amount"))
 		self.net_pay = flt(self.gross_pay) - flt(self.total_deduction)
 
 	def compute_year_to_date(self):
@@ -2987,10 +3055,13 @@ class SalarySlip(TransactionBase):
 						"available_leaves": flt(leave_values.get("remaining_leaves")),
 					},
 				)
-
-    
-
-    
+	def calculate_taxable_gross_pay(self):
+		taxable_total = 0
+		for row in self.earnings:
+			if row.is_tax_applicable:
+				taxable_total += row.amount
+		self.taxable_gross_pay = taxable_total
+		frappe.msgprint(f"this is the taxable gross {self.taxable_gross_pay}")
 
 
 def unlink_ref_doc_from_salary_slip(doc, method=None):

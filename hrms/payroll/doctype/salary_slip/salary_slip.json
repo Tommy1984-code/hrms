@@ -60,6 +60,8 @@
   "totals",
   "gross_pay",
   "base_gross_pay",
+  "taxable_gross_pay",
+  "base_taxable_gross_pay",
   "gross_year_to_date",
   "base_gross_year_to_date",
   "column_break_25",
@@ -748,13 +750,26 @@
    "fieldtype": "Data",
    "label": "Payment Type",
    "reqd": 1
+  },
+  {
+   "fieldname": "taxable_gross_pay",
+   "fieldtype": "Currency",
+   "label": "Taxable Gross Pay",
+   "read_only": 1
+  },
+  {
+   "fieldname": "base_taxable_gross_pay",
+   "fieldtype": "Currency",
+   "label": "Taxable Gross Pay(Company Currency)",
+   "options": "Company:company:default_currency",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-file-text",
  "idx": 9,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-02 11:47:43.002748",
+ "modified": "2025-08-13 16:00:21.446229",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Salary Slip",
