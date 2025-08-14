@@ -1213,6 +1213,7 @@ class SalarySlip(TransactionBase):
 		return query.run()[0][0]
 
 	def get_payment_days(self, include_holidays_in_total_working_days):
+		
 		if self.joining_date and self.joining_date > getdate(self.end_date):
 			# employee joined after payroll date
 			return 0
@@ -1225,9 +1226,6 @@ class SalarySlip(TransactionBase):
 						get_link_to_form("Employee", self.employee), formatdate(self.relieving_date)
 					)
 				)
-		
-		# use 26 days as the default working days
-		total_working_days = 26
 
 		# Helper function to parse dates
 		def parse_date(date_str):
@@ -1244,49 +1242,37 @@ class SalarySlip(TransactionBase):
 		emp_start_date = parse_date(self.start_date)
 		emp_end_date = parse_date(self.end_date)
 
-		# if not emp_relieving_date:
-		# 	return 
-
 		# Ensure all dates are in the correct format
 		if isinstance(emp_start_date, str) or isinstance(emp_end_date, str):
 			raise ValueError("Start date and end date must be valid date objects.")
 
-		worked_days = date_diff(self.actual_end_date,self.actual_start_date) + 1
+		# ------------------- CHANGED: Adjust effective payroll window -------------------
+		# If employee joins after start, start from joining date
+		# If employee leaves before end, end at relieving date
+		eff_start_date = emp_start_date if not emp_joining_date or emp_joining_date <= emp_start_date else emp_joining_date
+		eff_end_date = emp_end_date if not emp_relieving_date or emp_relieving_date >= emp_end_date else emp_relieving_date
+		if eff_end_date < eff_start_date:
+			return 0
+		# -------------------------------------------------------------------------------
 
+		# --- Calculate working days (exclude Sundays) ---
+		working_days = 0
+		for n in range((eff_end_date - eff_start_date).days + 1):
+			current_day = eff_start_date + timedelta(days=n)
+			if current_day.weekday() != 6:  # exclude Sundays
+				working_days += 1
 
-		# If employee worked full month, set to 26, else prorate
-		payment_days = worked_days
+		payment_days = working_days
 
-		# Check if employee is new (joining date within the payroll period)
-		if emp_joining_date > emp_start_date:
-			# Employee is new, adjust holidays accordingly
-			holidays = self.get_holidays_for_employee(self.actual_start_date, self.actual_end_date)
-			# frappe.msgprint(f"This is the holiday for new employee: {holidays}")
-			payment_days -= len(holidays)
-			
+		# Adjust holidays only if not including holidays in total working days
+		if not cint(include_holidays_in_total_working_days):
+			holidays = self.get_holidays_for_employee(eff_start_date, eff_end_date) or []
+			# ------------------- CHANGED: Avoid removing holidays that fall on Sundays -------------------
+			non_sunday_holidays = [getdate(h) for h in holidays if getdate(h).weekday() != 6]
+			payment_days -= len(non_sunday_holidays)
+			# ---------------------------------------------------------------------------------------------
 
-		elif emp_relieving_date and emp_relieving_date < emp_end_date:
-
-			# If the employee is leaving and has a relieving date, adjust the payment days
-			# Calculate the number of working days from the start date to the relieving date
-			leaving_days = (emp_relieving_date - emp_start_date).days + 1
-			payment_days = min(leaving_days, 26)
-			holidays = self.get_holidays_for_employee(self.actual_start_date,self.actual_end_date)
-			payment_days -= len(holidays)
-
-			# Adjust holidays if not including holidays in total working days
-			if not cint(include_holidays_in_total_working_days):
-				holidays = self.get_holidays_for_employee(self.actual_start_date,self.actual_end_date)
-				payment_days -= len(holidays)
-			
-
-
-		elif not cint(include_holidays_in_total_working_days):
-			holidays = self.get_holidays_for_employee(emp_start_date,emp_end_date)
-			
-			payment_days -= len(holidays)
-			
-		return max(payment_days,0)
+		return max(payment_days, 0)
 
 	def get_holidays_for_employee(self, start_date, end_date):
 		holiday_list = get_holiday_list_for_employee(self.employee)
