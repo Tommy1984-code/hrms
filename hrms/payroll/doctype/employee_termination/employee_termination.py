@@ -92,22 +92,32 @@ class EmployeeTermination(Document):
 		# After generation, update final severance details
 		self.update_final_settlement()
 
+		# Determine how many full base-salary multiples there are
 		tax_rate = self.total_severance / base_salary
 
-		first_severance_tax_part = int(tax_rate)
-		remaining_fraction = round(tax_rate - first_severance_tax_part, 2)
+		full_units = int(tax_rate)  # full base salary multiples
+		fraction_units = tax_rate - full_units  # decimal remainder
 
-		first_income_tax = base_salary * first_severance_tax_part
-		first_tax = self.calculate_tax(first_income_tax)
+		# First part: tax for the full multiples
+		first_tax = 0
+		if full_units > 0:
+			first_tax_income = base_salary  # tax base salary once
+			first_tax = self.calculate_tax(first_tax_income) * full_units
 
-		second_tax_income = base_salary * remaining_fraction
-		second_tax = self.calculate_tax(second_tax_income)
+		# Second part: tax for the fractional remainder
+		second_tax = 0
+		if fraction_units > 0:
+			second_tax_income = base_salary * fraction_units
+			second_tax = self.calculate_tax(second_tax_income)
 
+		# Total severance tax
 		total_severance_tax = first_tax + second_tax
 		self.severance_tax = round(total_severance_tax, 2)
 
+		# Net severance
 		net_severance = self.total_severance - self.severance_tax
 		self.net_severance = round(net_severance, 2)
+
 
 		self.clear_salary_component_tables()
 
@@ -163,7 +173,6 @@ class EmployeeTermination(Document):
 		worked_days = (end_date - start_date).days + 1
 		self.worked_days = min(worked_days, 365)
 		
-
 		# Step 2: Calculate per-day salary from monthly base
 		daily_salary = self.basic_salary / 26
 
@@ -200,8 +209,8 @@ class EmployeeTermination(Document):
 		if self.gross_annual_leave_payment:
 			self.insert_salary_component("earnings", "annlev", self.gross_annual_leave_payment)
 
-		if self.annual_leave_tax:
-			self.insert_salary_component("deductions", "annlevtax", self.annual_leave_tax)
+		# if self.annual_leave_tax:
+		# 	self.insert_salary_component("deductions", "annlevtax", self.annual_leave_tax)
 
 	def update_final_settlement(self):
 		"""Update the total severance amount in the final settlement section."""

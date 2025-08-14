@@ -1569,11 +1569,35 @@ class SalarySlip(TransactionBase):
 				flt(self.gross_pay) * flt(self.exchange_rate), self.precision("base_gross_pay")
 			)
 			
+		
+		 #my code for taxable gross pay
 		def set_taxable_gross_pay_and_base_taxable_gross_pay():
-			self.taxable_gross_pay = self.get_component_totals("earnings", depends_on_payment_days=1)
+			
+			total = 0.0
+
+			# Ensure is_tax_applicable is populated from Salary Component master
+			for row in self.earnings:
+				if not hasattr(row, "is_tax_applicable") or row.is_tax_applicable is None:
+					row.is_tax_applicable = frappe.db.get_value(
+						"Salary Component", row.salary_component, "is_tax_applicable"
+					) or 0
+
+				if row.do_not_include_in_total:
+					continue
+				if not row.is_tax_applicable:
+					continue
+
+				# Same proration logic as gross pay
+				amount = self.get_amount_based_on_payment_days(row)[0]
+				total += amount
+
+			self.taxable_gross_pay = total
 			self.base_taxable_gross_pay = flt(
-				flt(self.taxable_gross_pay )* flt(self.exchange_rate), self.precision("base_taxable_gross_pay")
+				flt(self.taxable_gross_pay) * flt(self.exchange_rate),
+				self.precision("base_taxable_gross_pay")
 			)
+
+
 			
 
 		if self.salary_structure:
@@ -2744,6 +2768,8 @@ class SalarySlip(TransactionBase):
 					amount = flt(d.amount, d.precision("amount"))
 				total += amount
 		return total
+		
+   
 
 	def email_salary_slip(self):
 		receiver = frappe.db.get_value("Employee", self.employee, "prefered_email", cache=True)
