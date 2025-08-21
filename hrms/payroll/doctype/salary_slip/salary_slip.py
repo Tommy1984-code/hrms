@@ -766,7 +766,11 @@ class SalarySlip(TransactionBase):
 				self.add_structure_component(
 					frappe._dict({
 						"salary_component": detail_row.salary_component,
-						"amount": detail_row.amount
+						"amount": detail_row.amount,
+						"abbr": frappe.get_value("Salary Component", detail_row.salary_component, "salary_component_abbr"),
+						"amount_based_on_formula": 0,
+						"statistical_component": 0,
+						"depends_on_payment_days": 0,
 					}),
 					component_type
 				)
@@ -789,7 +793,11 @@ class SalarySlip(TransactionBase):
 				self.add_structure_component(
 					frappe._dict({
 						"salary_component": row.salary_component,
-						"amount": row.amount
+						"amount": row.amount,
+						"abbr": frappe.get_value("Salary Component", row.salary_component, "salary_component_abbr"),
+						"amount_based_on_formula": 0,
+						"statistical_component": 0,
+						"depends_on_payment_days": 0,
 					}),
 					component_type
 				)
