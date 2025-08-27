@@ -40,12 +40,12 @@ def get_columns(selected_earnings=None, selected_deductions=None):
     earnings, deductions = get_dynamic_salary_components(selected_earnings, selected_deductions)
 
     total_columns = [
-        {"label": "Total Benefit", "fieldname": "total_benefit", "fieldtype": "Currency", "width": 130},
-        {"label": "Taxable Gross Pay", "fieldname": "taxable_gross", "fieldtype": "Currency", "width": 140},
-        {"label": "Gross Pay", "fieldname": "gross_pay", "fieldtype": "Currency", "width": 120},
-        {"label": "Company Pension Cont.", "fieldname": "company_pension", "fieldtype": "Currency", "width": 150},
-        {"label": "Total Deduction", "fieldname": "total_deduction", "fieldtype": "Currency", "width": 140},
-        {"label": "Net Pay", "fieldname": "net_pay", "fieldtype": "Currency", "width": 130},
+        {"label": "Total Benefit", "fieldname": "total_benefit", "fieldtype": "Float", "width": 130},
+        {"label": "Taxable Gross Pay", "fieldname": "taxable_gross", "fieldtype": "Float", "width": 140},
+        {"label": "Gross Pay", "fieldname": "gross_pay", "fieldtype": "Float", "width": 120},
+        {"label": "Company Pension Cont.", "fieldname": "company_pension", "fieldtype": "Float", "width": 150},
+        {"label": "Total Deduction", "fieldname": "total_deduction", "fieldtype": "Float", "width": 140},
+        {"label": "Net Pay", "fieldname": "net_pay", "fieldtype": "Float", "width": 130},
     ]
 
     return fixed_columns + earnings + deductions + total_columns
@@ -75,7 +75,7 @@ def get_dynamic_salary_components(selected_earnings=None, selected_deductions=No
                 earnings.insert(0, {
                     "label": "Basic Salary",
                     "fieldname": "basic_pay",
-                    "fieldtype": "Currency",
+                    "fieldtype": "Float",
                     "width": 140
                 })
                 basic_salary_added = True
@@ -84,7 +84,7 @@ def get_dynamic_salary_components(selected_earnings=None, selected_deductions=No
         column = {
             "label": comp.name,
             "fieldname": frappe.scrub(abbr),
-            "fieldtype": "Currency",
+            "fieldtype": "Float",
             "width": 140
         }
 
@@ -183,6 +183,7 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
     grade = filters.get("grade")
     job_title = filters.get("job_title")
     employee_type = filters.get("employee_type")
+    employee_status = filters.get("employee_status") or "All"   # ✅ new filter
 
     payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 
@@ -207,6 +208,11 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
           {"AND e.designation = %(job_title)s" if job_title else ""}
           {"AND e.employment_type = %(employee_type)s" if employee_type else ""}
     """
+    # --- apply new/terminated filter ---
+    if employee_status == "New Employees":
+        query += " AND e.date_of_joining BETWEEN %(from_date)s AND %(to_date)s"
+    elif employee_status == "Terminated Employees":
+        query += " AND e.relieving_date BETWEEN %(from_date)s AND %(to_date)s"
 
     params = {
         "from_date": from_date,
@@ -316,6 +322,16 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
 
         final_data.append(dept_row)
         final_data.extend(grouped_data[dept])
+
+     # ✅ force zeros only for numeric salary component fields
+    numeric_fields = component_fieldnames + total_fields
+    for row in final_data:
+        # Skip department header rows
+        if not row.get("employee"):
+            continue
+        for field in numeric_fields:
+            if row.get(field) in [None, ""]:
+                row[field] = 0
 
     return final_data
 

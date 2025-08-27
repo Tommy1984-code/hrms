@@ -48,6 +48,14 @@ frappe.query_reports["Employee Master List"] = {
             "fieldtype": "Select",
             "options": "\nFull-Time\nPart-Time\nContract\nTemporary"
         },
+        {
+          fieldname: "employee_status",
+          label: __("Employee Status"),
+          fieldtype: "Select",
+          options: "\nAll\nNew Employees\nTerminated Employees",
+          default: "All"
+      },
+      
 		{
             "fieldname": "from_date",
             "label": "From Date",
