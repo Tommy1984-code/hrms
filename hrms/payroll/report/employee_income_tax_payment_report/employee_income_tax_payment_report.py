@@ -67,7 +67,7 @@ def get_grouped_data(filters=None):
 			params[key] = filters.get(key)
 
 	results = frappe.db.sql(query, params, as_dict=True)
-	payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+	payment_order = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 	grouped = defaultdict(list)
 
 	# Organize slips per employee

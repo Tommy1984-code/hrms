@@ -51,7 +51,7 @@ def get_data(filters):
     bank = filters.get("bank")
 
     months = get_months_in_range(from_date, to_date)
-    payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+    payment_order = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 
     all_filtered_rows = []
 

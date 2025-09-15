@@ -212,13 +212,13 @@
    "fieldname": "payment_type",
    "fieldtype": "Select",
    "label": "Payment Type",
-   "options": "Advance Payment\nPerformance Payment\nThird Payment\nFourth Payment\nFifth Payment",
+   "options": "Advance Payment\nSecond Payment\nThird Payment\nFourth Payment\nFifth Payment",
    "reqd": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-18 11:43:43.555457",
+ "modified": "2025-09-05 09:39:10.460605",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Salary Structure Assignment",

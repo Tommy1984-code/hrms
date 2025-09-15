@@ -45,7 +45,7 @@ frappe.query_reports["Employee Income tax Payment Report"] = {
 			"fieldname": "payment_type",
 			"label": "Payment Type",
 			"fieldtype": "Select",
-			"options": "\nAdvance Payment\nPerformance Payment\nThird Payment\nFourth Payment\nFifth Payment"
+			"options": "\nAdvance Payment\nSecond Payment\nThird Payment\nFourth Payment\nFifth Payment"
 		},
         {
             "fieldname": "from_date",

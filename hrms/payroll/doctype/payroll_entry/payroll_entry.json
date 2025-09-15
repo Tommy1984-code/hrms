@@ -337,14 +337,14 @@
    "fieldname": "payment_type",
    "fieldtype": "Select",
    "label": "Payment Type",
-   "options": "Advance Payment\nPerformance Payment\nThird Payment\nFourth Payment\nFifth Payment",
+   "options": "Advance Payment\nSecond Payment\nThird Payment\nFourth Payment\nFifth Payment",
    "reqd": 1
   }
  ],
  "icon": "fa fa-cog",
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-18 16:31:45.761988",
+ "modified": "2025-09-15 09:20:42.799117",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Payroll Entry",

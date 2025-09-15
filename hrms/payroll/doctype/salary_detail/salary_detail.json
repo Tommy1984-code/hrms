@@ -264,7 +264,7 @@
    "fieldname": "payment_type",
    "fieldtype": "Select",
    "label": "Payment Type",
-   "options": "Advance Payment\nPerformance Payment\nThird Payment\nFourth Payment\nFifth Payment"
+   "options": "Advance Payment\nSecond Payment\nThird Payment\nFourth Payment\nFifth Payment"
   },
   {
    "default": "0",

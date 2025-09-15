@@ -43,8 +43,12 @@
   {
    "fieldname": "loan_type",
    "fieldtype": "Link",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Loan Type",
-   "options": "Salary Component"
+   "options": "Salary Component",
+   "reqd": 1
   },
   {
    "fieldname": "monthly_deduction",
@@ -136,7 +140,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-07-07 11:41:27.920982",
+ "modified": "2025-09-02 16:25:57.528508",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Loan Management",

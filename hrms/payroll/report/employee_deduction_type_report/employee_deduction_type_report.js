@@ -49,7 +49,7 @@ frappe.query_reports["Employee Deduction Type Report"] = {
             "fieldname": "payment_type",
             "label": "Payment Type",
             "fieldtype": "Select",
-            "options": ["", "Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"],
+            "options": ["", "Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"],
             "default": ""
         },
         {

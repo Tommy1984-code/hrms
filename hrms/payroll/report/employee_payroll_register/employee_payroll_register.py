@@ -50,7 +50,7 @@ def get_data(filters, columns):
         frappe.throw("Please set both From Date and To Date")
 
     months = get_months_in_range(from_date, to_date)
-    payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+    payment_order = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
     num_columns = len(columns)
 
     # 1) Fetch all relevant salary detail rows for the range
@@ -157,7 +157,7 @@ def get_data(filters, columns):
                     tgt["overtime"] += amt
                 elif comp == "C":
                     tgt["commission"] += amt
-                elif comp == "PP":
+                elif comp == "ICV":
                     tgt["incentive"] += amt
             elif pf == "deductions":
                 if comp == "IT":

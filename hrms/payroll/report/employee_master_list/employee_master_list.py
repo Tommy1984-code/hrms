@@ -185,7 +185,7 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
     employee_type = filters.get("employee_type")
     employee_status = filters.get("employee_status") or "All"   # ✅ new filter
 
-    payment_order = ["Advance Payment", "Performance Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+    payment_order = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 
     query = f"""
         SELECT
