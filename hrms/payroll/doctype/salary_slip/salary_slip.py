@@ -3034,8 +3034,15 @@ class SalarySlip(TransactionBase):
 			
 				# Add deduction if it doesn't exist
 				if not deduction_exists:
+					component = frappe.get_value(
+						"Salary Component",
+						{"salary_component": "Advance Payment Net Income"},
+						["name", "salary_component_abbr"],
+						as_dict=True
+					)
 					new_deduction = {
-						"salary_component": "Advance Payment Net Income",
+						"salary_component": component.name if component else "Advance Payment Net Income",
+						"abbr": component.salary_component_abbr if component else "APNI",  # fallback abbr
 						"amount": total_net_pay
 					}
 					self.append("deductions", new_deduction)
