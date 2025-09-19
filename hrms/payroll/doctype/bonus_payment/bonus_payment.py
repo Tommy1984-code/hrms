@@ -12,19 +12,22 @@ class BonusPayment(Document):
 	def prevent_duplicate_bonus(self):
 		"""Prevent inserting bonus twice for the same employee in the same payroll month"""
 		if self.employee and self.payroll_month:
-			# Normalize payroll_month to first day of the month
-			payroll_month = getdate(self.payroll_month).replace(day=1)
+			 # Extract year and month from payroll_month
+			payroll_month = getdate(self.payroll_month).strftime('%Y-%m')  # Format: 'YYYY-MM'
+			
 
 			exists = frappe.db.exists(
 				"Bonus Payment",
 				{
-					"employee": self.employee,
-					"payroll_month": payroll_month,
-					"name": ["!=", self.name]  # exclude current record during update
-				}
+				'employee': self.employee,
+                'payroll_month': ['like', f'{payroll_month}%'],  # Check for records in the same month
+                'docstatus': 1  # Only check submitted documents
+				},
+				'name'
 			)
 			if exists:
-				frappe.throw(f"Bonus for employee {self.employee} already exists for {payroll_month.strftime('%B %Y')}.")
+				frappe.throw(f"Bonus for employee {self.employee} already exists for {getdate(payroll_month).strftime('%B %Y')}.")
+
 
 	def calculate_bonus_payment(self):
 		"""Calculate the Bonus Payment of Employee"""
