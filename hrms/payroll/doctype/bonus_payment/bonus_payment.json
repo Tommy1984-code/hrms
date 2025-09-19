@@ -1,0 +1,141 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:Emp-Bon-{####}",
+ "creation": "2025-09-19 08:20:38.137811",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_zd25",
+  "employee",
+  "employee_name",
+  "company",
+  "department",
+  "column_break_ghku",
+  "employee_type",
+  "payroll_month",
+  "basic_salary",
+  "column_break_zklj",
+  "amended_from",
+  "section_break_cufk",
+  "earnings"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_zd25",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Bonus Payment",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Read Only",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee Name",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "employee.department",
+   "fieldname": "department",
+   "fieldtype": "Read Only",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Department",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "column_break_zklj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.employment_type",
+   "fieldname": "employee_type",
+   "fieldtype": "Read Only",
+   "label": "Employee Type",
+   "options": "Employee"
+  },
+  {
+   "default": "Today",
+   "fieldname": "payroll_month",
+   "fieldtype": "Date",
+   "label": "Payroll Month"
+  },
+  {
+   "fetch_from": "employee.company",
+   "fieldname": "company",
+   "fieldtype": "Read Only",
+   "label": "Company",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "column_break_ghku",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.base",
+   "fieldname": "basic_salary",
+   "fieldtype": "Currency",
+   "label": "Basic Salary",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "section_break_cufk",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "earnings",
+   "fieldtype": "Table",
+   "label": "Earnings",
+   "options": "Salary Detail"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-09-19 10:28:48.229334",
+ "modified_by": "Administrator",
+ "module": "Payroll",
+ "name": "Bonus Payment",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

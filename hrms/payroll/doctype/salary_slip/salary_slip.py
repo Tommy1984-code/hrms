@@ -852,7 +852,46 @@ class SalarySlip(TransactionBase):
 				)
 
 		frappe.db.commit()
-	
+	#my code for employee Bonus
+	def get_bonus_salary_component(self, employee_id, component_type=None):
+		"""Fetch salary components from Salary Detail table of Bonus Payment for employees."""
+
+		# Find Bonus Payment for this employee
+		bonus_id = frappe.get_value("Bonus Payment", {"employee": employee_id}, "name")
+		if not bonus_id:
+			return  # No bonus found
+
+		# Get payroll month from Bonus Payment
+		payroll_month = frappe.get_value("Bonus Payment", bonus_id, "payroll_month")
+		if not payroll_month:
+			return
+
+		# Compare only by Year-Month
+		bonus_month = getdate(payroll_month).strftime('%Y-%m')
+		slip_month = getdate(self.actual_start_date).strftime('%Y-%m')
+
+		if bonus_month != slip_month:
+			return  # Skip if not in same month
+
+		# Fetch salary details from Bonus Payment's Salary Detail child table
+		salary_details = frappe.get_all(
+			"Salary Detail",
+			filters={"parent": bonus_id},
+			fields=["salary_component", "amount", "parentfield"]
+		)
+
+		for detail in salary_details:
+			if component_type and detail.parentfield != component_type:
+				continue
+
+			struct_row = frappe._dict({
+				"salary_component": detail.salary_component,
+				"amount": detail.amount
+			})
+
+			# Insert into Salary Slip (earnings/deductions)
+			self.add_structure_component(struct_row, component_type)
+
 	#my code for employee termination
 	def get_termination_salary_component(self, employee_id, component_type=None):
 		"""Fetch salary components from Salary Detail table of Employee Termination for terminated employees."""
@@ -1977,6 +2016,7 @@ class SalarySlip(TransactionBase):
 		self.get_salary_components(self.employee,component_type)#my code adding the fetched on to the salary structure
 		self.get_absent_salary_component(self.employee,component_type) # my code adding the fetched absent salary component to salary structure
 		self.get_termination_salary_component(self.employee,component_type)
+		self.get_bonus_salary_component(self.employee,component_type)
 		self.add_loan_deductions(self.employee,component_type) # my code adding the loan component
 		for struct_row in self._salary_structure_doc.get(component_type):
 			self.add_structure_component(struct_row, component_type)
