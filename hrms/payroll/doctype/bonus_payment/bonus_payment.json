@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:Emp-Bon-{####}",
  "creation": "2025-09-19 08:20:38.137811",
@@ -15,10 +16,17 @@
   "employee_type",
   "payroll_month",
   "basic_salary",
+  "bonus_time_frame",
+  "days",
   "column_break_zklj",
+  "gross_bonus",
+  "tax_bonus",
+  "net_bonus",
   "amended_from",
   "section_break_cufk",
-  "earnings"
+  "earnings",
+  "section_break_oayn",
+  "deductions"
  ],
  "fields": [
   {
@@ -109,12 +117,49 @@
    "fieldtype": "Table",
    "label": "Earnings",
    "options": "Salary Detail"
+  },
+  {
+   "fieldname": "bonus_time_frame",
+   "fieldtype": "Select",
+   "label": "Bonus Timeframe",
+   "options": "1 Month\n1.5 Month\n2 Month\n3 Month\n20 Days\n15 Days\n5 Days\nOther"
+  },
+  {
+   "fieldname": "gross_bonus",
+   "fieldtype": "Float",
+   "label": "Gross Bonus"
+  },
+  {
+   "fieldname": "tax_bonus",
+   "fieldtype": "Float",
+   "label": "Tax Bonus"
+  },
+  {
+   "fieldname": "net_bonus",
+   "fieldtype": "Float",
+   "label": "Net Bonus"
+  },
+  {
+   "fieldname": "section_break_oayn",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "deductions",
+   "fieldtype": "Table",
+   "label": "Deductions",
+   "options": "Salary Detail"
+  },
+  {
+   "depends_on": "eval:doc.bonus_time_frame==\"Other\"\n",
+   "fieldname": "days",
+   "fieldtype": "Float",
+   "label": "Days"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-09-19 10:28:48.229334",
+ "modified": "2025-09-22 11:34:37.802263",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Bonus Payment",
