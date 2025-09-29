@@ -52,61 +52,57 @@ def get_data(filters):
         month_end = add_months(month_start, 1) - timedelta(days=1)
 
         query = """
-                    SELECT
-                        ss.name as salary_slip,
-                        ss.employee,
-                        ss.employee_name,
-                        ss.payment_type,
-                        ss.start_date AS slip_start_date,
-                        e.department,
-                        e.branch,
-                        e.designation,
-                        e.grade,
-                        e.name AS employee_id,
-                        e.base,
-                        asl.working_hour,
-                        asl.rate,
-                        asl.amount,
-                        asl.payroll_date,
-                        asl.from_date as asl_from_date,
-                        asl.to_date as asl_to_date,
-                        DATE_FORMAT(COALESCE(asl.payroll_date, asl.from_date), '%%Y-%%m') AS date
-                    FROM `tabSalary Slip` ss
-                    INNER JOIN `tabAdditional Salary` asl ON
-                        asl.employee = ss.employee
-                        AND asl.salary_component = 'OverTime'
-                        AND asl.docstatus = 1
-                        AND (
-                            (asl.payroll_date BETWEEN %(month_start)s AND %(month_end)s)
-                            OR (
-                                asl.from_date IS NOT NULL AND asl.to_date IS NOT NULL
-                                AND asl.from_date <= %(month_end)s
-                                AND asl.to_date >= %(month_start)s
-                            )
-                        )
-                    INNER JOIN `tabEmployee` e ON e.name = ss.employee
-                    WHERE
-                        ss.docstatus = 1
-                        AND ss.start_date <= %(month_end)s
-                        AND ss.end_date >= %(month_start)s
-                        {company_clause}
-                        {employee_clause}
-                        {branch_clause}
-                        {department_clause}
-                        {payment_type_clause}
-                        {grade_clause}
-                        {employment_type_clause}
-                        AND asl.working_hour > 0
-                    ORDER BY ss.end_date DESC
-                """.format(
-                    company_clause="AND ss.company = %(company)s" if company else "",
-                    employee_clause="AND ss.employee = %(employee)s" if employee else "",
-                    branch_clause="AND e.branch = %(branch)s" if branch else "",
-                    department_clause="AND e.department = %(department)s" if department else "",
-                    payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
-                    grade_clause="AND e.grade = %(grade)s" if grade else "",
-                    employment_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else ""
-                )
+                SELECT
+                    ss.name AS salary_slip,
+                    ss.employee,
+                    ss.employee_name,
+                    ss.payment_type,
+                    e.department,
+                    e.branch,
+                    e.designation,
+                    e.grade,
+                    e.name AS employee_id,
+                    od.ot_125,
+                    od.ot_150,
+                    od.ot_200,
+                    od.ot_250,
+                    asl.amount AS total_amount,
+                    asl.payroll_date,
+                    DATE_FORMAT(asl.payroll_date, '%%Y-%%m') AS date
+                FROM `tabAdditional Salary` asl
+                INNER JOIN `tabOvertime detail` od
+                    ON od.parent = asl.name
+                INNER JOIN `tabSalary Slip` ss
+                    ON ss.employee = asl.employee
+                INNER JOIN `tabEmployee` e
+                    ON e.name = asl.employee
+                WHERE
+                    asl.salary_component = 'OverTime'
+                    AND asl.docstatus = 1
+                    AND asl.payroll_date BETWEEN %(month_start)s AND %(month_end)s
+                    {company_clause}
+                    {employee_clause}
+                    {branch_clause}
+                    {department_clause}
+                    {payment_type_clause}
+                    {grade_clause}
+                    {employment_type_clause}
+                    AND (
+                        COALESCE(od.ot_125,0) > 0 OR
+                        COALESCE(od.ot_150,0) > 0 OR
+                        COALESCE(od.ot_200,0) > 0 OR
+                        COALESCE(od.ot_250,0) > 0
+                    )
+                ORDER BY asl.payroll_date ASC
+            """.format(
+                company_clause="AND ss.company = %(company)s" if company else "",
+                employee_clause="AND ss.employee = %(employee)s" if employee else "",
+                branch_clause="AND e.branch = %(branch)s" if branch else "",
+                department_clause="AND e.department = %(department)s" if department else "",
+                payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
+                grade_clause="AND e.grade = %(grade)s" if grade else "",
+                employment_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else ""
+            )
 
 
         params = {
@@ -142,21 +138,23 @@ def get_data(filters):
             amt = row.amount or 0
 
 
-            if row.employee not in employee_data_map:
-                employee_data_map[row.employee] = {
-                    "employee": row.employee,
-                    "employee_name": row.employee_name,
-                    "date": row.date,
-                    "designation": row.designation,
-                    "ot_1_25": 0,
-                    "amount_1_25": 0,
-                    "ot_1_5": 0,
-                    "amount_1_5": 0,
-                    "ot_2_0": 0,
-                    "amount_2_0": 0,
-                    "ot_2_5": 0,
-                    "amount_2_5": 0,
-                }
+            for row in data:
+                if row.employee not in employee_data_map:
+                    employee_data_map[row.employee] = {
+                        "employee": row.employee,
+                        "employee_name": row.employee_name,
+                        "date": row.date,
+                        "designation": row.designation,
+                        "ot_1_25": row.ot_125 or 0,
+                        "amount_1_25": row.total_amount if row.ot_125 else 0,
+                        "ot_1_5": row.ot_150 or 0,
+                        "amount_1_5": row.total_amount if row.ot_150 else 0,
+                        "ot_2_0": row.ot_200 or 0,
+                        "amount_2_0": row.total_amount if row.ot_200 else 0,
+                        "ot_2_5": row.ot_250 or 0,
+                        "amount_2_5": row.total_amount if row.ot_250 else 0,
+                    }
+
 
             if rate == 1.25:
                 employee_data_map[row.employee]["ot_1_25"] += wh

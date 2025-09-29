@@ -124,10 +124,10 @@
         <td class="text-[12px] text-center py-1">{{ row.employee_name }}</td>
         <td class="text-[12px] text-center py-1">{{ row.designation }}</td>
         <td class="text-[12px] text-center py-1">{{ row.base }}</td>
-        <td class="text-[12px] text-center py-1">{{ row.ot_125 }}</td>
-        <td class="text-[12px] text-center py-1">{{ row.ot_150 }}</td>
-        <td class="text-[12px] text-center py-1">{{ row.ot_200 }}</td>
-        <td class="text-[12px] text-center py-1">{{ row.ot_250 }}</td>
+        <td class="text-[12px] text-center py-1">{{ row.ot_125.toFixed(2) }}</td>
+        <td class="text-[12px] text-center py-1">{{ row.ot_150.toFixed(2)}}</td>
+        <td class="text-[12px] text-center py-1">{{ row.ot_200.toFixed(2) }}</td>
+        <td class="text-[12px] text-center py-1">{{ row.ot_250.toFixed(2) }}</td>
         <td class="text-[12px] text-center py-1">{{ amount.toFixed(2) }}</td>
       </tr>
       {%

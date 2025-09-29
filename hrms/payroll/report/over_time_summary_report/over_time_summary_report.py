@@ -49,60 +49,58 @@ def get_data(filters):
         month_end = add_months(month_start, 1) - timedelta(days=1)
 
         query = """
-            SELECT
-                ss.employee,
-                ss.employee_name,
-                e.department,
-                e.branch,
-                e.designation,
-                e.grade,
-                e.name AS employee_id,
-                e.base,
-                sd.amount,
-                ss.end_date,
-                ss.payment_type,
-                asl.working_hour,
-                asl.rate,
-                COALESCE(asl.payroll_date, asl.from_date) AS date
-            FROM `tabSalary Slip` ss
-            INNER JOIN `tabSalary Detail` sd ON sd.parent = ss.name
-            LEFT JOIN `tabEmployee` e ON e.name = ss.employee
-            LEFT JOIN `tabAdditional Salary` asl ON
-                asl.employee = ss.employee
-                AND asl.salary_component = 'OverTime'
-                AND asl.docstatus = 1
-                AND (
-                    (asl.payroll_date BETWEEN %(month_start)s AND %(month_end)s)
-                    OR (
-                        asl.from_date IS NOT NULL AND asl.to_date IS NOT NULL
-                        AND asl.from_date <= %(month_end)s
-                        AND asl.to_date >= %(month_start)s
+                SELECT
+                    ss.employee,
+                    ss.employee_name,
+                    e.department,
+                    e.branch,
+                    e.designation,
+                    e.grade,
+                    e.name AS employee_id,
+                    e.base,
+                    od.ot_125,
+                    od.ot_150,
+                    od.ot_200,
+                    od.ot_250,
+                    asl.amount AS total_amount,
+                    asl.payroll_date,
+                    ss.end_date,
+                    ss.payment_type,
+                    DATE_FORMAT(asl.payroll_date, '%%Y-%%m') AS date
+                FROM `tabAdditional Salary` asl
+                INNER JOIN `tabOvertime detail` od
+                    ON od.parent = asl.name
+                INNER JOIN `tabSalary Slip` ss
+                    ON ss.employee = asl.employee
+                INNER JOIN `tabEmployee` e
+                    ON e.name = asl.employee
+                WHERE
+                    asl.salary_component = 'OverTime'
+                    AND asl.docstatus = 1
+                    AND asl.payroll_date BETWEEN %(month_start)s AND %(month_end)s
+                    {company_clause}
+                    {employee_clause}
+                    {branch_clause}
+                    {department_clause}
+                    {payment_type_clause}
+                    {grade_clause}
+                    {employment_type_clause}
+                    AND (
+                        COALESCE(od.ot_125,0) > 0 OR
+                        COALESCE(od.ot_150,0) > 0 OR
+                        COALESCE(od.ot_200,0) > 0 OR
+                        COALESCE(od.ot_250,0) > 0
                     )
-                )
-            WHERE
-                ss.docstatus = 1
-                AND sd.salary_component = 'OverTime'
-                AND ss.start_date <= %(month_end)s
-                AND ss.end_date >= %(month_start)s
-                {company_clause}
-                {employee_clause}
-                {branch_clause}
-                {department_clause}
-                {payment_type_clause}
-                {grade_clause}
-                {employment_type_clause}
-            ORDER BY ss.employee, ss.end_date DESC, 
-                FIELD(ss.payment_type, '{payment_order_str}')
-        """.format(
-            company_clause="AND ss.company = %(company)s" if company else "",
-            employee_clause="AND ss.employee = %(employee)s" if employee else "",
-            branch_clause="AND e.branch = %(branch)s" if branch else "",
-            department_clause="AND e.department = %(department)s" if department else "",
-            payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
-            grade_clause="AND e.grade = %(grade)s" if grade else "",
-            employment_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else "",
-            payment_order_str="','".join(payment_order)
-        )
+                ORDER BY asl.payroll_date ASC
+            """.format(
+                company_clause="AND ss.company = %(company)s" if company else "",
+                employee_clause="AND ss.employee = %(employee)s" if employee else "",
+                branch_clause="AND e.branch = %(branch)s" if branch else "",
+                department_clause="AND e.department = %(department)s" if department else "",
+                payment_type_clause="AND ss.payment_type = %(payment_type)s" if payment_type else "",
+                grade_clause="AND e.grade = %(grade)s" if grade else "",
+                employment_type_clause="AND e.employment_type = %(employee_type)s" if employee_type else ""
+            )
 
         params = {
             "month_start": month_start,
@@ -148,33 +146,14 @@ def get_data(filters):
                     "employee_name": row.employee_name,
                     "employee": row.employee_id,
                     "designation": row.designation,
-                    "base": 0,
-                    "ot_125": 0,
-                    "ot_150": 0,
-                    "ot_200": 0,
-                    "ot_250": 0,
-                    "amount": 0,
-                    "date": None
+                    "base": row.base or 0,
+                    "ot_125": row.ot_125 or 0,
+                    "ot_150": row.ot_150 or 0,
+                    "ot_200": row.ot_200 or 0,
+                    "ot_250": row.ot_250 or 0,
+                    "amount": row.total_amount or 0,
+                    "date": row.date
                 }
-
-            # Add base salary for this month (only for employees with OT this month)
-            grouped[dept][emp_key]["base"] += row.base or 0
-
-            # Accumulate OT hours by rate
-            rate = float(row.rate) if row.rate else 0
-            working_hour = row.working_hour or 0
-
-            if rate == 1.25:
-                grouped[dept][emp_key]["ot_125"] += working_hour
-            elif rate == 1.5:
-                grouped[dept][emp_key]["ot_150"] += working_hour
-            elif rate == 2.0:
-                grouped[dept][emp_key]["ot_200"] += working_hour
-            elif rate == 2.5:
-                grouped[dept][emp_key]["ot_250"] += working_hour
-
-            # Accumulate OT amount
-            grouped[dept][emp_key]["amount"] += row.amount or 0
 
     # Prepare final output with department headers
     final_data = []

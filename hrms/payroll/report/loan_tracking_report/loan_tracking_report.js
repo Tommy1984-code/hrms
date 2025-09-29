@@ -10,7 +10,6 @@ frappe.query_reports["Loan Tracking Report"] = {
             "fieldtype": "Link",
             "options": "Company",
             "reqd": 1,
-            "default": "ASKU PLC"
         },
 		{
             "fieldname": "employee",
@@ -20,12 +19,21 @@ frappe.query_reports["Loan Tracking Report"] = {
             "reqd": 1
         },
 		{
-			"fieldname": "loan_type",
-			"label": "Loan Type",
-			"fieldtype": "Link",
-			"options": "Loan Type",
-			"reqd": 1
-		},
+            "fieldname": "loan_type",
+            "label": "Loan Type",
+            "fieldtype": "Link",
+            "options": "Salary Component",
+            "reqd": 1,
+            "get_query": function() {
+                return {
+                    filters: {
+                        "loan_component": 1   // Only show Salary Components marked as Loan
+                    }
+                };
+            }
+        }
+        
+        
    
 	]
     

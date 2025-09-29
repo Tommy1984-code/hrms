@@ -95,6 +95,7 @@ def get_data(filters):
 					et.termination_date BETWEEN %(month_start)s AND %(month_end)s
 					AND et.employee = %(employee)s
 					AND et.company = %(company)s
+					AND st.amount > 0
 			"""
 
 			params = {
@@ -135,6 +136,7 @@ def get_data(filters):
 				WHERE
 					et.termination_date BETWEEN %(month_start)s AND %(month_end)s
 					AND et.company = %(company)s
+					AND et.total_severance > 0
 			"""
 
 			params = {

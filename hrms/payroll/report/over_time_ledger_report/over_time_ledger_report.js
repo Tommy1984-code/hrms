@@ -10,7 +10,7 @@ frappe.query_reports["Over Time Ledger Report"] = {
             "fieldtype": "Link",
             "options": "Company",
             "reqd": 1,
-            "default": "ASKU PLC"
+            
         },
 		
         {
