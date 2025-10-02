@@ -1,5 +1,6 @@
 {
  "add_total_row": 0,
+ "add_translate_data": 0,
  "columns": [],
  "creation": "2025-04-23 10:23:46.487691",
  "disabled": 0,
@@ -10,7 +11,7 @@
  "is_standard": "Yes",
  "letter_head": "Asku",
  "letterhead": null,
- "modified": "2025-04-23 10:23:46.487691",
+ "modified": "2025-10-02 12:30:21.607582",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Employee Income tax Payment Report",

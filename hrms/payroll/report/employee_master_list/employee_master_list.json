@@ -1,5 +1,6 @@
 {
  "add_total_row": 1,
+ "add_translate_data": 0,
  "columns": [],
  "creation": "2025-05-16 10:09:39.555020",
  "disabled": 0,
@@ -10,7 +11,7 @@
  "is_standard": "Yes",
  "letter_head": "Asku",
  "letterhead": null,
- "modified": "2025-08-27 08:40:09.777694",
+ "modified": "2025-10-02 12:25:43.682444",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Employee Master List",

@@ -9,7 +9,7 @@ frappe.query_reports["Employee Salary Slip Report"] = {
             "fieldtype": "Link",
             "options": "Company",
             "reqd": 1,
-            "default": "ASKU PLC"
+            
         },
         {
             "fieldname": "employee",
