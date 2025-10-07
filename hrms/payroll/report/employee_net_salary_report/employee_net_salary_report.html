@@ -25,7 +25,14 @@
     </div>
 </div>
   
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 14px;">
+<div style="
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin: 0 auto 20px auto;  /* ⬅ centers it */
+font-size: 14px;
+max-width: 800px;          /* ⬅ keeps width consistent with table */
+">
   
     <!-- Left: Company Bank Account -->
     {% if data.length > 0 %}
@@ -89,11 +96,10 @@
       }
     }
   </style>
-
-<div class="w-full max-w-screen-xl mx-auto">
-    <table class="no-padding-body table-fixed border-collapse border border-gray-300">
+<div class="w-full flex justify-center">
+  <table class="table-fixed border-collapse border border-gray-300 mx-auto" style="min-width: 800px;">
         
-        <thead>
+       <thead>
             <tr>
                 <th  class="w-[40px]  text-[10px]  font-bold  text-center border whitespace-nowrap">No.</th>
                 <th  class="w-[200px]  text-[12px] font-bold text-left border p-0">Employee Name</th>
@@ -137,7 +143,7 @@
 
     </table>
 
-  </div>
+</div>
 
   <div style="margin-top: 30px; font-size: 12px; padding-top: 15px;">
     <div style="display: flex; justify-content: space-between; gap: 20px;">

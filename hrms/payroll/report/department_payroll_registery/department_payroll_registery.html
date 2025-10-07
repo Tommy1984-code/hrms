@@ -152,7 +152,7 @@
         <tr>
             <td class="text-sm text-left border">{{i+1}}</td>
             <td class="text-[11px] text-left  border p-0">{{data[i].department_name }}</td>
-            <td class=" text-[11px] text-left border p-0">{{data[i].basic || 0.0 }}</td>
+            <td class=" text-[11px] text-left border p-0">{{data[i].basic.toFixed(2) || 0.0 }}</td>
             <td class=" text-[10px] text-left border p-0">{{data[i].absence.toFixed(2) || 0.0 }}</td>
             <td class=" text-[11px] text-right border p-0">{{ data[i].total_benefits.toFixed(2) || 0.0}}</td>
             <td class=" text-[11px] text-right border p-0">{{ data[i].overtime.toFixed(2) || 0.0 }}</td>
@@ -176,22 +176,22 @@
                 <td colspan="9" style="height: 5px; border: none;"></td>
             </tr>
             <!-- Total row with style -->
-            <tr style="background-color: #f1f1f1; border-top: 2px solid #131111;">
+            <tr style="background-color: #f1f1f1; border-top: 2px solid #131111;font-size: 12px;">
                 <th colspan="2" style="text-align: right; padding: 10px 0;">Total:</th>
-                <th style="padding: 10px 0;">{{ total_basic_salary.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_absence.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_total_benefits.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_overtime.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_commission.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_incentive.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_taxable_gross.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_gross_pay.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_company_pension.toFixed(2)}}</th>
-                <th style="padding: 10px 0;">{{ total_income_tax.toFixed(2)}}</th>
-                <th style="padding: 10px 0;">{{ total_employee_pension.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_other_deduction.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{ total_deductions.toFixed(2) }}</th>
-                <th style="padding: 10px 0;">{{total_net_pay.toFixed(2)}}</th>
+                <th style="text-align: center;padding: 9px 0;">{{ total_basic_salary.toFixed(2) }}</th>
+                <th style="text-align: center;padding: 9px 0;">{{ total_absence.toFixed(2) }}</th>
+                <th style="text-align: center;padding: 9px 0;">{{ total_total_benefits.toFixed(2) }}</th>
+                <th style="text-align: center;padding: 9px 0;">{{ total_overtime.toFixed(2) }}</th>
+                <th style="text-align: center;padding: 9px 0;">{{ total_commission.toFixed(2) }}</th>
+                <th style="text-align: center;padding: 10px 0;">{{ total_incentive.toFixed(2) }}</th>
+                <th style="text-align: center;padding: 10px 0;">{{ total_taxable_gross.toFixed(2) }}</th>
+                <th style="text-align: center;padding: 10px 0;">{{ total_gross_pay.toFixed(2) }}</th>
+                <th style="text-align: center;padding: 10px 0;">{{ total_company_pension.toFixed(2)}}</th>
+                <th style="text-align: center;padding: 10px 0;">{{ total_income_tax.toFixed(2)}}</th>
+                <th style="text-align: center;padding: 10px 0;">{{ total_employee_pension.toFixed(2) }}</th>
+                <th style="text-align: center;padding: 10px 0;">{{ total_other_deduction.toFixed(2) }}</th>
+                <th style="text-align: center;padding: 10px 0;">{{ total_deductions.toFixed(2) }}</th>
+                <th style="text-align: center;padding: 10px 0;">{{total_net_pay.toFixed(2)}}</th>
 
                 <th></th>
             </tr>
