@@ -28,6 +28,13 @@ frappe.query_reports["Salary Register"] = {
 			width: "50px",
 		},
 		{
+            "fieldname": "payment_type",
+            "label": "Payment Type",
+            "fieldtype": "Select",
+            "options": ["", "Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"],
+            "default": ""
+        },
+		{
 			fieldname: "employee",
 			label: __("Employee"),
 			fieldtype: "Link",
