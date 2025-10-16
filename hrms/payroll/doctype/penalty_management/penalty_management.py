@@ -1,9 +1,7 @@
-
 import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, today
-
 
 class PenaltyManagement(Document):
 
@@ -14,7 +12,6 @@ class PenaltyManagement(Document):
         if not self.employee:
             return
 
-        # Fetch employee base salary
         base_salary = frappe.db.get_value("Employee", self.employee, "base")
         if not base_salary:
             frappe.msgprint(f"Employee {self.employee} does not have a base salary set.")
@@ -22,37 +19,23 @@ class PenaltyManagement(Document):
 
         self.base_salary = flt(base_salary)
 
-        # Calculate monthly deduction = base × deduction_percent / 100
         if self.deduction_percent:
             self.monthly_deduction = flt(self.base_salary) * (flt(self.deduction_percent) / 100)
-
-            # Ensure deduction never exceeds remaining_amount
             if self.remaining_amount is not None:
                 self.monthly_deduction = min(self.monthly_deduction, flt(self.remaining_amount))
             else:
                 self.remaining_amount = flt(self.total_penalty) if self.total_penalty else 0
                 self.monthly_deduction = min(self.monthly_deduction, flt(self.remaining_amount))
 
-        # Add/update penalty salary component
+        # ✅ Only add deduction to Salary Slip draft, do NOT record payment history
         self.add_penalty_salary_component()
 
-        # Handle manual payment entered in penalty_paid
+        # Manual penalty payment (works as before)
         if self.penalty_paid:
             self._process_manual_penalty_payment()
 
-        # Reset penalty_paid field to 0 after processing
         self.penalty_paid = 0
-
-        # Manage penalty queue (paused/ongoing)
         self.manage_penalty_queue()
-
-        # Activate next penalty if needed (for next month)
-        self.activate_next_penalty_if_ready()
-
-        # Update status if fully paid
-        if flt(self.remaining_amount) == 0:
-            self.status = "Completed"
-            self.is_active = 0
 
     # -----------------------------
     # Validation
@@ -60,7 +43,6 @@ class PenaltyManagement(Document):
     def validate(self):
         if not self.employee:
             frappe.throw("Please select an Employee before saving.")
-
         if self.deduction_percent and flt(self.deduction_percent) > 33:
             frappe.throw("Deduction percent cannot exceed 33% of base salary.")
 
@@ -68,6 +50,10 @@ class PenaltyManagement(Document):
     # Salary Component Integration
     # -----------------------------
     def add_penalty_salary_component(self):
+        """
+        Adds Penalty component to Salary Slip deductions.
+        ⚠️ Does NOT record payment history — history is only recorded on Salary Slip submit.
+        """
         component_name = "Penalty"
         component = frappe.get_value("Salary Component", {"name": component_name}, ["name", "salary_component_abbr"])
         if not component:
@@ -96,7 +82,7 @@ class PenaltyManagement(Document):
     # -----------------------------
     def _process_manual_penalty_payment(self):
         paid_amount = flt(self.penalty_paid)
-        if paid_amount <= 0:
+        if paid_amount <= 0 or not self.is_active:
             return
 
         remaining = flt(self.remaining_amount or self.total_penalty or 0)
@@ -117,7 +103,7 @@ class PenaltyManagement(Document):
         if flt(self.remaining_amount) == 0:
             self.status = "Completed"
             self.is_active = 0
-            # Do NOT activate next penalty immediately; it will be done next month
+            self.set_next_penalty_ready()
 
     # -----------------------------
     # Penalty Queue Management
@@ -148,24 +134,9 @@ class PenaltyManagement(Document):
                 self.queue_no = 1
 
     # -----------------------------
-    # Activate Next Penalty (Next Month)
+    # Mark Next Penalty Ready
     # -----------------------------
-    def activate_next_penalty_if_ready(self):
-        """Activate next penalty only if no active penalty exists."""
-        # Check if current penalty is completed
-        if flt(self.remaining_amount) > 0:
-            return
-
-        # Only activate next if no other active penalties
-        active = frappe.get_all(
-            "Penalty Management",
-            filters={"employee": self.employee, "is_active": 1, "status": "Ongoing"},
-            fields=["name"]
-        )
-        if active:
-            return
-
-        # Find the next paused penalty in queue
+    def set_next_penalty_ready(self):
         next_penalty = frappe.get_all(
             "Penalty Management",
             filters={
@@ -173,22 +144,47 @@ class PenaltyManagement(Document):
                 "is_active": 0,
                 "status": "Paused"
             },
-            fields=["name"],
             order_by="queue_no ASC",
+            fields=["name"],
             limit=1
         )
         if next_penalty:
-            doc = frappe.get_doc("Penalty Management", next_penalty[0].name)
+            frappe.db.set_value("Penalty Management", next_penalty[0].name, "next_deduction_ready", 1)
+
+    # -----------------------------
+    # Activate Ready Penalty for Current Month
+    # -----------------------------
+    @staticmethod
+    def activate_ready_penalty_for_month(employee):
+        ready_penalties = frappe.get_all(
+            "Penalty Management",
+            filters={
+                "employee": employee,
+                "is_active": 0,
+                "status": "Paused",
+                "next_deduction_ready": 1
+            },
+            order_by="queue_no ASC",
+            fields=["name"]
+        )
+        for p in ready_penalties:
+            doc = frappe.get_doc("Penalty Management", p.name)
             doc.is_active = 1
             doc.status = "Ongoing"
+            doc.next_deduction_ready = 0
             doc.save(ignore_permissions=True)
-            frappe.msgprint(f"Next penalty {doc.name} is now active in the new cycle.")
+            frappe.msgprint(f"Penalty {doc.name} is now active for this month.")
+            
 
     # -----------------------------
     # Salary Slip Payment Recording
     # -----------------------------
-    def update_penalty_payment(self, paid_amount, payment_date):
-        if self.is_active != 1:
+    def update_penalty_payment(self, paid_amount, payment_date,salary_month_start=None):
+        """
+        ✅ Called only from Salary Slip on_submit
+        Records the penalty payment history.
+        """
+        if not self.is_active:
             return
 
         if self.remaining_amount is None:
@@ -212,5 +208,20 @@ class PenaltyManagement(Document):
         if flt(self.remaining_amount) == 0:
             self.status = "Completed"
             self.is_active = 0
+            self.set_next_penalty_ready()
 
         self.save()
+
+
+# ===========================================================
+# 🔹 HOOK WRAPPER FUNCTION (for Salary Slip before_insert)
+# ===========================================================
+def activate_ready_penalty_for_month(doc, method=None):
+    """Wrapper for Frappe hook - activates next penalty before Salary Slip creation"""
+    from hrms.payroll.doctype.penalty_management.penalty_management import PenaltyManagement
+
+    if not getattr(doc, "employee", None):
+        return
+
+    PenaltyManagement.activate_ready_penalty_for_month(doc.employee)
+

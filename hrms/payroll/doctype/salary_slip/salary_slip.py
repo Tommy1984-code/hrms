@@ -209,8 +209,10 @@ class SalarySlip(TransactionBase):
 
 			make_loan_repayment_entry(self)
             #my code inserting that track the loan payment history
+			
 			self.track_loan_payment()
 			self.track_penalty_payment()
+			
 
 			if not frappe.flags.via_payroll_entry and not frappe.flags.in_patch:
 				email_salary_slip = cint(
@@ -956,8 +958,9 @@ class SalarySlip(TransactionBase):
 				)
 
 				if not already_paid and flt(amount) > 0:
-					penalty_doc.update_penalty_payment(amount, self.start_date)
-					penalty_doc.save(ignore_permissions=True)
+					if self.docstatus == 1: 
+						penalty_doc.update_penalty_payment(amount, self.start_date)
+						penalty_doc.save(ignore_permissions=True)
 
 		# -----------------------------
 		# SUBSEQUENT PAYMENTS (2nd–5th)
@@ -992,10 +995,16 @@ class SalarySlip(TransactionBase):
 
 
 	# -----------------------------
+
 	# Track Penalty Payment in Penalty Management
 	# -----------------------------my code
 	def track_penalty_payment(self):
 		"""Tracks Penalty deductions from Salary Slip and updates Penalty Payment History in Penalty Management."""
+
+		# ✅ Run only when Salary Slip is submitted
+		if self.docstatus != 1:
+			frappe.msgprint("Skipping penalty tracking — Salary Slip not submitted yet.", alert=False)
+			return
 
 		active_penalties = frappe.get_all(
 			"Penalty Management",
@@ -1019,17 +1028,19 @@ class SalarySlip(TransactionBase):
 				penalty_doc = frappe.get_doc("Penalty Management", penalty["name"])
 
 				# Avoid duplicate payment record for same month and penalty
-				if frappe.get_all(
+				existing_payment = frappe.get_all(
 					"Penalty Payment History",
 					filters={
 						"penalty_id": penalty_doc.name,
 						"payment_date": self.actual_start_date
 					},
 					fields=["name"]
-				):
+				)
+
+				if existing_payment:
 					continue
 
-				# Record the payment
+				# ✅ Record the payment only when the slip is submitted
 				penalty_doc.update_penalty_payment(
 					paid_amount=deduction.amount,
 					payment_date=self.actual_start_date

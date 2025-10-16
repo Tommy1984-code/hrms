@@ -21,6 +21,7 @@
   "status",
   "queue_no",
   "is_active",
+  "next_deduction_ready",
   "reason",
   "penalty_paid",
   "section_break_frjq",
@@ -163,12 +164,19 @@
    "fieldname": "penalty_paid",
    "fieldtype": "Currency",
    "label": "Penalty Paid"
+  },
+  {
+   "default": "0",
+   "fieldname": "next_deduction_ready",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Next Deduction Ready"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-15 12:20:26.497445",
+ "modified": "2025-10-15 16:56:50.762757",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Penalty Management",

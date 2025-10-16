@@ -347,3 +347,13 @@ ignore_links_on_delete = ["PWA Notification"]
 # Recommended only for DocTypes which have limited documents with untranslated names
 # For example: Role, Gender, etc.
 # translated_search_doctypes = []
+
+# hooks.py
+doc_events = {
+    "Salary Slip": {
+        "on_submit": "hrms.payroll.doctype.penalty_management.penalty_management.activate_ready_penalty_for_month"
+    }
+}
+
+
+
