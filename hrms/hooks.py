@@ -351,9 +351,13 @@ ignore_links_on_delete = ["PWA Notification"]
 # hooks.py
 doc_events = {
     "Salary Slip": {
-        "on_submit": "hrms.payroll.doctype.penalty_management.penalty_management.activate_ready_penalty_for_month"
+        "before_insert": "hrms.payroll.doctype.penalty_management.penalty_management.activate_ready_penalty_for_month"
     }
 }
+
+# In hooks.py
+
+
 
 
 

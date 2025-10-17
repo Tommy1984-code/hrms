@@ -22,6 +22,7 @@
   "queue_no",
   "is_active",
   "next_deduction_ready",
+  "activation_date",
   "reason",
   "penalty_paid",
   "section_break_frjq",
@@ -171,12 +172,17 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Next Deduction Ready"
+  },
+  {
+   "fieldname": "activation_date",
+   "fieldtype": "Date",
+   "label": "Activation Date"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-15 16:56:50.762757",
+ "modified": "2025-10-17 11:46:34.326143",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Penalty Management",

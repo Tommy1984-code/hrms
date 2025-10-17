@@ -856,13 +856,16 @@ class SalarySlip(TransactionBase):
 
 		frappe.db.commit()
 	
-	#my code 
+		#my code 
+	# -----------------------------
+	# Add Penalty Deductions
+	# -----------------------------
 	def add_penalty_deductions(self, employee_id, component_type=None):
 		"""Fetch active Penalty components from Penalty Management for this salary slip, respecting payment priority."""
 
-		# Define payment priority order
-		payment_priority = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+		from frappe.utils import getdate
 
+		payment_priority = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 		if not self.payment_type:
 			return
 
@@ -898,9 +901,6 @@ class SalarySlip(TransactionBase):
 		first_slip = sorted_slips[0]
 		is_first_payment = self.name == first_slip["name"]
 
-		# -----------------------------
-		# FIRST PAYMENT OF THE MONTH
-		# -----------------------------
 		if is_first_payment:
 			active_penalties = frappe.get_all(
 				"Penalty Management",
@@ -932,10 +932,8 @@ class SalarySlip(TransactionBase):
 				if not detail_row:
 					continue
 
-				# Adjust deduction if remaining < monthly_deduction
 				amount = min(flt(detail_row.amount), flt(penalty["remaining_amount"] or 0))
 
-				# Add the penalty component to the current salary slip
 				self.add_structure_component(
 					frappe._dict({
 						"salary_component": detail_row.salary_component,
@@ -948,25 +946,24 @@ class SalarySlip(TransactionBase):
 					component_type
 				)
 
-				# ✅ Reduce penalty in Penalty Management ONLY if not already updated this month
 				penalty_doc = frappe.get_doc("Penalty Management", penalty["name"])
 
-				# Check if already recorded for this salary slip (avoid duplicate entries)
 				already_paid = any(
 					p.payment_date == self.start_date and abs(p.paid_amount - amount) < 0.001
 					for p in penalty_doc.get("penalty_payment_history", [])
 				)
 
 				if not already_paid and flt(amount) > 0:
-					if self.docstatus == 1: 
-						penalty_doc.update_penalty_payment(amount, self.start_date)
+					if self.docstatus == 1:
+						# ✅ Pass salary_month_start
+						penalty_doc.update_penalty_payment(
+							paid_amount=amount,
+							payment_date=self.start_date,
+							salary_month_start=self.start_date
+						)
 						penalty_doc.save(ignore_permissions=True)
-
-		# -----------------------------
-		# SUBSEQUENT PAYMENTS (2nd–5th)
-		# -----------------------------
 		else:
-			# Copy the same penalty deduction from the first slip, without reducing Penalty Management
+			# Subsequent payments
 			salary_details = frappe.get_all(
 				"Salary Detail",
 				filters={
@@ -980,7 +977,6 @@ class SalarySlip(TransactionBase):
 				if any(d.salary_component == row.salary_component for d in self.get(component_type)):
 					continue
 
-				# Just add the component visually, do not update Penalty Management
 				self.add_structure_component(
 					frappe._dict({
 						"salary_component": row.salary_component,
@@ -995,13 +991,13 @@ class SalarySlip(TransactionBase):
 
 
 	# -----------------------------
-
-	# Track Penalty Payment in Penalty Management
-	# -----------------------------my code
+	# Track Penalty Payment
+	# -----------------------------
 	def track_penalty_payment(self):
 		"""Tracks Penalty deductions from Salary Slip and updates Penalty Payment History in Penalty Management."""
 
-		# ✅ Run only when Salary Slip is submitted
+		from frappe.utils import getdate
+
 		if self.docstatus != 1:
 			frappe.msgprint("Skipping penalty tracking — Salary Slip not submitted yet.", alert=False)
 			return
@@ -1020,14 +1016,11 @@ class SalarySlip(TransactionBase):
 
 		for penalty in active_penalties:
 			salary_component = "Penalty"
-
-			# Only consider deductions with the "Penalty" component
 			penalty_deductions = [d for d in self.deductions if d.salary_component == salary_component]
 
 			for deduction in penalty_deductions:
 				penalty_doc = frappe.get_doc("Penalty Management", penalty["name"])
 
-				# Avoid duplicate payment record for same month and penalty
 				existing_payment = frappe.get_all(
 					"Penalty Payment History",
 					filters={
@@ -1040,10 +1033,11 @@ class SalarySlip(TransactionBase):
 				if existing_payment:
 					continue
 
-				# ✅ Record the payment only when the slip is submitted
+				# ✅ Pass salary_month_start
 				penalty_doc.update_penalty_payment(
 					paid_amount=deduction.amount,
-					payment_date=self.actual_start_date
+					payment_date=self.actual_start_date,
+					salary_month_start=self.start_date
 				)
 
 				frappe.msgprint(
