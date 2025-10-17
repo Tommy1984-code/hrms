@@ -35,6 +35,7 @@ class PenaltyManagement(Document):
         # Manual penalty payment
         if self.penalty_paid:
             self._process_manual_penalty_payment(salary_month_start=today())
+            self.activate_next_penalty_after_manual_payment(salary_month_start=today())
 
         self.penalty_paid = 0
         self.manage_penalty_queue()
@@ -103,6 +104,28 @@ class PenaltyManagement(Document):
             self.is_active = 0
             # ✅ Pass current salary month to schedule next penalty in the following month
             self.set_next_penalty_ready(payroll_month_start=salary_month_start)
+        
+    def activate_next_penalty_after_manual_payment(self, salary_month_start):
+        """
+        Activates the next penalty in the queue for the employee after manual payment.
+        """
+        next_penalty = frappe.get_all(
+            "Penalty Management",
+            filters={
+                "employee": self.employee,
+                "is_active": 0,
+                "status": "Paused"
+            },
+            order_by="queue_no ASC",
+            fields=["name"]
+        )
+
+        if next_penalty:
+            next_doc = frappe.get_doc("Penalty Management", next_penalty[0].name)
+            next_doc.activation_date = get_first_day(add_months(getdate(salary_month_start), 1))
+            next_doc.next_deduction_ready = 1
+            next_doc.save(ignore_permissions=True)
+            frappe.msgprint(f"Next Penalty {next_doc.name} is now ready for activation.")
 
     # -----------------------------
     # Penalty Queue Management
