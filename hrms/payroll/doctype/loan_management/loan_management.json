@@ -10,14 +10,19 @@
   "loan_management_section",
   "employee",
   "employee_name",
+  "deduction_type",
+  "deduction_percent",
+  "base_salary",
+  "column_break_ywxd",
   "loan_type",
   "loan_amount",
   "monthly_deduction",
-  "column_break_ywxd",
   "remaining_amount",
   "start_date",
+  "column_break_toif",
   "status",
   "loan_paid",
+  "receipt",
   "section_break_imac",
   "deductions",
   "section_break_pdio",
@@ -136,11 +141,38 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "deduction_type",
+   "fieldtype": "Select",
+   "label": "Deduction Type",
+   "options": "Flat\nPercentile"
+  },
+  {
+   "depends_on": "eval:doc.deduction_type == \"Percentile\"\n",
+   "fieldname": "deduction_percent",
+   "fieldtype": "Float",
+   "label": "Deduction % Per Month"
+  },
+  {
+   "fetch_from": "employee.base",
+   "fieldname": "base_salary",
+   "fieldtype": "Read Only",
+   "label": "Base Salary"
+  },
+  {
+   "fieldname": "column_break_toif",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "receipt",
+   "fieldtype": "Attach",
+   "label": "Receipt"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-02 16:25:57.528508",
+ "modified": "2025-10-20 10:38:33.513050",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Loan Management",
@@ -162,6 +194,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

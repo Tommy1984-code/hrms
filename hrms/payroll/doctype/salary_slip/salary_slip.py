@@ -212,6 +212,7 @@ class SalarySlip(TransactionBase):
 			
 			self.track_loan_payment()
 			self.track_penalty_payment()
+			self.track_credit_association_payment()
 			
 
 			if not frappe.flags.via_payroll_entry and not frappe.flags.in_patch:
@@ -1035,6 +1036,7 @@ class SalarySlip(TransactionBase):
 
 				# ✅ Pass salary_month_start
 				penalty_doc.update_penalty_payment(
+					
 					paid_amount=deduction.amount,
 					payment_date=self.actual_start_date,
 					salary_month_start=self.start_date
@@ -1046,6 +1048,164 @@ class SalarySlip(TransactionBase):
 					),
 					alert=True
 				)
+
+		frappe.db.commit()
+
+	#my code for Credit associations contribution 
+	def add_credit_association_deductions(self, employee_id, component_type=None):
+		"""Fetch Credit Association components for first slip of month; reuse from first slip for others."""
+
+		payment_priority = [
+			"Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"
+		]
+
+		if not self.payment_type:
+			return
+
+		month_start = frappe.utils.get_first_day(self.start_date)
+		month_end = frappe.utils.get_last_day(self.end_date)
+
+		slips = frappe.get_all(
+			"Salary Slip",
+			filters={
+				"employee": employee_id,
+				"start_date": ["between", [month_start, month_end]],
+				"docstatus": 1
+			},
+			fields=["name", "payment_type", "start_date"]
+		)
+
+		slips.append({
+			"name": self.name,
+			"payment_type": self.payment_type,
+			"start_date": self.start_date
+		})
+
+		sorted_slips = sorted(
+			[s for s in slips if s["payment_type"] in payment_priority],
+			key=lambda x: payment_priority.index(x["payment_type"])
+		)
+
+		first_slip = sorted_slips[0]
+		is_first_payment = self.name == first_slip["name"]
+
+		if is_first_payment:
+			active_contributions = frappe.get_all(
+				"Credit Association Contribution",
+				filters={"employee": employee_id, "status": ["not in", ["Closed", "Paused"]]},
+				fields=["name", "monthly_deduction", "deduction_percent", "start_date"]
+			)
+
+			if not active_contributions:
+				return
+
+			for contribution in active_contributions:
+				salary_component = "Credit Association"  # Adjust if you have a linked component
+
+				# Fetch this contribution's deduction row from its child table
+				detail_row = frappe.get_value(
+					"Salary Detail",
+					{
+						"parent": contribution["name"],
+						"salary_component": salary_component,
+						"parentfield": component_type if component_type else "deductions"
+					},
+					["salary_component", "amount"],
+					as_dict=True
+				)
+
+				if not detail_row:
+					continue
+
+				if any(d.salary_component == salary_component for d in self.get(component_type)):
+					continue
+
+				self.add_structure_component(
+					frappe._dict({
+						"salary_component": detail_row.salary_component,
+						"amount": detail_row.amount,
+						"abbr": frappe.get_value("Salary Component", detail_row.salary_component, "salary_component_abbr"),
+						"amount_based_on_formula": 0,
+						"statistical_component": 0,
+						"depends_on_payment_days": 0,
+					}),
+					component_type
+				)
+		else:
+			# Copy from first slip
+			salary_details = frappe.get_all(
+				"Salary Detail",
+				filters={
+					"parent": first_slip["name"],
+					"parentfield": component_type
+				},
+				fields=["salary_component", "amount"]
+			)
+
+			for row in salary_details:
+				if any(d.salary_component == row.salary_component for d in self.get(component_type)):
+					continue
+
+				self.add_structure_component(
+					frappe._dict({
+						"salary_component": row.salary_component,
+						"amount": row.amount,
+						"abbr": frappe.get_value("Salary Component", row.salary_component, "salary_component_abbr"),
+						"amount_based_on_formula": 0,
+						"statistical_component": 0,
+						"depends_on_payment_days": 0,
+					}),
+					component_type
+				)
+
+
+	def track_credit_association_payment(self):
+		"""Tracks Credit Association deductions from Salary Slip and updates Payment History."""
+
+		active_contributions = frappe.get_all(
+			"Credit Association Contribution",
+			filters={
+				"employee": self.employee,
+				"status": ["not in", ["Closed", "Paused"]]
+			},
+			fields=["name"]
+		)
+
+		if not active_contributions:
+			return
+
+		for contribution in active_contributions:
+			salary_component = "Credit Association"  # Adjust if you have a linked component
+
+			contribution_deductions = [d for d in self.deductions if d.salary_component == salary_component]
+
+			for deduction in contribution_deductions:
+				contribution_doc = frappe.get_doc("Credit Association Contribution", contribution["name"])
+
+				# Avoid duplicate payment record for same month
+				if frappe.get_all(
+					"Credit Association Contribution Payment History", 
+					filters={
+						"parent": contribution_doc.name,
+						"payment_date": self.actual_start_date
+					},
+					fields=["name"]
+				):
+					continue
+
+				# Record the payment
+				contribution_doc.append("credit_association_payment_history", {
+					"credit_assocation_id":contribution_doc.name,
+					"payment_date": self.actual_start_date,
+					"paid_amount": deduction.amount
+				})
+
+				frappe.msgprint(
+					_("Credit Association payment of {0} recorded for Employee {1}").format(deduction.amount, self.employee_name),
+					alert=True
+				)
+
+				contribution_doc.save(ignore_permissions=True)
 
 		frappe.db.commit()
 
@@ -2216,6 +2376,7 @@ class SalarySlip(TransactionBase):
 		self.get_bonus_salary_component(self.employee,component_type)
 		self.add_loan_deductions(self.employee,component_type) # my code adding the loan component
 		self.add_penalty_deductions(self.employee,component_type) # my code adding the penalty component
+		self.add_credit_association_deductions(self.employee,component_type) #my code addint the creadit assocation component
 		for struct_row in self._salary_structure_doc.get(component_type):
 			self.add_structure_component(struct_row, component_type)
 		
