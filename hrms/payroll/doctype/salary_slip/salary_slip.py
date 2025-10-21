@@ -1092,9 +1092,14 @@ class SalarySlip(TransactionBase):
 		if is_first_payment:
 			active_contributions = frappe.get_all(
 				"Credit Association Contribution",
-				filters={"employee": employee_id, "status": ["not in", ["Closed", "Paused"]]},
+				filters={
+					"employee": employee_id,
+					"status": ["not in", ["Closed", "Paused"]],
+					"start_date": ["<=", self.start_date]  # ✅ respect start date (from date)
+				},
 				fields=["name", "monthly_deduction", "deduction_percent", "start_date"]
 			)
+
 
 			if not active_contributions:
 				return
@@ -1166,7 +1171,8 @@ class SalarySlip(TransactionBase):
 			"Credit Association Contribution",
 			filters={
 				"employee": self.employee,
-				"status": ["not in", ["Closed", "Paused"]]
+				"status": ["not in", ["Closed", "Paused"]],
+				"start_date": ["<=", self.start_date]  # respect from_date
 			},
 			fields=["name"]
 		)
@@ -1175,7 +1181,7 @@ class SalarySlip(TransactionBase):
 			return
 
 		for contribution in active_contributions:
-			salary_component = "Credit Association"  # Adjust if you have a linked component
+			salary_component = "Credit Association"
 
 			contribution_deductions = [d for d in self.deductions if d.salary_component == salary_component]
 
@@ -1183,31 +1189,22 @@ class SalarySlip(TransactionBase):
 				contribution_doc = frappe.get_doc("Credit Association Contribution", contribution["name"])
 
 				# Avoid duplicate payment record for same month
-				if frappe.get_all(
-					"Credit Association Contribution Payment History", 
-					filters={
-						"parent": contribution_doc.name,
-						"payment_date": self.actual_start_date
-					},
-					fields=["name"]
-				):
+				exists = frappe.db.exists(
+					"Credit Association Contribution Payment History",
+					{"parent": contribution_doc.name, "payment_date": self.actual_start_date}
+				)
+				if exists:
 					continue
 
-				# Record the payment
-				contribution_doc.append("credit_association_payment_history", {
-					"credit_assocation_id":contribution_doc.name,
-					"payment_date": self.actual_start_date,
-					"paid_amount": deduction.amount
-				})
+				# Use the parent method to record payment and update paid_amount
+				contribution_doc.update_credit_payment(deduction.amount, self.actual_start_date)
 
 				frappe.msgprint(
-					_("Credit Association payment of {0} recorded for Employee {1}").format(deduction.amount, self.employee_name),
+					_("Credit Association payment of {0} recorded for Employee {1}").format(
+						deduction.amount, self.employee_name
+					),
 					alert=True
 				)
-
-				contribution_doc.save(ignore_permissions=True)
-
-		frappe.db.commit()
 
 	#my code for employee Bonus
 	def get_bonus_salary_component(self, employee_id, component_type=None):
