@@ -5,7 +5,7 @@
    "label": "Outgoing Salary"
   }
  ],
- "content": "[{\"id\":\"QcCwbzoKIw\",\"type\":\"card\",\"data\":{\"card_name\":\"Quick Links\",\"col\":4}},{\"id\":\"Gjdp-s2h1e\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":4}},{\"id\":\"0hS7VuIAYJ\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":3}},{\"id\":\"yHvxO8c7y4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Salary Register\",\"col\":3}},{\"id\":\"BkyX2AbOa9\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"SzbKmzu7Pa\",\"type\":\"onboarding\",\"data\":{\"onboarding_name\":\"Payroll\",\"col\":12}},{\"id\":\"JwdDI8L83f\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Outgoing Salary\",\"col\":12}},{\"id\":\"LQTPvC_4qj\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}}]",
+ "content": "[{\"id\":\"JwdDI8L83f\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Outgoing Salary\",\"col\":12}},{\"id\":\"QcCwbzoKIw\",\"type\":\"card\",\"data\":{\"card_name\":\"Salary & Payroll Management\",\"col\":4}},{\"id\":\"U_AllFPM0j\",\"type\":\"card\",\"data\":{\"card_name\":\"Salary Adjustments\",\"col\":4}},{\"id\":\"FhbE-sfqvv\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports And Settings\",\"col\":4}},{\"id\":\"BkyX2AbOa9\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"SzbKmzu7Pa\",\"type\":\"onboarding\",\"data\":{\"onboarding_name\":\"Payroll\",\"col\":12}},{\"id\":\"LQTPvC_4qj\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"UuXhwf2Bqz\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Data Import\",\"col\":3}},{\"id\":\"PLV5dNJ1Tf\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Data Export\",\"col\":3}}]",
  "creation": "2020-05-27 19:54:23.405607",
  "custom_blocks": [],
  "docstatus": 0,
@@ -20,39 +20,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Absent Employee",
-   "link_count": 0,
-   "link_to": "Absent Employee",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Report",
-   "link_count": 0,
-   "link_to": "Report",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
    "label": "Additional Salary",
    "link_count": 0,
    "link_to": "Additional Salary",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Employee Termination",
-   "link_count": 0,
-   "link_to": "Employee Termination",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -70,8 +40,206 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Quick Links",
+   "label": "Loan Management",
+   "link_count": 0,
+   "link_to": "Loan Management",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Credit Association Contribution",
+   "link_count": 0,
+   "link_to": "Credit Association Contribution",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Employee Termination",
+   "link_count": 0,
+   "link_to": "Employee Termination",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Absent Employee",
+   "link_count": 0,
+   "link_to": "Absent Employee",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Bonus Payment",
+   "link_count": 0,
+   "link_to": "Bonus Payment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": " Penalty Management",
+   "link_count": 0,
+   "link_to": "Penalty Management",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Report",
+   "link_count": 0,
+   "link_to": "Report",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Payroll Settings",
+   "link_count": 0,
+   "link_to": "Payroll Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Salary Adjustments",
    "link_count": 8,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Additional Salary",
+   "link_count": 0,
+   "link_to": "Additional Salary",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Net Benefit Gross",
+   "link_count": 0,
+   "link_to": "Net Benefit Gross Up",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Loan Management",
+   "link_count": 0,
+   "link_to": "Loan Management",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Credit Association Contribution",
+   "link_count": 0,
+   "link_to": "Credit Association Contribution",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Employee Termination",
+   "link_count": 0,
+   "link_to": "Employee Termination",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Absent Employee",
+   "link_count": 0,
+   "link_to": "Absent Employee",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Bonus Payment",
+   "link_count": 0,
+   "link_to": "Bonus Payment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Penalty Management",
+   "link_count": 0,
+   "link_to": "Penalty Management",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports And Settings",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports",
+   "link_count": 0,
+   "link_to": "Report",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Payroll Settings",
+   "link_count": 0,
+   "link_to": "Payroll Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Salary & Payroll Management",
+   "link_count": 4,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -99,9 +267,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Absent Employee",
+   "label": "Salary Structure Assignment",
    "link_count": 0,
-   "link_to": "Absent Employee",
+   "link_to": "Salary Structure Assignment",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -109,74 +277,15 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Report",
+   "label": "Bulk Salary Structure assignment",
    "link_count": 0,
-   "link_to": "Report",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Additional Salary",
-   "link_count": 0,
-   "link_to": "Additional Salary",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Employee Termination",
-   "link_count": 0,
-   "link_to": "Employee Termination",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Net Benefit Gross Up",
-   "link_count": 0,
-   "link_to": "Net Benefit Gross Up",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Bonus Payment",
-   "link_count": 0,
-   "link_to": "Bonus Payment",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Settings",
-   "link_count": 1,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Payroll Settings",
-   "link_count": 0,
-   "link_to": "Payroll Settings",
+   "link_to": "Bulk Salary Structure Assignment",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2025-10-07 13:27:15.051065",
+ "modified": "2025-10-22 09:14:48.245655",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Payroll",
@@ -190,17 +299,19 @@
  "sequence_id": 15.0,
  "shortcuts": [
   {
-   "label": "Dashboard",
-   "link_to": "Payroll",
-   "type": "Dashboard"
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Data Import",
+   "link_to": "Data Import",
+   "stats_filter": "[]",
+   "type": "DocType"
   },
   {
    "color": "Grey",
    "doc_view": "List",
-   "label": "Salary Register",
-   "link_to": "Salary Register",
-   "report_ref_doctype": "Salary Slip",
-   "type": "Report"
+   "label": "Data Export",
+   "link_to": "Data Export",
+   "type": "DocType"
   }
  ],
  "title": "Payroll"

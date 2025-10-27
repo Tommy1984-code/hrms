@@ -172,7 +172,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-20 10:38:33.513050",
+ "modified": "2025-10-22 08:23:38.466094",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Loan Management",
@@ -190,6 +190,18 @@
    "report": 1,
    "role": "System Manager",
    "select": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR And Payroll",
    "share": 1,
    "write": 1
   }

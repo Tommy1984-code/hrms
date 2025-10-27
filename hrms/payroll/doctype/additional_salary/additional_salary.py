@@ -71,29 +71,6 @@ class AdditionalSalary(Document):
 
 		
 
-	# def calculate_overtime(self):
-	# 	"""Calculate Overtime if the selected salary component is 'Overtime'"""
-	# 	if self.salary_component == "OverTime":
-	# 		if not self.rate or not self.working_hour:
-	# 			frappe.throw(_("Rate and Working Hour are required for Overtime calculations."))
-
-	# 		base_salary = frappe.db.get_value("Employee", self.employee, "base")
-
-	# 		if not base_salary:
-	# 			frappe.throw(_("Base Salary is missing for Employee: {0}").format(self.employee))
-
-	# 			# Convert base_salary to float, handling currency formatting if necessary
-	# 	if isinstance(base_salary, str):
-	# 		base_salary = float(base_salary.replace(',', '').replace('ETB', '').strip())  # Adjust as per your currency format
-
-	# 	# Ensure working_hour is a float
-	# 	self.working_hour = float(self.working_hour)
-
-	# 	# Convert rate to float
-	# 	self.rate = float(self.rate)  # Ensure rate is a float
-
-	# 	self.amount = (base_salary / 208) * self.working_hour * self.rate
-
 	def validate_salary_structure(self):
 		if not frappe.db.exists("Salary Structure Assignment", {"employee": self.employee}):
 			frappe.throw(
@@ -277,9 +254,13 @@ def get_additional_salaries(employee, start_date, end_date, component_type):
 			component_field,
 			additional_sal.type,
 			additional_sal.amount,
+			additional_sal.prorate,
 			additional_sal.is_recurring,
 			overwrite_field,
 			additional_sal.deduct_full_tax_on_selected_payroll_date,
+			additional_sal.from_date,
+            additional_sal.to_date,
+            additional_sal.payroll_date
 		)
 		.where(
 			(additional_sal.employee == employee)
@@ -294,7 +275,7 @@ def get_additional_salaries(employee, start_date, end_date, component_type):
 						[  # is recurring and additional salary dates fall within the payroll period
 							additional_sal.is_recurring == 1,
 							additional_sal.from_date <= end_date,
-							additional_sal.to_date >= end_date,
+							additional_sal.to_date >= start_date,
 						]
 					),
 					Criterion.all(

@@ -26,6 +26,7 @@
   "overtime_details",
   "amount",
   "column_break_8",
+  "prorate",
   "deduct_full_tax_on_selected_payroll_date",
   "overwrite_salary_structure_amount",
   "properties_and_references_section",
@@ -69,7 +70,7 @@
    "reqd": 1
   },
   {
-   "default": "1",
+   "default": "0",
    "fieldname": "overwrite_salary_structure_amount",
    "fieldtype": "Check",
    "label": "Overwrite Salary Structure Amount"
@@ -207,11 +208,17 @@
    "fieldtype": "Table",
    "label": "Overtime Details",
    "options": "Overtime detail"
+  },
+  {
+   "default": "0",
+   "fieldname": "prorate",
+   "fieldtype": "Check",
+   "label": "Prorate"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-10-07 15:03:35.675227",
+ "modified": "2025-10-27 11:08:51.893156",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Additional Salary",

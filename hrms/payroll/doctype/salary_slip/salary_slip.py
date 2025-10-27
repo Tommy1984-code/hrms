@@ -739,7 +739,7 @@ class SalarySlip(TransactionBase):
 				filters={
 					"employee": employee_id, 
 					"status": ["not in", ["Completed", "Paused"]],
-					"start_date": ["<=", self.start_date] },
+					"start_date": ["<=", self.end_date] },
 				fields=["name", "monthly_deduction", "loan_type"]
 			)
 
@@ -911,7 +911,7 @@ class SalarySlip(TransactionBase):
 				filters={
 					"employee": employee_id,
 					"status": ["not in", ["Completed", "Paused"]],
-					"start_date": ["<=", self.start_date] 
+					"start_date": ["<=", self.end_date] 
 				},
 				fields=["name", "monthly_deduction", "remaining_amount"]
 			)
@@ -2575,19 +2575,80 @@ class SalarySlip(TransactionBase):
 						last_benefit = frappe._dict(last_benefit)
 						amount = last_benefit.amount
 						self.update_component_row(frappe._dict(last_benefit.struct_row), amount, "earnings")
+	
 
 	def add_additional_salary_components(self, component_type):
 		additional_salaries = get_additional_salaries(
 			self.employee, self.start_date, self.end_date, component_type
 		)
 
+		def working_days_between(start_date, end_date):
+			"""Return number of working days (Mon-Sat) between two dates."""
+			start = getdate(start_date)
+			end = getdate(end_date)
+			days = 0
+			while start <= end:
+				if start.weekday() != 6:  # Exclude Sunday
+					days += 1
+				start = add_days(start, 1)
+			return days
+
+		# -----------------------
+		# Cumulative storage per component
+		# -----------------------
+		cumulative_components = {}
+
 		for additional_salary in additional_salaries:
+			amount = flt(additional_salary.amount)
+
+			if getattr(additional_salary, "prorate", 0):
+				payroll_start = getdate(self.start_date)
+				payroll_end = getdate(self.end_date)
+
+				if additional_salary.is_recurring:
+					# Recurring: calculate overlapping days with payroll month
+					add_start = getdate(additional_salary.from_date)
+					add_end = getdate(additional_salary.to_date)
+					period_start = max(add_start, payroll_start)
+					period_end = min(add_end, payroll_end)
+				else:
+					# Single-month: prorate from payroll_date to end of payroll month
+					payroll_day = getdate(additional_salary.payroll_date)
+					period_start = payroll_day
+					period_end = payroll_end
+
+				# Total working days in payroll month
+				total_working_days_in_month = working_days_between(payroll_start, payroll_end)
+				# Effective working days for this additional salary
+				effective_working_days = working_days_between(period_start, period_end)
+
+				if total_working_days_in_month > 0:
+					amount = round(amount * effective_working_days / total_working_days_in_month, 2)
+				else:
+					amount = 0
+
+			component = additional_salary.component
+
+			# -----------------------
+			# Cumulative logic
+			# -----------------------
+			if additional_salary.overwrite_salary_structure_amount:
+				# Overwrite replaces previous value
+				cumulative_components[component] = amount
+			else:
+				# Sum with previous amounts for same component
+				cumulative_components[component] = cumulative_components.get(component, 0) + amount
+
+		# -----------------------
+		# Update salary slip with cumulative amounts
+		# -----------------------
+		for component, amount in cumulative_components.items():
 			self.update_component_row(
-				get_salary_component_data(additional_salary.component),
-				additional_salary.amount,
+				get_salary_component_data(component),
+				amount,
 				component_type,
-				additional_salary,
-				is_recurring=additional_salary.is_recurring,
+				additional_salary=None,  # Can pass None here
+				is_recurring=False,
 			)
 
 	def add_tax_components(self):
