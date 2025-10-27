@@ -20,11 +20,17 @@ frappe.ui.form.on("Additional Salary", {
 		
 	},
 
+	
+
 	onload: function (frm) {
 		if (frm.doc.type) {
 			frm.trigger("set_component_query");
 		}
 	},
+	is_recurring: function(frm) {
+		manage_set_recurring_button(frm);
+	},
+
 
 	employee: function (frm) {
 		if (frm.doc.employee) {
@@ -167,3 +173,92 @@ frappe.ui.form.on("Additional Salary", {
 	},
 	
 });
+
+function manage_set_recurring_button(frm) {
+    $(".btn-set-recurring-range").remove(); // prevent duplicate buttons
+
+    if (frm.doc.is_recurring) {
+        frm.add_custom_button(__('Set Recurring Range'), function () {
+            set_recurring_range(frm);
+        }).addClass('btn-set-recurring-range btn-primary');
+    }
+}
+
+function set_recurring_range(frm) {
+    if (!frm.doc.employee) {
+        frappe.msgprint(__('Please select an Employee first.'));
+        return;
+    }
+
+    frappe.call({
+        method: "frappe.client.get_value",
+        args: {
+            doctype: "Employee",
+            filters: { name: frm.doc.employee },
+            fieldname: ["date_of_joining", "relieving_date"]
+        },
+        callback: function (res) {
+            if (!res.message) return;
+
+            const { date_of_joining, relieving_date } = res.message;
+            const today = frappe.datetime.str_to_obj(frappe.datetime.get_today());
+            const month_range = frm.doc.recurring_months || 1;
+
+            let from_date;
+
+            // --- Determine from_date ---
+            if (date_of_joining) {
+                const joinDate = frappe.datetime.str_to_obj(date_of_joining);
+                // New employee joined this month → start from joining date
+                if (joinDate.getFullYear() === today.getFullYear() &&
+                    joinDate.getMonth() === today.getMonth()) {
+                    from_date = joinDate;
+                } else {
+                    // Existing employee → start from first day of current month
+                    from_date = new Date(today.getFullYear(), today.getMonth(), 1);
+                }
+            } else {
+                from_date = new Date(today.getFullYear(), today.getMonth(), 1);
+            }
+
+            // --- Calculate to_date correctly based on month_range ---
+            function addMonths(date, months) {
+                const d = new Date(date);
+                const newMonth = d.getMonth() + months;
+                d.setMonth(newMonth);
+                // Adjust for month overflow
+                if (d.getDate() !== date.getDate()) {
+                    d.setDate(0);
+                }
+                return d;
+            }
+
+            // to_date = last day of the month after adding (month_range - 1) months
+            let temp_date = addMonths(from_date, month_range - 1);
+            let to_date = new Date(temp_date.getFullYear(), temp_date.getMonth() + 1, 0);
+
+            // Respect relieving date if earlier
+            if (relieving_date) {
+                const relieveDate = frappe.datetime.str_to_obj(relieving_date);
+                if (relieveDate < to_date) {
+                    to_date = relieveDate;
+                }
+            }
+
+            // --- Apply values ---
+            frm.set_value("from_date", frappe.datetime.obj_to_str(from_date));
+            frm.set_value("to_date", frappe.datetime.obj_to_str(to_date));
+            frm.set_value("is_recurring", 1);
+
+            frappe.show_alert({
+                message: __(
+                    "Recurring range set from {0} → {1}",
+                    [frappe.datetime.obj_to_str(from_date), frappe.datetime.obj_to_str(to_date)]
+                ),
+                indicator: "green",
+            });
+        },
+    });
+}
+
+
