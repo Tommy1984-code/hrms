@@ -15,8 +15,11 @@
   "benefit_type",
   "monthly_earning",
   "start_date",
+  "end_date",
+  "column_break_zrnn",
   "status",
   "total_paid",
+  "prorate",
   "section_break_kovd",
   "earnings",
   "section_break_roof",
@@ -112,12 +115,27 @@
    "fieldtype": "Table",
    "label": "Benefit Payment History",
    "options": "Benefit Payment History"
+  },
+  {
+   "default": "0",
+   "fieldname": "prorate",
+   "fieldtype": "Check",
+   "label": "Prorate"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "column_break_zrnn",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-27 16:54:22.330149",
+ "modified": "2025-10-28 09:26:05.635693",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Benefit Management",

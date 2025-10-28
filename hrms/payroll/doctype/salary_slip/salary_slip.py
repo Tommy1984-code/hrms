@@ -213,6 +213,7 @@ class SalarySlip(TransactionBase):
 			self.track_loan_payment()
 			self.track_penalty_payment()
 			self.track_credit_association_payment()
+			self.track_benefit_payment()
 			
 
 			if not frappe.flags.via_payroll_entry and not frappe.flags.in_patch:
@@ -1176,7 +1177,7 @@ class SalarySlip(TransactionBase):
 			filters={
 				"employee": self.employee,
 				"status": ["not in", ["Closed", "Paused"]],
-				"start_date": ["<=", self.start_date]  # respect from_date
+				"start_date": ["<=", self.end_date]  # respect from_date
 			},
 			fields=["name"]
 		)
@@ -1287,7 +1288,195 @@ class SalarySlip(TransactionBase):
 			})
 
 			self.add_structure_component(struct_row, component_type)
-			
+
+	#my code for benefit earing salary component
+	def add_benefit_earnings(self, employee_id, component_type=None):
+
+		def working_days_between(start_date, end_date):
+			"""Return number of working days (Mon-Sat) between two dates."""
+			start = getdate(start_date)
+			end = getdate(end_date)
+			days = 0
+			while start <= end:
+				if start.weekday() != 6:  # Exclude Sunday
+					days += 1
+				start = add_days(start, 1)
+			return days
+		
+		"""Fetch benefit components from Benefit Management for first slip of month; reuse from first slip for others."""
+
+		payment_priority = [
+			"Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"
+		]
+
+		if not self.payment_type:
+			return
+
+		month_start = frappe.utils.get_first_day(self.start_date)
+		month_end = frappe.utils.get_last_day(self.end_date)
+
+		slips = frappe.get_all(
+			"Salary Slip",
+			filters={
+				"employee": employee_id,
+				"start_date": ["between", [month_start, month_end]],
+				"docstatus": 1
+			},
+			fields=["name", "payment_type", "start_date"]
+		)
+
+		slips.append({
+			"name": self.name,
+			"payment_type": self.payment_type,
+			"start_date": self.start_date
+		})
+
+		sorted_slips = sorted(
+			[s for s in slips if s["payment_type"] in payment_priority],
+			key=lambda x: payment_priority.index(x["payment_type"])
+		)
+
+		first_slip = sorted_slips[0]
+		is_first_payment = self.name == first_slip["name"]
+
+		# Force component_type to 'earnings' like loans are always in deductions
+		component_type = "earnings"
+
+		if is_first_payment:
+			active_benefits = frappe.get_all(
+				"Benefit Management",
+				filters={
+					"employee": employee_id,
+					"status": ["not in", ["Closed", "Paused"]],
+					"start_date": ["<=", self.end_date]
+				},
+				fields=["name", "monthly_earning", "benefit_type", "start_date", "end_date", "prorate"]
+			)
+
+			if not active_benefits:
+				return
+
+			for benefit in active_benefits:
+				salary_component = benefit["benefit_type"]
+
+				if not frappe.get_value("Salary Component", salary_component, "benefit_component"):
+					continue
+
+				monthly_amount = flt(benefit["monthly_earning"])
+
+				# Apply proration if needed
+				# Then inside add_benefit_earnings:
+				if benefit.get("prorate"):
+					effective_start = max(benefit["start_date"], month_start)
+					effective_end = min(benefit["end_date"] or month_end, month_end)
+
+					total_working_days = working_days_between(month_start, month_end)
+					active_working_days = working_days_between(effective_start, effective_end)
+
+					if total_working_days > 0:
+						monthly_amount = monthly_amount * (active_working_days / total_working_days)
+
+				if any(d.salary_component == salary_component for d in self.get(component_type)):
+					continue
+
+				self.add_structure_component(
+					frappe._dict({
+						"salary_component": salary_component,
+						"amount": monthly_amount,
+						"abbr": frappe.get_value("Salary Component", salary_component, "salary_component_abbr"),
+						"amount_based_on_formula": 0,
+						"statistical_component": 0,
+						"depends_on_payment_days": 0,
+					}),
+					component_type
+				)
+
+		else:
+			# Copy from first slip
+			salary_details = frappe.get_all(
+				"Salary Detail",
+				filters={
+					"parent": first_slip["name"],
+					"parentfield": component_type
+				},
+				fields=["salary_component", "amount"]
+			)
+
+			for row in salary_details:
+				if any(d.salary_component == row.salary_component for d in self.get(component_type)):
+					continue
+
+				self.add_structure_component(
+					frappe._dict({
+						"salary_component": row.salary_component,
+						"amount": row.amount,
+						"abbr": frappe.get_value("Salary Component", row.salary_component, "salary_component_abbr"),
+						"amount_based_on_formula": 0,
+						"statistical_component": 0,
+						"depends_on_payment_days": 0,
+					}),
+					component_type
+				)
+
+	#my code for tracking benefit payment 
+	def track_benefit_payment(self):
+		"""Tracks benefit earnings from Salary Slip and updates Benefit Payment History."""
+
+		active_benefits = frappe.get_all(
+			"Benefit Management",
+			filters={
+				"employee": self.employee,
+				"status": ["not in", ["Closed", "Paused"]]
+			},
+			fields=["name", "benefit_type"]
+		)
+
+		if not active_benefits:
+			return
+
+		for benefit in active_benefits:
+			benefit_component = benefit["benefit_type"]
+
+			if not frappe.get_value("Salary Component", benefit_component, "benefit_component"):
+				continue
+
+			benefit_earnings = [e for e in self.earnings if e.salary_component == benefit_component]
+
+			for earning in benefit_earnings:
+				benefit_doc = frappe.get_doc("Benefit Management", benefit["name"])
+
+				# Check if payment for this month already exists
+				existing_payment = None
+				for row in benefit_doc.benefit_payment_history or []:
+					if row.payment_date == self.actual_start_date:
+						existing_payment = row
+						break
+
+				if existing_payment:
+					# Update existing row
+					existing_payment.paid_amount = earning.amount
+					# Recalculate total payment
+					previous_total = sum([d.paid_amount for d in benefit_doc.benefit_payment_history if d != existing_payment])
+					existing_payment.total_payment = previous_total + earning.amount
+				else:
+					# Append new row
+					previous_total = sum([d.paid_amount for d in benefit_doc.benefit_payment_history or []])
+					benefit_doc.append("benefit_payment_history", {
+						"benefit_id": benefit_doc.name,
+						"payment_date": self.actual_start_date,
+						"paid_amount": earning.amount,
+						"total_payment": previous_total + earning.amount
+					})
+
+				benefit_doc.save(ignore_permissions=True)
+
+				frappe.msgprint(
+					_("Benefit payment of {0} recorded for Employee {1}").format(earning.amount, self.employee_name),
+					alert=True
+				)
+
+		frappe.db.commit()
+
 	def calculate_tax(self, gross):
 		"""Calculate Ethiopian income tax with employee's tax-free transportation deduction."""
 
@@ -2378,6 +2567,7 @@ class SalarySlip(TransactionBase):
 		self.add_loan_deductions(self.employee,component_type) # my code adding the loan component
 		self.add_penalty_deductions(self.employee,component_type) # my code adding the penalty component
 		self.add_credit_association_deductions(self.employee,component_type) #my code addint the creadit assocation component
+		self.add_benefit_earnings(self.employee,component_type) #my code
 		for struct_row in self._salary_structure_doc.get(component_type):
 			self.add_structure_component(struct_row, component_type)
 		
