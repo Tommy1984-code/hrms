@@ -14,15 +14,9 @@ class PenaltyManagement(Document):
         if not self.employee:
             return
 
-        base_salary = frappe.db.get_value("Employee", self.employee, "base")
-        if not base_salary:
-            frappe.msgprint(f"Employee {self.employee} does not have a base salary set.")
-            return
-
-        self.base_salary = flt(base_salary)
-
         if self.deduction_percent:
-            self.monthly_deduction = flt(self.base_salary) * (flt(self.deduction_percent) / 100)
+            # ✅ replaced base_salary → net_amount
+            self.monthly_deduction = flt(self.net_amount) * (flt(self.deduction_percent) / 100)
             if self.remaining_amount is not None:
                 self.monthly_deduction = min(self.monthly_deduction, flt(self.remaining_amount))
             else:
@@ -46,8 +40,7 @@ class PenaltyManagement(Document):
     def validate(self):
         if not self.employee:
             frappe.throw("Please select an Employee before saving.")
-        if self.deduction_percent and flt(self.deduction_percent) > 33:
-            frappe.throw("Deduction percent cannot exceed 33% of base salary.")
+        
 
     # -----------------------------
     # Salary Component Integration

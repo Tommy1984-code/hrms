@@ -878,17 +878,31 @@ class SalarySlip(TransactionBase):
 	# Add Penalty Deductions
 	# -----------------------------
 	def add_penalty_deductions(self, employee_id, component_type=None):
-		"""Fetch active Penalty components from Penalty Management for this salary slip, respecting payment priority."""
+		"""Fetch Penalty components from first slip of month; apply working-day proration and add to deductions."""
 
-		from frappe.utils import getdate
+		from frappe.utils import getdate, add_days, flt, get_first_day, get_last_day
 
-		payment_priority = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+		def working_days_between(start_date, end_date):
+			"""Return number of working days (Mon–Sat), excluding Sunday."""
+			start = getdate(start_date)
+			end = getdate(end_date)
+			days = 0
+			while start <= end:
+				if start.weekday() != 6:  # Exclude Sunday
+					days += 1
+				start = add_days(start, 1)
+			return days
+
+		payment_priority = [
+			"Advance Payment", "Second Payment", "Third Payment",
+			"Fourth Payment", "Fifth Payment"
+		]
+
 		if not self.payment_type:
 			return
 
-		# Define month range
-		month_start = frappe.utils.get_first_day(self.start_date)
-		month_end = frappe.utils.get_last_day(self.end_date)
+		month_start = get_first_day(self.start_date)
+		month_end = get_last_day(self.end_date)
 
 		# Get all salary slips for this employee in the same month
 		slips = frappe.get_all(
@@ -901,7 +915,6 @@ class SalarySlip(TransactionBase):
 			fields=["name", "payment_type", "start_date"]
 		)
 
-		# Add current slip to the list
 		slips.append({
 			"name": self.name,
 			"payment_type": self.payment_type,
@@ -914,85 +927,75 @@ class SalarySlip(TransactionBase):
 			key=lambda x: payment_priority.index(x["payment_type"])
 		)
 
-		# Identify the first slip in the month
 		first_slip = sorted_slips[0]
 		is_first_payment = self.name == first_slip["name"]
 
+		# Always add to deductions
+		deductions_field = "deductions"
+
 		if is_first_payment:
+			# Fetch all active penalties
 			active_penalties = frappe.get_all(
 				"Penalty Management",
 				filters={
 					"employee": employee_id,
 					"status": ["not in", ["Completed", "Paused"]],
-					"start_date": ["<=", self.end_date] 
+					"start_date": ["<=", self.end_date]
 				},
-				fields=["name", "monthly_deduction", "remaining_amount"]
+				fields=["name", "monthly_deduction", "start_date", "end_date", "prorate"]
 			)
 
+			if not active_penalties:
+				return
+
 			for penalty in active_penalties:
-				salary_component = "Penalty"
+				salary_component = "Penalty"  # Use existing deduction component
 
-				# Skip if already exists in the table
-				if any(d.salary_component == salary_component for d in self.get(component_type)):
+				amount = flt(penalty.get("monthly_deduction", 0))
+
+				# Apply proration if enabled
+				if penalty.get("prorate"):
+					effective_start = max(getdate(penalty["start_date"]), month_start)
+					effective_end = min(getdate(penalty.get("end_date") or month_end), month_end)
+
+					total_working_days = working_days_between(month_start, month_end)
+					active_working_days = working_days_between(effective_start, effective_end)
+
+					if total_working_days > 0:
+						amount = amount * (active_working_days / total_working_days)
+
+				# Prevent duplicate entries
+				if any(d.salary_component == salary_component for d in self.get(deductions_field)):
 					continue
 
-				detail_row = frappe.get_value(
-					"Salary Detail",
-					{
-						"parent": penalty["name"],
-						"salary_component": salary_component,
-						"parentfield": component_type if component_type else "deductions"
-					},
-					["salary_component", "amount"],
-					as_dict=True
-				)
-
-				if not detail_row:
-					continue
-
-				amount = min(flt(detail_row.amount), flt(penalty["remaining_amount"] or 0))
-
+				# Add penalty component to deductions
 				self.add_structure_component(
 					frappe._dict({
-						"salary_component": detail_row.salary_component,
+						"salary_component": salary_component,
 						"amount": amount,
-						"abbr": frappe.get_value("Salary Component", detail_row.salary_component, "salary_component_abbr"),
+						"abbr": frappe.get_value("Salary Component", salary_component, "salary_component_abbr"),
 						"amount_based_on_formula": 0,
 						"statistical_component": 0,
 						"depends_on_payment_days": 0,
 					}),
-					component_type
+					deductions_field
 				)
 
-				penalty_doc = frappe.get_doc("Penalty Management", penalty["name"])
-
-				already_paid = any(
-					p.payment_date == self.start_date and abs(p.paid_amount - amount) < 0.001
-					for p in penalty_doc.get("penalty_payment_history", [])
-				)
-
-				if not already_paid and flt(amount) > 0:
-					if self.docstatus == 1:
-						# ✅ Pass salary_month_start
-						penalty_doc.update_penalty_payment(
-							paid_amount=amount,
-							payment_date=self.start_date,
-							salary_month_start=self.start_date
-						)
-						penalty_doc.save(ignore_permissions=True)
 		else:
-			# Subsequent payments
+			# Copy penalty deductions from first slip (deductions only)
 			salary_details = frappe.get_all(
 				"Salary Detail",
 				filters={
 					"parent": first_slip["name"],
-					"parentfield": component_type
+					"parentfield": deductions_field
 				},
 				fields=["salary_component", "amount"]
 			)
 
 			for row in salary_details:
-				if any(d.salary_component == row.salary_component for d in self.get(component_type)):
+				if row.salary_component != "Penalty":
+					continue
+				if any(d.salary_component == row.salary_component for d in self.get(deductions_field)):
 					continue
 
 				self.add_structure_component(
@@ -1004,7 +1007,7 @@ class SalarySlip(TransactionBase):
 						"statistical_component": 0,
 						"depends_on_payment_days": 0,
 					}),
-					component_type
+					deductions_field
 				)
 
 

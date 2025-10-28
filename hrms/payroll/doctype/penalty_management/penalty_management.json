@@ -9,22 +9,24 @@
   "employee",
   "employee_name",
   "company",
-  "base_salary",
   "total_penalty",
+  "net_amount",
   "column_break_eprb",
   "deduction_percent",
   "monthly_deduction",
   "start_date",
   "end_date",
   "remaining_amount",
+  "penalty_paid",
   "column_break_dvou",
   "status",
   "queue_no",
   "is_active",
   "next_deduction_ready",
+  "prorate",
   "activation_date",
   "reason",
-  "penalty_paid",
+  "receipt",
   "section_break_frjq",
   "deductions",
   "section_break_yzbs",
@@ -58,13 +60,6 @@
    "fieldtype": "Read Only",
    "label": "Company ",
    "options": "Employee",
-   "reqd": 1
-  },
-  {
-   "fetch_from": "employee.base",
-   "fieldname": "base_salary",
-   "fieldtype": "Currency",
-   "label": "Base Salary",
    "reqd": 1
   },
   {
@@ -177,12 +172,29 @@
    "fieldname": "activation_date",
    "fieldtype": "Date",
    "label": "Activation Date"
+  },
+  {
+   "fieldname": "receipt",
+   "fieldtype": "Attach",
+   "label": "Receipt"
+  },
+  {
+   "default": "0",
+   "fieldname": "prorate",
+   "fieldtype": "Check",
+   "label": "Prorate"
+  },
+  {
+   "fieldname": "net_amount",
+   "fieldtype": "Currency",
+   "label": "Net Amount",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-22 08:22:12.746744",
+ "modified": "2025-10-28 15:31:34.809822",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Penalty Management",
