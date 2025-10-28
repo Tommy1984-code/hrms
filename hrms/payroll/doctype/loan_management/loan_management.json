@@ -19,9 +19,11 @@
   "monthly_deduction",
   "remaining_amount",
   "start_date",
+  "end_date",
   "column_break_toif",
   "status",
   "loan_paid",
+  "prorate",
   "receipt",
   "section_break_imac",
   "deductions",
@@ -168,11 +170,22 @@
    "fieldname": "receipt",
    "fieldtype": "Attach",
    "label": "Receipt"
+  },
+  {
+   "default": "0",
+   "fieldname": "prorate",
+   "fieldtype": "Check",
+   "label": "Prorate"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-22 08:23:38.466094",
+ "modified": "2025-10-28 12:37:31.712580",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Loan Management",

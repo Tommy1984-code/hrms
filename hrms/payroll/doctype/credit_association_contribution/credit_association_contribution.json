@@ -13,8 +13,10 @@
   "column_break_javt",
   "monthly_deduction",
   "start_date",
+  "end_date",
   "paid_amount",
   "status",
+  "prorate",
   "section_break_zzum",
   "deductions",
   "section_break_esxx",
@@ -94,12 +96,23 @@
    "fieldtype": "Table",
    "label": "Credit Association Payment History",
    "options": "Credit Association Contribution Payment History"
+  },
+  {
+   "default": "0",
+   "fieldname": "prorate",
+   "fieldtype": "Check",
+   "label": "Prorate"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End date"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-22 08:22:57.971596",
+ "modified": "2025-10-28 12:59:54.026859",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Credit Association Contribution",

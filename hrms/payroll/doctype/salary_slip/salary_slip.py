@@ -698,7 +698,18 @@ class SalarySlip(TransactionBase):
 
     #my code adding my loan components
 	def add_loan_deductions(self, employee_id, component_type=None):
-		"""Fetch loan components from Loan Management for first slip of month; reuse from first slip for others."""
+		"""Fetch loan components from Loan Management and add them to Deductions only."""
+
+		def working_days_between(start_date, end_date):
+			"""Return number of working days (Mon-Sat) between two dates."""
+			start = getdate(start_date)
+			end = getdate(end_date)
+			days = 0
+			while start <= end:
+				if start.weekday() != 6:  # Exclude Sunday
+					days += 1
+				start = add_days(start, 1)
+			return days
 
 		payment_priority = [
 			"Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"
@@ -734,68 +745,69 @@ class SalarySlip(TransactionBase):
 		first_slip = sorted_slips[0]
 		is_first_payment = self.name == first_slip["name"]
 
+		# Force loans into deductions, ignore whatever component_type is passed
+		deductions_field = "deductions"
+
 		if is_first_payment:
 			active_loans = frappe.get_all(
 				"Loan Management",
 				filters={
-					"employee": employee_id, 
+					"employee": employee_id,
 					"status": ["not in", ["Completed", "Paused"]],
-					"start_date": ["<=", self.end_date] },
-				fields=["name", "monthly_deduction", "loan_type"]
+					"start_date": ["<=", self.end_date]
+				},
+				fields=["name", "monthly_deduction", "loan_type", "prorate", "start_date", "end_date"]
 			)
 
 			if not active_loans:
 				return
 
 			for loan in active_loans:
-				salary_component = loan["loan_type"]  # Already the linked component
+				salary_component = loan["loan_type"]
 
 				if not frappe.get_value("Salary Component", salary_component, "loan_component"):
 					continue
 
-				# Fetch this loan's deduction row from its Loan Management child table
-				detail_row = frappe.get_value(
-					"Salary Detail",
-					{
-						"parent": loan["name"],
-						"salary_component": salary_component,
-						"parentfield": component_type if component_type else "deductions"
-					},
-					["salary_component", "amount"],
-					as_dict=True
-				)
+				amount = flt(loan.get("monthly_deduction", 0))
 
-				if not detail_row:
-					continue
+				if loan.get("prorate"):
+					effective_start = max(getdate(loan["start_date"]), month_start)
+					effective_end = min(getdate(loan["end_date"] or month_end), month_end)
 
-				if any(d.salary_component == salary_component for d in self.get(component_type)):
+					total_working_days = working_days_between(month_start, month_end)
+					active_working_days = working_days_between(effective_start, effective_end)
+
+					if total_working_days > 0:
+						amount = amount * (active_working_days / total_working_days)
+
+				if any(d.salary_component == salary_component for d in self.get(deductions_field)):
 					continue
 
 				self.add_structure_component(
 					frappe._dict({
-						"salary_component": detail_row.salary_component,
-						"amount": detail_row.amount,
-						"abbr": frappe.get_value("Salary Component", detail_row.salary_component, "salary_component_abbr"),
+						"salary_component": salary_component,
+						"amount": amount,
+						"abbr": frappe.get_value("Salary Component", salary_component, "salary_component_abbr"),
 						"amount_based_on_formula": 0,
 						"statistical_component": 0,
 						"depends_on_payment_days": 0,
 					}),
-					component_type
+					deductions_field
 				)
 
 		else:
-			# Copy from first slip
+			# Copy from first slip (deductions only)
 			salary_details = frappe.get_all(
 				"Salary Detail",
 				filters={
 					"parent": first_slip["name"],
-					"parentfield": component_type
+					"parentfield": deductions_field
 				},
 				fields=["salary_component", "amount"]
 			)
 
 			for row in salary_details:
-				if any(d.salary_component == row.salary_component for d in self.get(component_type)):
+				if any(d.salary_component == row.salary_component for d in self.get(deductions_field)):
 					continue
 
 				self.add_structure_component(
@@ -807,7 +819,7 @@ class SalarySlip(TransactionBase):
 						"statistical_component": 0,
 						"depends_on_payment_days": 0,
 					}),
-					component_type
+					deductions_field
 				)
 
 	#my code in my loan track payment 
@@ -1058,7 +1070,18 @@ class SalarySlip(TransactionBase):
 
 	#my code for Credit associations contribution 
 	def add_credit_association_deductions(self, employee_id, component_type=None):
-		"""Fetch Credit Association components for first slip of month; reuse from first slip for others."""
+		"""Fetch Credit Association components from first slip of month; reuse for others, always in Deductions."""
+
+		def working_days_between(start_date, end_date):
+			"""Return number of working days (Mon-Sat) between two dates."""
+			start = getdate(start_date)
+			end = getdate(end_date)
+			days = 0
+			while start <= end:
+				if start.weekday() != 6:  # Exclude Sunday
+					days += 1
+				start = add_days(start, 1)
+			return days
 
 		payment_priority = [
 			"Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"
@@ -1094,66 +1117,67 @@ class SalarySlip(TransactionBase):
 		first_slip = sorted_slips[0]
 		is_first_payment = self.name == first_slip["name"]
 
+		# Always use deductions for Credit Association
+		deductions_field = "deductions"
+
 		if is_first_payment:
 			active_contributions = frappe.get_all(
 				"Credit Association Contribution",
 				filters={
 					"employee": employee_id,
 					"status": ["not in", ["Closed", "Paused"]],
-					"start_date": ["<=", self.start_date]  # ✅ respect start date (from date)
+					"start_date": ["<=", self.end_date]  # respect from date
 				},
-				fields=["name", "monthly_deduction", "deduction_percent", "start_date"]
+				fields=["name", "monthly_deduction", "deduction_percent", "start_date", "end_date", "prorate"]
 			)
-
 
 			if not active_contributions:
 				return
 
 			for contribution in active_contributions:
-				salary_component = "Credit Association"  # Adjust if you have a linked component
+				salary_component = "Credit Association"  # adjust if you have a linked component
 
-				# Fetch this contribution's deduction row from its child table
-				detail_row = frappe.get_value(
-					"Salary Detail",
-					{
-						"parent": contribution["name"],
-						"salary_component": salary_component,
-						"parentfield": component_type if component_type else "deductions"
-					},
-					["salary_component", "amount"],
-					as_dict=True
-				)
+				amount = flt(contribution.get("monthly_deduction", 0))
 
-				if not detail_row:
-					continue
+				# Apply proration if enabled
+				if contribution.get("prorate"):
+					effective_start = max(getdate(contribution["start_date"]), month_start)
+					effective_end = min(getdate(contribution.get("end_date") or month_end), month_end)
 
-				if any(d.salary_component == salary_component for d in self.get(component_type)):
+					total_working_days = working_days_between(month_start, month_end)
+					active_working_days = working_days_between(effective_start, effective_end)
+
+					if total_working_days > 0:
+						amount = amount * (active_working_days / total_working_days)
+
+				if any(d.salary_component == salary_component for d in self.get(deductions_field)):
 					continue
 
 				self.add_structure_component(
 					frappe._dict({
-						"salary_component": detail_row.salary_component,
-						"amount": detail_row.amount,
-						"abbr": frappe.get_value("Salary Component", detail_row.salary_component, "salary_component_abbr"),
+						"salary_component": salary_component,
+						"amount": amount,
+						"abbr": frappe.get_value("Salary Component", salary_component, "salary_component_abbr"),
 						"amount_based_on_formula": 0,
 						"statistical_component": 0,
 						"depends_on_payment_days": 0,
 					}),
-					component_type
+					deductions_field
 				)
+
 		else:
-			# Copy from first slip
+			# Copy from first slip (deductions only)
 			salary_details = frappe.get_all(
 				"Salary Detail",
 				filters={
 					"parent": first_slip["name"],
-					"parentfield": component_type
+					"parentfield": deductions_field
 				},
 				fields=["salary_component", "amount"]
 			)
 
 			for row in salary_details:
-				if any(d.salary_component == row.salary_component for d in self.get(component_type)):
+				if any(d.salary_component == row.salary_component for d in self.get(deductions_field)):
 					continue
 
 				self.add_structure_component(
@@ -1165,7 +1189,7 @@ class SalarySlip(TransactionBase):
 						"statistical_component": 0,
 						"depends_on_payment_days": 0,
 					}),
-					component_type
+					deductions_field
 				)
 
 
