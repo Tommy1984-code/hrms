@@ -7,18 +7,13 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "ot_125",
   "ot_150",
+  "ot_170",
   "ot_200",
   "ot_250",
   "total"
  ],
  "fields": [
-  {
-   "fieldname": "ot_125",
-   "fieldtype": "Float",
-   "label": "OT 1.25"
-  },
   {
    "fieldname": "ot_150",
    "fieldtype": "Float",
@@ -38,18 +33,24 @@
    "fieldname": "total",
    "fieldtype": "Float",
    "label": "Total"
+  },
+  {
+   "fieldname": "ot_170",
+   "fieldtype": "Float",
+   "label": "OT 1.70"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-07-17 10:52:09.790063",
+ "modified": "2025-10-29 10:02:28.849213",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Overtime detail",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

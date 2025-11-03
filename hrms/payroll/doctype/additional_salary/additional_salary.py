@@ -47,9 +47,9 @@ class AdditionalSalary(Document):
 			base_salary = float(base_salary.replace(',', '').replace('ETB', '').strip())
 
 		# Define rates
-		rate_map = {
-			"ot_125": 1.25,
+		rate_map = {			
 			"ot_150": 1.5,
+			"ot_170": 1.7,
 			"ot_200": 2.0,
 			"ot_250": 2.5
 		}

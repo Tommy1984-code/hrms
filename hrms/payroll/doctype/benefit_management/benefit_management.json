@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:{BM}-{####}",
  "creation": "2025-10-27 16:19:11.713014",
@@ -135,7 +136,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-28 09:26:05.635693",
+ "modified": "2025-10-29 09:25:51.044157",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Benefit Management",

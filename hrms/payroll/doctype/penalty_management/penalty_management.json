@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:{PM}-{####}",
  "creation": "2025-10-14 15:29:43.150239",
@@ -194,7 +195,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-28 15:31:34.809822",
+ "modified": "2025-10-29 09:29:55.491107",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Penalty Management",
