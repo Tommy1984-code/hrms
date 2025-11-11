@@ -50,7 +50,7 @@ def get_data(filters=None):
 
     months = get_months_in_range(from_date, to_date)
     data = []
-    payment_order = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+    payment_order = ["First Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 
     for month in months:
         month_start = month.replace(day=1)

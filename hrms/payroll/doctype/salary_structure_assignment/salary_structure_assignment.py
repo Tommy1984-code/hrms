@@ -231,7 +231,7 @@ def determine_payment_type(employee, from_date):
 
 	# If no existing assignment, set payment type to Advance Payment
 	if not existing_assignments:
-		return "Advance Payment"
+		return "First Payment"
 	
 	# If there is an existing assignment, set payment type to Second Payment
 	return "Second Payment"

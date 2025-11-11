@@ -73,7 +73,7 @@ def get_data(filters=None):
 
     months = get_months_in_range(from_date, to_date)
     data = []
-    payment_order = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+    payment_order = ["First Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 
     # Keep latest slip per employee per month
     latest_slips = {}

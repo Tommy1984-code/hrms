@@ -45,7 +45,7 @@ def get_data(filters=None):
 		frappe.throw("Please set both From Date and To Date")
 
 	months = get_months_in_range(from_date, to_date)
-	payment_order = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+	payment_order = ["First Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 	grouped_data = {}
 	processed_slips = set()
 	

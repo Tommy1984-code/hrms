@@ -209,8 +209,8 @@ class EmployeeTermination(Document):
 		if self.gross_annual_leave_payment:
 			self.insert_salary_component("earnings", "annlev", self.gross_annual_leave_payment)
 
-		# if self.annual_leave_tax:
-		# 	self.insert_salary_component("deductions", "annlevtax", self.annual_leave_tax)
+		if self.annual_leave_tax:
+			self.insert_salary_component("deductions", "annlevtax", self.annual_leave_tax)
 
 	def update_final_settlement(self):
 		"""Update the total severance amount in the final settlement section."""

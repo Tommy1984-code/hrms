@@ -42,7 +42,7 @@ def get_data(filters):
     if not (from_date and to_date):
         frappe.throw("Please set both From Date and To Date")
 
-    payment_order = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+    payment_order = ["First Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
     months = get_months_in_range(from_date, to_date)
 
     employee_data_map = {}

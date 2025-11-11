@@ -21,7 +21,7 @@ frappe.query_reports["Employee Coast Sharing Report"] = {
             "fieldname": "payment_type",
             "label": "Payment Type",
             "fieldtype": "Select",
-            "options": ["", "Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"],
+            "options": ["", "First Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"],
             "default": ""
         },
         {

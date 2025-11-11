@@ -49,7 +49,7 @@ class AdditionalSalary(Document):
 		# Define rates
 		rate_map = {			
 			"ot_150": 1.5,
-			"ot_170": 1.7,
+			"ot_170": 1.75,
 			"ot_200": 2.0,
 			"ot_250": 2.5
 		}

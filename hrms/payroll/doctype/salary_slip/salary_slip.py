@@ -387,7 +387,7 @@ class SalarySlip(TransactionBase):
 		if is_advance_payment:
 			self.payment_type = "Second Payment"
 		else:
-			self.payment_type = "Advance Payment"
+			self.payment_type = "First Payment"
 			
 		ss = frappe.qb.DocType("Salary Structure")
 		ssa = frappe.qb.DocType("Salary Structure Assignment")
@@ -435,7 +435,7 @@ class SalarySlip(TransactionBase):
 		advance_query = frappe.qb.from_("Salary Slip").select("name").where(
 			(frappe.qb.DocType("Salary Slip").employee == self.employee)&
 			(frappe.qb.DocType("Salary Slip").start_date == self.actual_start_date)& #my code
-			(frappe.qb.DocType("Salary Slip").payment_type == "Advance Payment")&
+			(frappe.qb.DocType("Salary Slip").payment_type == "First Payment")&
 			(frappe.qb.DocType("Salary Slip").docstatus == 1)
 		)
 		result = advance_query.run()
@@ -518,7 +518,7 @@ class SalarySlip(TransactionBase):
 	def get_salary_components(self, employee_id, component_type=None):
 
 		# Define payment types in order
-		payment_types_order = ["Advance Payment", "Second Payment", "Third Payment", 
+		payment_types_order = ["First Payment", "Second Payment", "Third Payment", 
 								"Fourth Payment", "Fifth Payment"]
 		# Get the index of the selected payment type
 		selected_payment_index = payment_types_order.index(self.payment_type) if self.payment_type in payment_types_order else -1
@@ -712,7 +712,7 @@ class SalarySlip(TransactionBase):
 			return days
 
 		payment_priority = [
-			"Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"
+			"First Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"
 		]
 
 		if not self.payment_type:
@@ -894,7 +894,7 @@ class SalarySlip(TransactionBase):
 			return days
 
 		payment_priority = [
-			"Advance Payment", "Second Payment", "Third Payment",
+			"First Payment", "Second Payment", "Third Payment",
 			"Fourth Payment", "Fifth Payment"
 		]
 
@@ -1087,7 +1087,7 @@ class SalarySlip(TransactionBase):
 			return days
 
 		payment_priority = [
-			"Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"
+			"First Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"
 		]
 
 		if not self.payment_type:
@@ -1333,7 +1333,7 @@ class SalarySlip(TransactionBase):
 		"""Fetch benefit components from Benefit Management for first slip of month; reuse from first slip for others."""
 
 		payment_priority = [
-			"Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"
+			"First Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"
 		]
 
 		if not self.payment_type:
@@ -2061,7 +2061,7 @@ class SalarySlip(TransactionBase):
 
 		#Define the strict order of payment types
 		payment_types_in_order =[
-			"Advance Payment",
+			"First Payment",
         	"Second Payment",
        		"Third Payment",
        		"Fourth Payment",
@@ -3662,7 +3662,7 @@ class SalarySlip(TransactionBase):
 	def add_advance_net_pay_deduction(self):
 		if self.employee:
 		# Define the payment types in the correct order
-			payment_types = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment","Fifth Payment"]
+			payment_types = ["First Payment", "Second Payment", "Third Payment", "Fourth Payment","Fifth Payment"]
 
 		# Get the index of the current payment type
 		if self.payment_type in payment_types:

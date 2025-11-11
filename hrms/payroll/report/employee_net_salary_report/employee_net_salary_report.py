@@ -54,7 +54,7 @@ def get_data(filters=None):
 		month_start = month.replace(day=1)
 		month_end = (add_months(month_start, 1) - timedelta(days=1))
 
-		payment_order = ["Advance Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
+		payment_order = ["First Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"]
 
 		# Dynamically build WHERE clauses
 		clauses = []

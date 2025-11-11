@@ -25,7 +25,7 @@ def get_data(filters):
     salary_component = earning_component or deduction_component
     months = get_months_in_range(from_date, to_date)
     payment_order = [
-        "Advance Payment", "Second Payment", "Third Payment",
+        "First Payment", "Second Payment", "Third Payment",
         "Fourth Payment", "Fifth Payment"
     ]
 
