@@ -15,6 +15,15 @@ class CreditAssociationContribution(Document):
     def before_save(self):
         if not self.employee:
             return
+        
+        # --- Prevent duplication for the same employee ---
+        existing = frappe.db.exists({
+            "doctype": "Credit Association Contribution",
+            "employee": self.employee,
+            "name": ("!=", self.name)  # exclude self if updating
+        })
+        if existing:
+            frappe.throw(f"A Credit Association Contribution already exists for Employee {self.employee}.")
 
         # --- Fetch Employee Base ---
         base_salary = frappe.db.get_value("Employee", self.employee, "base")

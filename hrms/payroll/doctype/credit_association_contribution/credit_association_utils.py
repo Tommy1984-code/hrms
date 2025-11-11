@@ -1,11 +1,15 @@
 import frappe
 from frappe.utils import flt
+from hrms.payroll.utils import has_base_changed
 
 def update_employee_credit_association(doc, method=None):
     """
     Triggered whenever an Employee is updated.
     Adjusts monthly deduction for active (Ongoing) and paused (Paused) contributions.
     """
+    # Only proceed if 'base' field changed
+    if not has_base_changed(doc, ["base"]):
+        return
     if not doc.base:
         return
 

@@ -1,5 +1,6 @@
 import frappe
 from frappe.utils import flt
+from hrms.payroll.utils import has_base_changed
 
 def update_employee_loans(doc, method=None):
     """
@@ -7,6 +8,9 @@ def update_employee_loans(doc, method=None):
     Updates the base salary and recalculates monthly repayment for active (Ongoing or Paused) loans.
     Does NOT change remaining_amount.
     """
+    # Only proceed if 'base' field changed
+    if not has_base_changed(doc, ["base"]):
+        return
     if not doc.base:
         return
 

@@ -13,6 +13,18 @@ class LoanManagement(Document):
         """Handle base salary, deductions, and manual payments before saving."""
         if not self.employee:
             return
+        
+        #--- Prevent duplicate loans for same employee & loan type ---
+        existing = frappe.db.exists({
+            "doctype": "Loan Management",
+            "employee": self.employee,
+            "loan_type": self.loan_type,
+            "name": ("!=", self.name),  # exclude self if updating
+            "status": ["in", ["Ongoing", "Paused"]]  # only active loans
+        })
+        if existing:
+            frappe.throw(f"Employee {self.employee} already has an active loan of type '{self.loan_type}'.")
+
 
         # --- Fetch Employee Base ---
         base_salary = frappe.db.get_value("Employee", self.employee, "base")

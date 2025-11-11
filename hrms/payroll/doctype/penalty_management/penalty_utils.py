@@ -1,5 +1,6 @@
 import frappe
 from frappe.utils import flt
+from hrms.payroll.utils import has_base_changed
 
 def update_employee_penalties(doc, method=None):
     """
@@ -7,6 +8,9 @@ def update_employee_penalties(doc, method=None):
     Adjusts only monthly deduction for active (Ongoing) and paused (Paused) penalties.
     Does NOT update remaining_amount.
     """
+    # Only proceed if 'base' field changed
+    if not has_base_changed(doc, ["base"]):
+        return
     if not doc.base:
         return
 

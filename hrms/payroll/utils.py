@@ -39,3 +39,21 @@ def get_payroll_settings_for_payment_days() -> dict:
 		],
 		as_dict=True,
 	)
+
+# Helper for Employee hooks
+# ----------------------------
+def has_base_changed(doc, base_fields):
+    """
+    Check if any of the base fields have changed in a document.
+    
+    Args:
+        doc (Document): The current document (e.g., Employee)
+        base_fields (list): List of field names to check
+    
+    Returns:
+        bool: True if any field changed, False otherwise
+    """
+    old_doc = doc.get_doc_before_save()
+    if not old_doc:
+        return True  # treat as changed if new doc
+    return any(getattr(doc, f) != getattr(old_doc, f) for f in base_fields)
