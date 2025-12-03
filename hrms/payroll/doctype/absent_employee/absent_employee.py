@@ -37,21 +37,21 @@ class AbsentEmployee(Document):
         if not emp_base_salary:
             frappe.throw("Base Salary Is Not Found For Emploee {self.employee}")
         # Always 26 working days per month
-        #total_working_days = 26 
+        total_working_days = 26 
 
-        # 🔹 Get payroll month as date
-        payroll_date = getdate(self.payroll_month)
-        year, month = payroll_date.year, payroll_date.month
+        # # 🔹 Get payroll month as date
+        # payroll_date = getdate(self.payroll_month)
+        # year, month = payroll_date.year, payroll_date.month
 
-        # 🔹 Get number of days in the payroll month
-        days_in_month = calendar.monthrange(year, month)[1]
+        # # 🔹 Get number of days in the payroll month
+        # days_in_month = calendar.monthrange(year, month)[1]
 
-        # 🔹 Count working days (exclude Sundays)
-        total_working_days = 0
-        for day in range(1, days_in_month + 1):
-            d = getdate(f"{year}-{month:02d}-{day:02d}")
-            if d.weekday() != 6:  # 6 = Sunday
-                total_working_days += 1
+        # # 🔹 Count working days (exclude Sundays)
+        # total_working_days = 0
+        # for day in range(1, days_in_month + 1):
+        #     d = getdate(f"{year}-{month:02d}-{day:02d}")
+        #     if d.weekday() != 6:  # 6 = Sunday
+        #         total_working_days += 1
 
         # Calculate the deduction per day
         self.deduct_single_day_amount = emp_base_salary / total_working_days 
