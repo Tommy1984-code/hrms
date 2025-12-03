@@ -257,7 +257,12 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
         else:
             slips_by_month = defaultdict(list)
             for slip_rows in slips.values():
-                month_key = slip_rows[0].start_date.strftime("%Y-%m")
+                # Safely handle missing start_date
+                start_date = slip_rows[0].start_date
+                if start_date:
+                    month_key = start_date.strftime("%Y-%m")
+                else:
+                    month_key = "Unknown"
                 slips_by_month[month_key].append(slip_rows)
 
             all_rows = []
@@ -268,11 +273,23 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
                 for slip_rows in slips_list:
                     pt = slip_rows[0].payment_type
                     prio = payment_order.index(pt) if pt in payment_order else -1
+
+                    # Safely get end_date or start_date, or None if both missing
                     slip_end_date = slip_rows[0].end_date or slip_rows[0].start_date
-                    if prio > best_priority or (prio == best_priority and slip_end_date > latest_date):
-                        best_priority = prio
-                        latest_date = slip_end_date
-                        best_slip = slip_rows
+
+                    # Only compare if slip_end_date exists
+                    if slip_end_date is not None:
+                        if prio > best_priority or (prio == best_priority and (latest_date is None or slip_end_date > latest_date)):
+                            best_priority = prio
+                            latest_date = slip_end_date
+                            best_slip = slip_rows
+                    else:
+                        # fallback: if no date, choose by priority only
+                        if prio > best_priority:
+                            best_priority = prio
+                            latest_date = None
+                            best_slip = slip_rows
+
                 if best_slip:
                     all_rows.extend(best_slip)
 
@@ -299,11 +316,11 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
                 "tin_no": base.employee_tin_no or "",
                 "pension_id": base.pension_id or "",
                 "period": f"{from_date.strftime('%d %b %Y')} - {to_date.strftime('%d %b %Y')}",
-                # Calculate taxable_gross = gross_pay - tax_free_transportation_amount
+                # Calculate taxable_gross = gross_pay - tax-free transportation amount
                 "taxable_gross": aggregated.get("gross_pay", 0) - tax_free_transport,
             })
 
-            grouped_data[dept].append(aggregated)
+        grouped_data[dept].append(aggregated)
 
     for emp, slips in data_by_employee_slip.items():
         process_employee(emp, slips)
