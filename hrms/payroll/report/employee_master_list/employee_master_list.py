@@ -120,6 +120,7 @@ def aggregate_salary_components(rows, allowed_fields=None):
     earnings_map, deductions_map = get_active_component_map()
 
     gross_pays = set()
+    taxable_gross_pays = set()
     net_pays = set()
     total_deductions = set()
 
@@ -140,10 +141,12 @@ def aggregate_salary_components(rows, allowed_fields=None):
             result[fieldname] += amt
 
         gross_pays.add((r.salary_slip, r.gross_pay or 0))
+        taxable_gross_pays.add((r.salary_slip,r.taxable_gross_pay or 0))
         net_pays.add((r.salary_slip, r.net_pay or 0))
         total_deductions.add((r.salary_slip, r.total_deduction or 0))
 
     result["gross_pay"] = sum(v for _, v in gross_pays)
+    result["taxable_gross"] =sum(v for _, v in taxable_gross_pays) 
     result["net_pay"] = sum(v for _, v in net_pays)
     result["total_deduction"] = sum(v for _, v in total_deductions)
 
@@ -191,7 +194,7 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
         SELECT
             e.name AS employee, e.employee_name, e.department, e.branch, e.designation, e.cell_number,
             e.employment_type, e.date_of_joining, e.gender, e.employee_tin_no, e.salary_mode, e.pension_id,
-            ss.name AS salary_slip, ss.start_date, ss.end_date, ss.gross_pay, ss.net_pay, ss.total_deduction,
+            ss.name AS salary_slip, ss.start_date, ss.end_date, ss.gross_pay, ss.net_pay, ss.total_deduction,ss.taxable_gross_pay,
             ss.payment_type, sd.salary_component, sd.abbr, sd.amount, sd.parentfield
         FROM `tabSalary Slip` ss
         JOIN `tabEmployee` e ON ss.employee = e.name
@@ -317,7 +320,7 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
                 "pension_id": base.pension_id or "",
                 "period": f"{from_date.strftime('%d %b %Y')} - {to_date.strftime('%d %b %Y')}",
                 # Calculate taxable_gross = gross_pay - tax-free transportation amount
-                "taxable_gross": aggregated.get("gross_pay", 0) - tax_free_transport,
+                # "taxable_gross": aggregated.get("gross_pay", 0) - tax_free_transport,
             })
 
         grouped_data[dept].append(aggregated)
@@ -328,7 +331,7 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
     final_data = []
 
     total_fields = [
-        "gross_pay", "net_pay", "total_deduction",
+        "gross_pay", "taxable_gross", "net_pay", "total_deduction",
         "company_pension", "total_benefit", "taxable_gross"
     ]
 
