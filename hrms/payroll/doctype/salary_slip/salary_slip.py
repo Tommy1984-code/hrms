@@ -692,6 +692,7 @@ class SalarySlip(TransactionBase):
 				struct_row = frappe._dict({
 					'salary_component': detail.salary_component,
 					'amount': detail.amount,
+					'abbr': frappe.get_value("Salary Component", detail.salary_component, "salary_component_abbr")
 					
 				})
 				self.add_structure_component(struct_row, component_type)
@@ -1642,7 +1643,9 @@ class SalarySlip(TransactionBase):
 		# Add the component
 		net_ben_row = frappe._dict({
 			"salary_component": TARGET_COMPONENT,
-			"amount": float(net_ben_gross)  # ERPNext expects float for storage
+			"amount": float(net_ben_gross),  # ERPNext expects float for storage
+			"abbr": frappe.get_value("Salary Component", TARGET_COMPONENT, "salary_component_abbr")
+			
 		})
 		self.add_structure_component(net_ben_row, "earnings")
 
@@ -2178,12 +2181,53 @@ class SalarySlip(TransactionBase):
 			
 		
 		 #my code for taxable gross pay
-		def set_taxable_gross_pay_and_base_taxable_gross_pay():
+		# def set_taxable_gross_pay_and_base_taxable_gross_pay():
 			
+		# 	total = 0.0
+
+		# 	# Ensure is_tax_applicable is populated from Salary Component master
+		# 	for row in self.earnings:
+		# 		if not hasattr(row, "is_tax_applicable") or row.is_tax_applicable is None:
+		# 			row.is_tax_applicable = frappe.db.get_value(
+		# 				"Salary Component", row.salary_component, "is_tax_applicable"
+		# 			) or 0
+
+		# 		if row.do_not_include_in_total:
+		# 			continue
+		# 		if not row.is_tax_applicable:
+		# 			continue
+
+		# 		# Same proration logic as gross pay
+		# 		amount = self.get_amount_based_on_payment_days(row)[0]
+		# 		total += amount
+
+		# 	self.taxable_gross_pay = total
+		# 	self.base_taxable_gross_pay = flt(
+		# 		flt(self.taxable_gross_pay) * flt(self.exchange_rate),
+		# 		self.precision("base_taxable_gross_pay")
+		# 	)
+		
+		def set_taxable_gross_pay_and_base_taxable_gross_pay():
+
 			total = 0.0
 
-			# Ensure is_tax_applicable is populated from Salary Component master
+			# Fetch employee tax rule: All Tax, 600, 2200
+			tax_rule = frappe.db.get_value("Employee", self.employee, "tax_free_transportation_amount") or "All Tax"
+
+			# Allowed limits
+			TAX_FREE_LIMITS = {
+				"All Tax": 0,
+				"600": 600,
+				"2200": 2200,
+			}
+
+			tax_free_limit = TAX_FREE_LIMITS.get(tax_rule, 0)
+
+			transportation_amount = 0.0
+
+			# First calculate total taxable components
 			for row in self.earnings:
+
 				if not hasattr(row, "is_tax_applicable") or row.is_tax_applicable is None:
 					row.is_tax_applicable = frappe.db.get_value(
 						"Salary Component", row.salary_component, "is_tax_applicable"
@@ -2194,11 +2238,21 @@ class SalarySlip(TransactionBase):
 				if not row.is_tax_applicable:
 					continue
 
-				# Same proration logic as gross pay
 				amount = self.get_amount_based_on_payment_days(row)[0]
+
+				# Capture transportation amount
+				if row.salary_component.lower() == "transport allowance":
+					transportation_amount = amount
+
 				total += amount
 
+			# Apply transportation tax-free rule (600 or 2200 only)
+			if tax_free_limit > 0:
+				tax_free_portion = min(transportation_amount, tax_free_limit)
+				total -= tax_free_portion
+
 			self.taxable_gross_pay = total
+
 			self.base_taxable_gross_pay = flt(
 				flt(self.taxable_gross_pay) * flt(self.exchange_rate),
 				self.precision("base_taxable_gross_pay")
