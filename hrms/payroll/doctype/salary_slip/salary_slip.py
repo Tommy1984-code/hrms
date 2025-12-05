@@ -1505,46 +1505,115 @@ class SalarySlip(TransactionBase):
 
 		frappe.db.commit()
 
+	# def calculate_tax(self, gross):
+	# 	"""Calculate Ethiopian income tax with employee's tax-free transportation deduction."""
+
+	# 	# Fetch employee's tax-free transportation amount, default to '0' if not set
+	# 	tax_free_transportation_amount = frappe.db.get_value("Employee", self.employee, "tax_free_transportation_amount") or '0'
+
+	# 	# Convert to int (assuming string like '2200', '600', or '0')
+	# 	try:
+	# 		tax_free = int(tax_free_transportation_amount)
+	# 	except:
+	# 		tax_free = 0
+
+	# 	# Calculate taxable income after transport allowance
+	# 	taxable = gross - tax_free
+	# 	if taxable <= 0:
+	# 		return 0
+
+	# 	tax = 0
+	# 	if taxable <= 2000:
+	# 		return 0
+	# 	if taxable <= 4000:
+	# 		tax += (taxable - 2000) * 0.15
+	# 	elif taxable <= 7000:
+	# 		tax += (4000 - 2000) * 0.15
+	# 		tax += (taxable - 4000) * 0.20
+	# 	elif taxable <= 10000:
+	# 		tax += (4000 - 2000) * 0.15
+	# 		tax += (7000 - 4000) * 0.20
+	# 		tax += (taxable - 7000) * 0.25
+	# 	elif taxable <= 14000:
+	# 		tax += (4000 - 2000) * 0.15
+	# 		tax += (7000 - 4000) * 0.20
+	# 		tax += (10000 - 7000) * 0.25
+	# 		tax += (taxable - 10000) * 0.30
+	# 	else:
+	# 		tax += (4000 - 2000) * 0.15
+	# 		tax += (7000 - 4000) * 0.20
+	# 		tax += (10000 - 7000) * 0.25
+	# 		tax += (14000 - 10000) * 0.30
+	# 		tax += (taxable - 14000) * 0.35
+
+	# 	return round(tax, 2)
+
 	def calculate_tax(self, gross):
-		"""Calculate Ethiopian income tax with employee's tax-free transportation deduction."""
+		"""Calculate Ethiopian income tax using transport allowance and employee tax rule."""
 
-		# Fetch employee's tax-free transportation amount, default to '0' if not set
-		tax_free_transportation_amount = frappe.db.get_value("Employee", self.employee, "tax_free_transportation_amount") or '0'
+		# 1️⃣ Fetch employee's tax rule
+		tax_rule = frappe.db.get_value("Employee", self.employee, "tax_free_transportation_amount") or "All Tax"
 
-		# Convert to int (assuming string like '2200', '600', or '0')
-		try:
-			tax_free = int(tax_free_transportation_amount)
-		except:
-			tax_free = 0
+		# Allowed limits
+		TAX_FREE_LIMITS = {
+			"All Tax": 0,
+			"600": 600,
+			"2200": 2200,
+		}
 
-		# Calculate taxable income after transport allowance
-		taxable = gross - tax_free
-		if taxable <= 0:
+		tax_free_limit = TAX_FREE_LIMITS.get(tax_rule, 0)
+
+		# 2️⃣ Get transport allowance from earnings (same method you used earlier)
+		transport_allowance = 0.0
+
+		for row in self.earnings:
+
+			if row.salary_component.lower() == "transport allowance":
+				# Same calculation method you used
+				amount = self.get_amount_based_on_payment_days(row)[0]
+				transport_allowance = amount
+				break
+
+		# 3️⃣ Apply tax-free rule
+		# Example:
+		#  - If rule=600 and transport=700 → 100 taxable
+		#  - If rule=600 and transport=500 → 0 taxable
+		taxable_transport = max(transport_allowance - tax_free_limit, 0)
+
+		# 4️⃣ Adjust gross income
+		#     remove only the tax-free portion
+		taxable_income = gross - (transport_allowance - taxable_transport)
+
+		if taxable_income <= 0:
 			return 0
 
+		# -------------------------------------------------
+		# 5️⃣ Ethiopian Income Tax Brackets
+		# -------------------------------------------------
 		tax = 0
-		if taxable <= 2000:
+
+		if taxable_income <= 2000:
 			return 0
-		if taxable <= 4000:
-			tax += (taxable - 2000) * 0.15
-		elif taxable <= 7000:
-			tax += (4000 - 2000) * 0.15
-			tax += (taxable - 4000) * 0.20
-		elif taxable <= 10000:
-			tax += (4000 - 2000) * 0.15
-			tax += (7000 - 4000) * 0.20
-			tax += (taxable - 7000) * 0.25
-		elif taxable <= 14000:
-			tax += (4000 - 2000) * 0.15
-			tax += (7000 - 4000) * 0.20
-			tax += (10000 - 7000) * 0.25
-			tax += (taxable - 10000) * 0.30
+		if taxable_income <= 4000:
+			tax += (taxable_income - 2000) * 0.15
+		elif taxable_income <= 7000:
+			tax += 2000 * 0.15
+			tax += (taxable_income - 4000) * 0.20
+		elif taxable_income <= 10000:
+			tax += 2000 * 0.15
+			tax += 3000 * 0.20
+			tax += (taxable_income - 7000) * 0.25
+		elif taxable_income <= 14000:
+			tax += 2000 * 0.15
+			tax += 3000 * 0.20
+			tax += 3000 * 0.25
+			tax += (taxable_income - 10000) * 0.30
 		else:
-			tax += (4000 - 2000) * 0.15
-			tax += (7000 - 4000) * 0.20
-			tax += (10000 - 7000) * 0.25
-			tax += (14000 - 10000) * 0.30
-			tax += (taxable - 14000) * 0.35
+			tax += 2000 * 0.15
+			tax += 3000 * 0.20
+			tax += 3000 * 0.25
+			tax += 4000 * 0.30
+			tax += (taxable_income - 14000) * 0.35
 
 		return round(tax, 2)
 
@@ -2207,6 +2276,57 @@ class SalarySlip(TransactionBase):
 		# 		self.precision("base_taxable_gross_pay")
 		# 	)
 		
+		# def set_taxable_gross_pay_and_base_taxable_gross_pay():
+
+		# 	total = 0.0
+
+		# 	# Fetch employee tax rule: All Tax, 600, 2200
+		# 	tax_rule = frappe.db.get_value("Employee", self.employee, "tax_free_transportation_amount") or "All Tax"
+
+		# 	# Allowed limits
+		# 	TAX_FREE_LIMITS = {
+		# 		"All Tax": 0,
+		# 		"600": 600,
+		# 		"2200": 2200,
+		# 	}
+
+		# 	tax_free_limit = TAX_FREE_LIMITS.get(tax_rule, 0)
+
+		# 	transportation_amount = 0.0
+
+		# 	# First calculate total taxable components
+		# 	for row in self.earnings:
+
+		# 		if not hasattr(row, "is_tax_applicable") or row.is_tax_applicable is None:
+		# 			row.is_tax_applicable = frappe.db.get_value(
+		# 				"Salary Component", row.salary_component, "is_tax_applicable"
+		# 			) or 0
+
+		# 		if row.do_not_include_in_total:
+		# 			continue
+		# 		if not row.is_tax_applicable:
+		# 			continue
+
+		# 		amount = self.get_amount_based_on_payment_days(row)[0]
+
+		# 		# Capture transportation amount
+		# 		if row.salary_component.lower() == "transport allowance":
+		# 			transportation_amount = amount
+
+		# 		total += amount
+
+		# 	# Apply transportation tax-free rule (600 or 2200 only)
+		# 	if tax_free_limit > 0:
+		# 		tax_free_portion = min(transportation_amount, tax_free_limit)
+		# 		total -= tax_free_portion
+
+		# 	self.taxable_gross_pay = total
+
+		# 	self.base_taxable_gross_pay = flt(
+		# 		flt(self.taxable_gross_pay) * flt(self.exchange_rate),
+		# 		self.precision("base_taxable_gross_pay")
+		# 	)
+
 		def set_taxable_gross_pay_and_base_taxable_gross_pay():
 
 			total = 0.0
@@ -2214,7 +2334,6 @@ class SalarySlip(TransactionBase):
 			# Fetch employee tax rule: All Tax, 600, 2200
 			tax_rule = frappe.db.get_value("Employee", self.employee, "tax_free_transportation_amount") or "All Tax"
 
-			# Allowed limits
 			TAX_FREE_LIMITS = {
 				"All Tax": 0,
 				"600": 600,
@@ -2225,7 +2344,11 @@ class SalarySlip(TransactionBase):
 
 			transportation_amount = 0.0
 
-			# First calculate total taxable components
+			# NEW: Cash Indemnity tracking
+			cash_indemnity_earning = 0.0
+			cash_indemnity_deduction = 0.0
+
+			# First calculate total taxable earnings
 			for row in self.earnings:
 
 				if not hasattr(row, "is_tax_applicable") or row.is_tax_applicable is None:
@@ -2240,16 +2363,33 @@ class SalarySlip(TransactionBase):
 
 				amount = self.get_amount_based_on_payment_days(row)[0]
 
-				# Capture transportation amount
+				# Capture Transport Allowance
 				if row.salary_component.lower() == "transport allowance":
 					transportation_amount = amount
 
+				# Capture Cash Indemnity (Earnings)
+				if row.salary_component.lower() == "cash indemnity":
+					cash_indemnity_earning = amount
+
 				total += amount
 
-			# Apply transportation tax-free rule (600 or 2200 only)
+			# Capture Cash Indemnity Deduction from deductions table
+			for row in self.deductions:
+				if row.salary_component.lower() == "cash indemnity deduction":
+					cash_indemnity_deduction = self.get_amount_based_on_payment_days(row)[0]
+
+			# Calculate net cash indemnity
+			net_cash_indemnity = cash_indemnity_earning - cash_indemnity_deduction
+
+			# Apply transportation tax-free rule
 			if tax_free_limit > 0:
 				tax_free_portion = min(transportation_amount, tax_free_limit)
 				total -= tax_free_portion
+
+			# Apply Cash Indemnity tax-free rule
+			# Example: earning=2000, deduction=1000 → tax-free = 1000
+			if net_cash_indemnity > 0:
+				total -= net_cash_indemnity
 
 			self.taxable_gross_pay = total
 
