@@ -2327,12 +2327,87 @@ class SalarySlip(TransactionBase):
 		# 		self.precision("base_taxable_gross_pay")
 		# 	)
 
+		# def set_taxable_gross_pay_and_base_taxable_gross_pay():
+
+		# 	total = 0.0
+
+		# 	# Fetch employee tax rule: All Tax, 600, 2200
+		# 	tax_rule = frappe.db.get_value("Employee", self.employee, "tax_free_transportation_amount") or "All Tax"
+
+		# 	TAX_FREE_LIMITS = {
+		# 		"All Tax": 0,
+		# 		"600": 600,
+		# 		"2200": 2200,
+		# 	}
+
+		# 	tax_free_limit = TAX_FREE_LIMITS.get(tax_rule, 0)
+
+		# 	transportation_amount = 0.0
+
+		# 	# NEW: Cash Indemnity tracking
+		# 	cash_indemnity_earning = 0.0
+		# 	cash_indemnity_deduction = 0.0
+
+		# 	# First calculate total taxable earnings
+		# 	for row in self.earnings:
+
+		# 		if not hasattr(row, "is_tax_applicable") or row.is_tax_applicable is None:
+		# 			row.is_tax_applicable = frappe.db.get_value(
+		# 				"Salary Component", row.salary_component, "is_tax_applicable"
+		# 			) or 0
+
+		# 		if row.do_not_include_in_total:
+		# 			continue
+		# 		if not row.is_tax_applicable:
+		# 			continue
+
+		# 		amount = self.get_amount_based_on_payment_days(row)[0]
+
+		# 		# Capture Transport Allowance
+		# 		if row.salary_component.lower() == "transport allowance":
+		# 			transportation_amount = amount
+
+		# 		# Capture Cash Indemnity (Earnings)
+		# 		if row.salary_component.lower() == "cash indemnity":
+		# 			cash_indemnity_earning = amount
+
+		# 		total += amount
+
+		# 	# Capture Cash Indemnity Deduction from deductions table
+		# 	for row in self.deductions:
+		# 		if row.salary_component.lower() == "cash indemnity deduction":
+		# 			cash_indemnity_deduction = self.get_amount_based_on_payment_days(row)[0]
+
+		# 	# Calculate net cash indemnity
+		# 	net_cash_indemnity = cash_indemnity_earning - cash_indemnity_deduction
+			
+
+		# 	# Apply transportation tax-free rule
+		# 	if tax_free_limit > 0:
+		# 		tax_free_portion = min(transportation_amount, tax_free_limit)
+		# 		total -= tax_free_portion
+
+		# 	# Apply Cash Indemnity tax-free rule
+		# 	# Example: earning=2000, deduction=1000 → tax-free = 1000
+		# 	#if it's equal it should be 0
+
+		# 	if cash_indemnity_deduction > 0 and net_cash_indemnity >= 0:
+		# 		total -= net_cash_indemnity
+
+		# 	self.taxable_gross_pay = total
+
+		# 	self.base_taxable_gross_pay = flt(
+		# 		flt(self.taxable_gross_pay) * flt(self.exchange_rate),
+		# 		self.precision("base_taxable_gross_pay")
+		# 	)
 		def set_taxable_gross_pay_and_base_taxable_gross_pay():
 
 			total = 0.0
 
-			# Fetch employee tax rule: All Tax, 600, 2200
-			tax_rule = frappe.db.get_value("Employee", self.employee, "tax_free_transportation_amount") or "All Tax"
+			# Fetch employee tax rule
+			tax_rule = frappe.db.get_value(
+				"Employee", self.employee, "tax_free_transportation_amount"
+			) or "All Tax"
 
 			TAX_FREE_LIMITS = {
 				"All Tax": 0,
@@ -2344,7 +2419,7 @@ class SalarySlip(TransactionBase):
 
 			transportation_amount = 0.0
 
-			# NEW: Cash Indemnity tracking
+			# Cash Indemnity tracking
 			cash_indemnity_earning = 0.0
 			cash_indemnity_deduction = 0.0
 
@@ -2363,33 +2438,49 @@ class SalarySlip(TransactionBase):
 
 				amount = self.get_amount_based_on_payment_days(row)[0]
 
-				# Capture Transport Allowance
+				# Transport allowance
 				if row.salary_component.lower() == "transport allowance":
 					transportation_amount = amount
 
-				# Capture Cash Indemnity (Earnings)
+				# Cash indemnity earning
 				if row.salary_component.lower() == "cash indemnity":
 					cash_indemnity_earning = amount
 
 				total += amount
 
-			# Capture Cash Indemnity Deduction from deductions table
+			# Cash Indemnity Deduction
 			for row in self.deductions:
 				if row.salary_component.lower() == "cash indemnity deduction":
 					cash_indemnity_deduction = self.get_amount_based_on_payment_days(row)[0]
 
-			# Calculate net cash indemnity
-			net_cash_indemnity = cash_indemnity_earning - cash_indemnity_deduction
+			# RULE: If deduction > earning → error
+			if cash_indemnity_deduction > cash_indemnity_earning:
+				frappe.throw(
+					f"Cash Indemnity Deduction ({cash_indemnity_deduction}) "
+					f"cannot be greater than Cash Indemnity Earning ({cash_indemnity_earning})."
+				)
+
+			# Determine correct tax-free amount
+			if cash_indemnity_earning > 0 and cash_indemnity_deduction == 0:
+				# Deduction not exist → earning fully taxable
+				cash_indemnity_tax_free = 0
+
+			elif cash_indemnity_earning == cash_indemnity_deduction:
+				# Equal → earning fully non-taxable
+				cash_indemnity_tax_free = cash_indemnity_earning
+
+			else:
+				# Normal case: earning > deduction → tax-free = difference
+				cash_indemnity_tax_free = cash_indemnity_earning - cash_indemnity_deduction
 
 			# Apply transportation tax-free rule
 			if tax_free_limit > 0:
 				tax_free_portion = min(transportation_amount, tax_free_limit)
 				total -= tax_free_portion
 
-			# Apply Cash Indemnity tax-free rule
-			# Example: earning=2000, deduction=1000 → tax-free = 1000
-			if net_cash_indemnity > 0:
-				total -= net_cash_indemnity
+			# Apply cash indemnity tax-free portion
+			if cash_indemnity_tax_free > 0:
+				total -= cash_indemnity_tax_free
 
 			self.taxable_gross_pay = total
 
@@ -2398,8 +2489,6 @@ class SalarySlip(TransactionBase):
 				self.precision("base_taxable_gross_pay")
 			)
 
-
-			
 
 		if self.salary_structure:
 			# self.get_salary_components(self.employee) #my code adding the salary component of earnings
