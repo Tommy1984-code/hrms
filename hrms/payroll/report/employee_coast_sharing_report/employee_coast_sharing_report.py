@@ -84,7 +84,7 @@ def get_data(filters=None):
         month_key = month.strftime("%Y-%m")  # example: '2025-05'
 
         query = """
-            SELECT ss.name, ss.employee, ss.end_date, ss.net_pay, ss.payment_type,
+            SELECT ss.name, ss.employee, ss.end_date, ss.net_pay, ss.payment_type,ss.taxable_gross_pay,
                    e.name AS employee, e.employee_name, e.department, e.designation, e.branch,
                    e.grade, e.bank_name, e.employment_type, e.employee_tin_no, e.date_of_joining, 
                    e.tax_free_transportation_amount,
@@ -170,7 +170,7 @@ def get_data(filters=None):
             "basic_salary": basic_salary,
             "transport_salary": transport_salary,
             "total_tax": employment_tax,
-            "employment_tax": employment_tax,
+            "employment_tax": slip.taxable_gross_pay,
             "employee_pension": employee_pension,
             "coast_sharing": coast_sharing,
             "net_pay": slip.net_pay,

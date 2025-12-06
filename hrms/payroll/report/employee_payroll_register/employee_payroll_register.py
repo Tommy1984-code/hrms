@@ -61,9 +61,8 @@ def get_data(filters, columns):
 
         query = """
             SELECT e.name AS employee, e.employee_name, e.department, e.designation, e.branch, 
-            e.tax_free_transportation_amount AS tax_free_transport,
                    ss.bank_name AS bank, ss.mode_of_payment, ss.payment_type,
-                   ss.name AS salary_slip, ss.gross_pay, ss.net_pay, ss.total_deduction,
+                   ss.name AS salary_slip, ss.gross_pay, ss.net_pay, ss.total_deduction,ss.taxable_gross_pay,
                    ss.end_date,
                    sd.salary_component, sd.abbr, sd.amount, sd.parentfield
             FROM `tabSalary Slip` ss
@@ -125,6 +124,7 @@ def get_data(filters, columns):
                 "income_tax": 0, "employee_pension": 0,
                 "absence": 0, "other_deduction": 0,
                 "gross_pay": row.gross_pay,
+                "taxable_gross" : row.taxable_gross_pay,
                 "net_pay": row.net_pay,
                 "total_deduction": row.total_deduction,
                 "_priority": priority
@@ -136,17 +136,6 @@ def get_data(filters, columns):
             comp = row.abbr or row.salary_component
             pf = row.parentfield
             tgt = monthly_slips[month_key]
-
-            # Convert the tax-free transport amount only once for each slip
-            raw = row.tax_free_transport or ""
-            if raw == "2200":
-                tax_free = 2200.0
-            elif raw == "600":
-                tax_free = 600.0
-            else:
-                tax_free = 0.0  # For "All Tax" or blank
-
-            tgt["tax_free_transport"] = tax_free
 
             if pf == "earnings":
                 if comp in ("B", "VB"):
@@ -181,7 +170,7 @@ def get_data(filters, columns):
             for field in [
                 "basic", "hardship", "overtime", "commission", "incentive",
                 "income_tax", "employee_pension", "absence", "other_deduction",
-                "gross_pay", "net_pay", "total_deduction"
+                "gross_pay","taxable_gross","net_pay", "total_deduction"
             ]:
                 tgt[field] += data[field]
 
@@ -189,7 +178,6 @@ def get_data(filters, columns):
     department_rows = {}
     for emp_data in final_emps.values():
         emp_data["company_pension"] = emp_data["basic"] * 0.11
-        emp_data["taxable_gross"] = emp_data["gross_pay"] - (emp_data.get("tax_free_transport") or 0)
         dept = emp_data["department"]
         department_rows.setdefault(dept, []).append(emp_data)
 

@@ -86,7 +86,7 @@ def get_data(filters=None):
         query = """
             SELECT e.name AS employee,e.employee_name, e.employee_tin_no, e.date_of_joining,
                 e.tax_free_transportation_amount,e.department,e.designation,e.branch,e.grade,e.employment_type,
-                ss.name, ss.employee, ss.start_date, ss.end_date, ss.net_pay,ss.payment_type
+                ss.name, ss.employee, ss.start_date, ss.end_date, ss.net_pay,ss.payment_type,ss.taxable_gross_pay
             FROM `tabSalary Slip` ss
             JOIN `tabEmployee` e ON ss.employee = e.name
                      WHERE ss.start_date <= %(month_end)s 
@@ -163,7 +163,7 @@ def get_data(filters=None):
             tax_free_transportation_amount = safe_float(latest_slip.tax_free_transportation_amount)
             # tax_free_transportation_amount = float(latest_slip.tax_free_transportation_amount or 0)
             transport_pension = max(transport_salary - tax_free_transportation_amount, 0)
-
+            taxable_gross = safe_float(latest_slip.taxable_gross_pay)
             excluded_abbrs = ['B', 'VB', 'TA', 'Bns']
             other_benefits = sum(
                 amt for abbr, amt in earnings.items()
@@ -190,7 +190,7 @@ def get_data(filters=None):
                 "transport_pesnion": transport_pension,
                 "employee_bonus": employee_bonus,
                 "other_benefit": other_benefits,
-                "total_tax": employment_tax,
+                "total_tax": taxable_gross,
                 "employment_tax": employment_tax,
                 "employee_pension": employee_pension,
                 "company_pension": company_pension,

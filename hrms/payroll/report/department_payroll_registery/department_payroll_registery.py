@@ -62,6 +62,7 @@ def get_data(filters=None):
 				ss.name AS salary_slip,
 				ss.gross_pay,
 				ss.net_pay,
+				ss.taxable_gross_pay,
 				ss.total_deduction,
 				ss.payment_type,
 				sd.salary_component,
@@ -127,7 +128,7 @@ def get_data(filters=None):
 				grouped_data[row.employee] = {
 					"employee_name": row.employee_name,
 					"department": row.department,
-					"gross": 0, "net_pay": 0, "total_deduction": 0,
+					"gross": 0,"taxable_gross":0, "net_pay": 0, "total_deduction": 0,
 					"basic": 0, "total_benefits": 0, "overtime": 0, "commission": 0,
 					"incentive": 0, "income_tax": 0, "employee_pension": 0,
 					"absence": 0, "other_deduction": 0,
@@ -173,6 +174,7 @@ def get_data(filters=None):
 			# Sum once per salary slip
 			if row.salary_slip not in processed_slips:
 				grouped_data[row.employee]["gross"] += row.gross_pay or 0
+				grouped_data[row.employee]["taxable_gross"] +=row.taxable_gross_pay or 0
 				grouped_data[row.employee]["net_pay"] += row.net_pay or 0
 				grouped_data[row.employee]["total_deduction"] += row.total_deduction or 0
 				processed_slips.add(row.salary_slip)
@@ -185,7 +187,6 @@ def get_data(filters=None):
 			dept_group[dept] = []
 
 		g["company_pension"] = g["basic"] * 0.11
-		g["taxable_gross"] = g["gross"] - g.get("tax_free_transport", 0)
 
 		dept_group[dept].append(g)
 
