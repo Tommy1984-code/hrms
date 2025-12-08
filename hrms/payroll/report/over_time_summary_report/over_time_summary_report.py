@@ -18,8 +18,8 @@ def get_columns():
         {"label": "Name", "fieldname": "employee_name", "fieldtype": "Data", "width": 150},
         {"label": "Job Title", "fieldname": "designation", "fieldtype": "Data", "width": 150},
         {"label": "Salary", "fieldname": "base", "fieldtype": "Currency", "width": 100},
-        {"label": "OT 1.25", "fieldname": "ot_125", "fieldtype": "Float", "width": 80},
         {"label": "OT 1.50", "fieldname": "ot_150", "fieldtype": "Float", "width": 80},
+        {"label": "OT 1.75", "fieldname": "ot_175", "fieldtype": "Float", "width": 80},
         {"label": "OT 2.00", "fieldname": "ot_200", "fieldtype": "Float", "width": 80},
         {"label": "OT 2.50", "fieldname": "ot_250", "fieldtype": "Float", "width": 80},
         {"label": "Amount", "fieldname": "amount", "fieldtype": "Currency", "width": 100},
@@ -58,8 +58,8 @@ def get_data(filters):
                     e.grade,
                     e.name AS employee_id,
                     e.base,
-                    od.ot_125,
                     od.ot_150,
+                    od.ot_175,
                     od.ot_200,
                     od.ot_250,
                     asl.amount AS total_amount,
@@ -86,8 +86,8 @@ def get_data(filters):
                     {grade_clause}
                     {employment_type_clause}
                     AND (
-                        COALESCE(od.ot_125,0) > 0 OR
                         COALESCE(od.ot_150,0) > 0 OR
+                        COALESCE(od.ot_175,0) > 0 OR
                         COALESCE(od.ot_200,0) > 0 OR
                         COALESCE(od.ot_250,0) > 0
                     )
@@ -147,8 +147,8 @@ def get_data(filters):
                     "employee": row.employee_id,
                     "designation": row.designation,
                     "base": row.base or 0,
-                    "ot_125": row.ot_125 or 0,
                     "ot_150": row.ot_150 or 0,
+                    "ot_175": row.ot_175 or 0,
                     "ot_200": row.ot_200 or 0,
                     "ot_250": row.ot_250 or 0,
                     "amount": row.total_amount or 0,
@@ -162,8 +162,8 @@ def get_data(filters):
             "employee": f"▶ {dept}",
             "employee_name": None,
             "base": None,
-            "ot_125": None,
             "ot_150": None,
+            "ot_175": None,
             "ot_200": None,
             "ot_250": None,
             "amount": None,

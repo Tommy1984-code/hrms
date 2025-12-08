@@ -17,10 +17,10 @@ def get_columns():
         {"label": "Employee ID", "fieldname": "employee", "fieldtype":"Data","width": 150},
         {"label": "Name", "fieldname": "employee_name", "fieldtype": "Data", "width": 150},
         {"label": "Date", "fieldname": "date", "fieldtype": "Date", "width": 90},
-        {"label": "OT 1.25", "fieldname": "ot_1_25", "fieldtype": "Float", "width": 80},
-        {"label": "Amount 1.25", "fieldname": "amount_1_25", "fieldtype": "Currency", "width": 90},
         {"label": "OT 1.5", "fieldname": "ot_1_5", "fieldtype": "Float", "width": 80},
         {"label": "Amount 1.5", "fieldname": "amount_1_5", "fieldtype": "Currency", "width": 90},
+        {"label": "OT 1.75", "fieldname": "ot_1_75", "fieldtype": "Float", "width": 80},
+        {"label": "Amount 1.75", "fieldname": "amount_1_75", "fieldtype": "Currency", "width": 90},       
         {"label": "OT 2.0", "fieldname": "ot_2_0", "fieldtype": "Float", "width": 80},
         {"label": "Amount 2.0", "fieldname": "amount_2_0", "fieldtype": "Currency", "width": 90},
         {"label": "OT 2.5", "fieldname": "ot_2_5", "fieldtype": "Float", "width": 80},
@@ -62,8 +62,8 @@ def get_data(filters):
                     e.designation,
                     e.grade,
                     e.name AS employee_id,
-                    od.ot_125,
                     od.ot_150,
+                    od.ot_175,
                     od.ot_200,
                     od.ot_250,
                     asl.amount AS total_amount,
@@ -88,8 +88,9 @@ def get_data(filters):
                     {grade_clause}
                     {employment_type_clause}
                     AND (
-                        COALESCE(od.ot_125,0) > 0 OR
+                        
                         COALESCE(od.ot_150,0) > 0 OR
+                        COALESCE(od.ot_175,0) > 0 OR
                         COALESCE(od.ot_200,0) > 0 OR
                         COALESCE(od.ot_250,0) > 0
                     )
@@ -145,10 +146,10 @@ def get_data(filters):
                         "employee_name": row.employee_name,
                         "date": row.date,
                         "designation": row.designation,
-                        "ot_1_25": row.ot_125 or 0,
-                        "amount_1_25": row.total_amount if row.ot_125 else 0,
                         "ot_1_5": row.ot_150 or 0,
                         "amount_1_5": row.total_amount if row.ot_150 else 0,
+                        "ot_1_75": row.ot_175 or 0,
+                        "amount_1_75": row.total_amount if row.ot_175 else 0,
                         "ot_2_0": row.ot_200 or 0,
                         "amount_2_0": row.total_amount if row.ot_200 else 0,
                         "ot_2_5": row.ot_250 or 0,
@@ -156,12 +157,13 @@ def get_data(filters):
                     }
 
 
-            if rate == 1.25:
-                employee_data_map[row.employee]["ot_1_25"] += wh
-                employee_data_map[row.employee]["amount_1_25"] += amt
-            elif rate == 1.5:
+           
+            if rate == 1.5:
                 employee_data_map[row.employee]["ot_1_5"] += wh
                 employee_data_map[row.employee]["amount_1_5"] += amt
+            elif rate == 1.75:
+                employee_data_map[row.employee]["ot_1_75"] += wh
+                employee_data_map[row.employee]["amount_1_75"] += amt
             elif rate == 2.0:
                 employee_data_map[row.employee]["ot_2_0"] += wh
                 employee_data_map[row.employee]["amount_2_0"] += amt

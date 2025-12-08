@@ -107,9 +107,9 @@
       <th class="w-[150px] text-[12px] font-bold text-left border border-gray-400 py-2">Employee ID</th>
       <th class="w-[200px] text-[12px] font-bold text-left border border-gray-400 py-2">Name</th>
       <th class="w-[100px] text-[12px] font-bold text-left border border-gray-400 py-2">Date</th>
-      <th class="w-[80px] text-[12px] font-bold text-center border border-gray-400 py-2">OT 1.25</th>
-      <th class="w-[100px] text-[12px] font-bold text-right border border-gray-400 py-2">Amount</th>
       <th class="w-[80px] text-[12px] font-bold text-center border border-gray-400 py-2">OT 1.5</th>
+      <th class="w-[100px] text-[12px] font-bold text-right border border-gray-400 py-2">Amount</th>
+      <th class="w-[80px] text-[12px] font-bold text-center border border-gray-400 py-2">OT 1.75</th>
       <th class="w-[100px] text-[12px] font-bold text-right border border-gray-400 py-2">Amount</th>
       <th class="w-[80px] text-[12px] font-bold text-center border border-gray-400 py-2">OT 2.0</th>
       <th class="w-[100px] text-[12px] font-bold text-right border border-gray-400 py-2">Amount</th>
@@ -119,14 +119,14 @@
   </thead>
   <tbody>
     {%
-      var total_amount_125 = 0;
       var total_amount_150 = 0;
+      var total_amount_175 = 0;
       var total_amount_200 = 0;
       var total_amount_250 = 0;
 
       for (var i = 0; i < data.length; i++) {
-        total_amount_125 += data[i].amount_1_25 || 0;
         total_amount_150 += data[i].amount_1_5 || 0;
+        total_amount_175 += data[i].amount_1_75 || 0;
         total_amount_200 += data[i].amount_2_0 || 0;
         total_amount_250 += data[i].amount_2_5 || 0;
     %}
@@ -135,10 +135,10 @@
       <td class="text-[12px] text-center py-1">{{ data[i].employee }}</td>
       <td class="text-[12px] text-center py-1">{{ data[i].employee_name }}</td>
       <td class="text-[12px] text-center py-1">{{ data[i].date }}</td>
-      <td class="text-[12px] text-center py-1">{{ data[i].ot_1_25.toFixed(2) }}</td>
-      <td class="text-[12px] text-center py-1">{{ data[i].amount_1_25.toFixed(2) }}</td>
       <td class="text-[12px] text-center py-1">{{ data[i].ot_1_5.toFixed(2) }}</td>
       <td class="text-[12px] text-center py-1">{{ data[i].amount_1_5.toFixed(2) }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].ot_1_75.toFixed(2) }}</td>
+      <td class="text-[12px] text-center py-1">{{ data[i].amount_1_75.toFixed(2) }}</td>
       <td class="text-[12px] text-center py-1">{{ data[i].ot_2_0.toFixed(2) }}</td>
       <td class="text-[12px] text-center py-1">{{ data[i].amount_2_0.toFixed(2) }}</td>
       <td class="text-[12px] text-center py-1">{{ data[i].ot_2_5.toFixed(2) }}</td>
@@ -149,9 +149,9 @@
   <tfoot>
     <tr style="border-top: 2px solid #a5a3a3;">
       <td colspan="5" style="text-align: right; font-weight: bold;">Total Amount</td>
-      <td style="text-align: center;">{{ total_amount_125.toFixed(2) }}</td>
-      <td></td>
       <td style="text-align: center;">{{ total_amount_150.toFixed(2) }}</td>
+      <td></td>
+      <td style="text-align: center;">{{ total_amount_175.toFixed(2) }}</td>
       <td></td>
       <td style="text-align: center;">{{ total_amount_200.toFixed(2) }}</td>
       <td></td>
