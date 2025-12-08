@@ -59,7 +59,15 @@ def get_dynamic_salary_components(selected_earnings=None, selected_deductions=No
     seen = set()
     earnings = []
     deductions = []
-    basic_salary_added = False
+    basic_salary_column = None  # Store Basic Salary separately
+    absent_column = None        # Store Absent Deduction separately
+    transport_exempt_column = None  # Transport Allowance Exempt
+
+    # Initialize all special component variables
+    house_allowance_column = None
+    overtime_column = None
+    income_tax_column = None
+    pension_column = None
 
     for comp in components:
         abbr = comp.salary_component_abbr
@@ -70,17 +78,6 @@ def get_dynamic_salary_components(selected_earnings=None, selected_deductions=No
         if frappe.scrub(abbr) == "cp":
             continue
 
-        if abbr in ("B", "VB"):
-            if not basic_salary_added:
-                earnings.insert(0, {
-                    "label": "Basic Salary",
-                    "fieldname": "basic_pay",
-                    "fieldtype": "Float",
-                    "width": 140
-                })
-                basic_salary_added = True
-            continue
-
         column = {
             "label": comp.name,
             "fieldname": frappe.scrub(abbr),
@@ -88,15 +85,95 @@ def get_dynamic_salary_components(selected_earnings=None, selected_deductions=No
             "width": 140
         }
 
+        # Capture Basic Salary without inserting yet
+        if abbr in ("B", "VB"):
+            basic_salary_column = {
+                "label": "Basic Salary",
+                "fieldname": "basic_pay",
+                "fieldtype": "Float",
+                "width": 140
+            }
+            continue
+
         if comp.type == "Earning":
             if not selected_earnings or comp.name in selected_earnings:
+                
+                if comp.name.lower() == "overtime":
+                    overtime_column = column
+                    continue
+                if comp.name.lower() == "house allowance":
+                    house_allowance_column = column
+                    continue
                 earnings.append(column)
+
         elif comp.type == "Deduction":
             if not selected_deductions or comp.name in selected_deductions:
+                if comp.name.lower() == "income tax":
+                    income_tax_column = column
+                    continue
+                if comp.name.lower() == "pension":
+                    pension_column = column
+                    continue
+                if comp.name.lower() == "absent":
+                    absent_column = column
+                    continue
+
                 deductions.append(column)
 
+    # Apply ordering for earnings: Basic Salary first, then Absent, then Transport Exempt, house allowance, overtime, then normal earnings
+    ordered_earnings = []
+    if basic_salary_column:
+        ordered_earnings.append(basic_salary_column)
+    if overtime_column:
+        ordered_earnings.append(overtime_column)
+    if absent_column:
+        ordered_earnings.append(absent_column)
+
+    transport_exempt_column = {
+    "label": "Transport Allowance Exempt",
+    "fieldname": "transport_allowance_exempt",
+    "fieldtype": "Float",
+    "width": 140
+    }
+    ordered_earnings.append(transport_exempt_column)
+
+    if house_allowance_column:
+        ordered_earnings.append(house_allowance_column)
+        
+    ordered_earnings.extend(earnings)
+
+    # Apply ordering for deductions: Income Tax, Pension, then rest
+    ordered_deductions = []
+    if income_tax_column:
+        ordered_deductions.append(income_tax_column)
+    if pension_column:
+        ordered_deductions.append(pension_column)
+    ordered_deductions.extend(deductions)
+
+    # Overwrite earnings and deductions, keep return same
+    earnings = ordered_earnings
+    deductions = ordered_deductions
     return earnings, deductions
 
+def get_tax_free_transportation_map(employee_names):
+    result = {}
+    if not employee_names:
+        return result
+
+    employees = frappe.get_all("Employee",
+        filters={"name": ["in", employee_names]},
+        fields=["name", "tax_free_transportation_amount"]
+    )
+    for emp in employees:
+        val = emp.tax_free_transportation_amount
+        try:
+            # Convert to float if possible
+            num_val = float(val)
+        except (ValueError, TypeError):
+            # If "All Tax" or invalid, treat as zero
+            num_val = 0
+        result[emp.name] = num_val
+    return result
 
 def get_active_component_map():
     components = frappe.get_all(
@@ -140,6 +217,11 @@ def aggregate_salary_components(rows, allowed_fields=None):
         if fieldname and (not allowed_fields or fieldname in allowed_fields):
             result[fieldname] += amt
 
+        if abbr.upper() == "TA":
+            result["transport_allowance"] = result.get("transport_allowance", 0) + amt
+        
+
+
         gross_pays.add((r.salary_slip, r.gross_pay or 0))
         taxable_gross_pays.add((r.salary_slip,r.taxable_gross_pay or 0))
         net_pays.add((r.salary_slip, r.net_pay or 0))
@@ -173,6 +255,7 @@ def get_tax_free_transportation_map(employee_names):
             # If conversion fails (e.g., "All Tax"), treat as zero
             num_val = 0
         result[emp.name] = num_val
+        
     return result
 
 def get_data(filters, selected_earnings=None, selected_deductions=None):
@@ -248,6 +331,7 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
     # Prepare tax free transport map once for all employees
     employee_names = list(data_by_employee_slip.keys())
     tax_free_transport_map = get_tax_free_transportation_map(employee_names)
+    
 
     grouped_data = defaultdict(list)
 
@@ -302,7 +386,26 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
             dept = base.department or "Other"
             
             # Get tax-free transport amount for this employee
+            # Get tax-free transport threshold for this employee
             tax_free_transport = tax_free_transport_map.get(emp, 0)
+            actual_transport = aggregated.get("transport_allowance", 0)
+            if isinstance(tax_free_transport, str) and tax_free_transport.lower() == "all tax":
+                transport_exempt = 0  # fully taxed
+            else:
+                try:
+                    # Convert to float/int if it's a number string
+                    limit = int(tax_free_transport)
+                except (ValueError, TypeError):
+                    limit = 0
+
+                # Apply exemption logic
+                if limit > 0:
+                    transport_exempt = min(actual_transport, limit)
+                else:
+                    transport_exempt = 0
+
+            aggregated["transport_allowance_exempt"] = transport_exempt
+
 
             aggregated.update({
                 "employee": emp,
@@ -336,11 +439,11 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
     ]
 
     for dept in sorted(grouped_data.keys()):
-        dept_row = {"employee_name": f"{dept}"}
-        for field in component_fieldnames + total_fields:
-            dept_row[field] = None
+        # dept_row = {"employee_name": f"{dept}"}
+        # for field in component_fieldnames + total_fields:
+        #     dept_row[field] = None
 
-        final_data.append(dept_row)
+        # final_data.append(dept_row)
         final_data.extend(grouped_data[dept])
 
      # ✅ force zeros only for numeric salary component fields
