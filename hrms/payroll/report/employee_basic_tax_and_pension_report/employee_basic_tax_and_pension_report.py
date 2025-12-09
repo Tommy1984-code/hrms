@@ -97,7 +97,11 @@ def get_data(filters=None):
                     "employee": row.employee,
                     "end_date": row.end_date,
                     "payment_type": row.payment_type,
-                    "components": []
+                    "components": [],
+                    # ✅ Fetch taxable gross here
+                    "taxable_income": frappe.db.get_value(
+                        "Salary Slip", row.name, "taxable_gross_pay"
+                    ) or 0
                 }
 
             slip_map[slip_key]["components"].append(row)
@@ -117,11 +121,10 @@ def get_data(filters=None):
             cost_sharing = deductions.get("csl", 0)
             tax = deductions.get("IT", 0)
 
-            other_income = sum(
-                amount for abbr, amount in earnings.items()
-                if abbr not in ("B", "VB")
-            )
-            
+            # Replace old logic → new required logic:
+            taxable_income = slip.get("taxable_income", 0)
+            other_income = max(taxable_income - basic_salary, 0)
+
             # --- Handle and format the payment month ---
             end_date = slip["end_date"] 
             if isinstance(end_date, str):

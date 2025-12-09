@@ -70,6 +70,14 @@ def get_data(filters):
 		frappe.throw("Please set both From Date and To Date")
 	if not employee :
 		return []
+	
+	loan_components = frappe.get_all(
+		"Salary Component",
+		filters={"loan_component": 1},
+		fields=["salary_component_abbr", "name"]
+	)
+	loan_abbrs = {d.abbr for d in loan_components}
+	loan_names = {d.name for d in loan_components}
 
 	months = get_months_in_range(from_date, to_date)
 	data = []
@@ -162,7 +170,7 @@ def get_data(filters):
 						row_dict["employee_pension"] += amt
 					elif comp == 'APNI':
 						row_dict["salary_advance"] += amt
-					elif comp in ('HL', 'csl'):
+					elif comp in loan_abbrs or r.salary_component in loan_names:
 						row_dict["loan"] += amt
 					elif comp == 'GM':
 						row_dict["gym"] += amt
