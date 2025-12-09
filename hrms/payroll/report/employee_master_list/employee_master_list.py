@@ -38,12 +38,15 @@ def get_columns(selected_earnings=None, selected_deductions=None):
     ]
 
     earnings, deductions = get_dynamic_salary_components(selected_earnings, selected_deductions)
-
+    earnings.append({"label": "Total Benefit", "fieldname": "total_benefit", "fieldtype": "Float", "width": 130}),
+    earnings.append({"label": "Taxable Gross Pay", "fieldname": "taxable_gross", "fieldtype": "Float", "width": 140})
+    earnings.append({"label": "Gross Pay", "fieldname": "gross_pay", "fieldtype": "Float", "width": 120})
+    earnings.append({"label": "Company Pension Cont.", "fieldname": "company_pension", "fieldtype": "Float", "width": 150}),
     total_columns = [
-        {"label": "Total Benefit", "fieldname": "total_benefit", "fieldtype": "Float", "width": 130},
-        {"label": "Taxable Gross Pay", "fieldname": "taxable_gross", "fieldtype": "Float", "width": 140},
-        {"label": "Gross Pay", "fieldname": "gross_pay", "fieldtype": "Float", "width": 120},
-        {"label": "Company Pension Cont.", "fieldname": "company_pension", "fieldtype": "Float", "width": 150},
+        # {"label": "Total Benefit", "fieldname": "total_benefit", "fieldtype": "Float", "width": 130},
+        # {"label": "Taxable Gross Pay", "fieldname": "taxable_gross", "fieldtype": "Float", "width": 140},
+        # {"label": "Gross Pay", "fieldname": "gross_pay", "fieldtype": "Float", "width": 120},
+        # {"label": "Company Pension Cont.", "fieldname": "company_pension", "fieldtype": "Float", "width": 150},
         {"label": "Total Deduction", "fieldname": "total_deduction", "fieldtype": "Float", "width": 140},
         {"label": "Net Pay", "fieldname": "net_pay", "fieldtype": "Float", "width": 130},
     ]
@@ -76,6 +79,8 @@ def get_dynamic_salary_components(selected_earnings=None, selected_deductions=No
         seen.add(abbr)
 
         if frappe.scrub(abbr) == "cp":
+            continue
+        if abbr.upper() == "TA":
             continue
 
         column = {
@@ -200,6 +205,7 @@ def aggregate_salary_components(rows, allowed_fields=None):
     taxable_gross_pays = set()
     net_pays = set()
     total_deductions = set()
+    total_benefit = 0.0 
 
     for r in rows:
         amt = r.amount or 0
@@ -219,7 +225,9 @@ def aggregate_salary_components(rows, allowed_fields=None):
 
         if abbr.upper() == "TA":
             result["transport_allowance"] = result.get("transport_allowance", 0) + amt
-        
+        # Sum total benefit (exclude base salary)
+        if r.parentfield == "earnings" and abbr not in ("B", "VB"):
+            total_benefit += amt
 
 
         gross_pays.add((r.salary_slip, r.gross_pay or 0))
@@ -231,6 +239,7 @@ def aggregate_salary_components(rows, allowed_fields=None):
     result["taxable_gross"] =sum(v for _, v in taxable_gross_pays) 
     result["net_pay"] = sum(v for _, v in net_pays)
     result["total_deduction"] = sum(v for _, v in total_deductions)
+    result["total_benefit"] = total_benefit 
 
     if "company_pension" not in result:
         result["company_pension"] = result.get("basic_pay", 0) * 0.11
