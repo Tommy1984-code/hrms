@@ -430,7 +430,7 @@ def get_data(filters, selected_earnings=None, selected_deductions=None):
                 "employee_id": emp,
                 "tin_no": base.employee_tin_no or "",
                 "pension_id": base.pension_id or "",
-                "period": f"{from_date.strftime('%d %b %Y')} - {to_date.strftime('%d %b %Y')}",
+                "period":from_date.strftime('%B %Y')
                 # Calculate taxable_gross = gross_pay - tax-free transportation amount
                 # "taxable_gross": aggregated.get("gross_pay", 0) - tax_free_transport,
             })
