@@ -6,6 +6,7 @@ from frappe.model.document import Document
 from datetime import date, timedelta
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta 
+import calendar
 
 
 
@@ -145,72 +146,75 @@ class EmployeeTermination(Document):
 
 		return tax
 
+
+
 	def calculate_annual_leave(self):
-		"""Calculate annual leave compensation and tax, prorated by worked days."""
+		"""Calculate annual leave compensation and tax accurately using worked days (limited to 1 year)."""
+
 		if not self.basic_salary or not self.annual_leave:
 			return
-		
-		dates = frappe.db.get_value("Employee",
-							self.employee, ["date_of_joining", "relieving_date"], as_dict=True)
+
+		# Fetch employee dates
+		dates = frappe.db.get_value(
+			"Employee",
+			self.employee,
+			["date_of_joining", "relieving_date"],
+			as_dict=True
+		)
+
 		if not dates or not dates.date_of_joining or not dates.relieving_date:
 			frappe.throw("Employee joining date or relieving date is missing.")
 
-		date_of_joining = dates.date_of_joining
-		relieving_date = dates.relieving_date
+		start_date = (
+			dates.date_of_joining
+			if isinstance(dates.date_of_joining, datetime)
+			else datetime.strptime(str(dates.date_of_joining), "%Y-%m-%d")
+		)
 
-		# Convert to datetime if not already
-		if not isinstance(date_of_joining, datetime):
-			start_date = datetime.strptime(str(date_of_joining), "%Y-%m-%d")
-		else:
-			start_date = date_of_joining
+		end_date = (
+			dates.relieving_date
+			if isinstance(dates.relieving_date, datetime)
+			else datetime.strptime(str(dates.relieving_date), "%Y-%m-%d")
+		)
 
-		if not isinstance(relieving_date, datetime):
-			end_date = datetime.strptime(str(relieving_date), "%Y-%m-%d")
-		else:
-			end_date = relieving_date
+		# Step 1: Calculate actual worked days
+		total_worked_days = (end_date - start_date).days + 1
+		# Step 2: Limit to 1 year for annual leave calculation
+		worked_days = min(total_worked_days, 366 if calendar.isleap(start_date.year) else 365)
+		self.worked_days = worked_days 
 
-		# Calculate worked days capped at 365
-		worked_days = (end_date - start_date).days + 1
-		self.worked_days = min(worked_days, 365)
-		
-		# Step 2: Calculate per-day salary from monthly base
+		# Step 3: Daily salary (26 working days per month)
 		daily_salary = self.basic_salary / 26
 
-		# Step 3: Prorate eligible leave days if worked less than 365
-		eligible_leave_days = (self.annual_leave / 365) * self.worked_days
+		# Step 4: Gross annual leave (based on leave days)
+		gross_annual_leave_payment = self.annual_leave * daily_salary
 
-		# Step 4: Calculate Gross Leave Payment
-		gross_annual_leave_payment = eligible_leave_days * daily_salary
+		# Step 5: Tax calculation using day-based approach
+		# Tax on base salary
+		base_tax = self.calculate_tax(self.basic_salary)
+		# Tax on base + leave
+		combined_tax = self.calculate_tax(self.basic_salary + gross_annual_leave_payment)
+		# Annual leave tax = difference
+		annual_leave_tax = max(combined_tax - base_tax, 0)
 
-		# Step 5: Monthly leave compensation (used for tax adjustment)
-		monthly_leave_compensation = gross_annual_leave_payment / 12
-
-		# Step 6: Base tax on normal salary
-		base_salary_tax = self.calculate_tax(self.basic_salary)
-
-		# Step 7: Tax on (base + monthly leave)
-		combined_tax = self.calculate_tax(self.basic_salary + monthly_leave_compensation)
-
-		# Step 8: Difference in tax per month
-		monthly_tax_difference = combined_tax - base_salary_tax
-
-		# Step 9: Annual leave tax = monthly diff * 12
-		annual_leave_tax = monthly_tax_difference * 12
-
-		# Step 10: Net leave = gross - tax
+		# Step 6: Net leave payment
 		net_annual_leave_payment = gross_annual_leave_payment - annual_leave_tax
 
-		# Step 11: Save values to the document
+		# Step 7: Save values
 		self.gross_annual_leave_payment = round(gross_annual_leave_payment, 2)
 		self.annual_leave_tax = round(annual_leave_tax, 2)
 		self.net_annual_leave_payment = round(net_annual_leave_payment, 2)
 
-		# Step 12: Insert into earnings and deductions tables
+		# Step 8: Insert salary components
 		if self.gross_annual_leave_payment:
-			self.insert_salary_component("earnings", "annlev", self.gross_annual_leave_payment)
+			self.insert_salary_component(
+				"earnings", "annlev", self.gross_annual_leave_payment
+			)
 
 		if self.annual_leave_tax:
-			self.insert_salary_component("deductions", "annlevtax", self.annual_leave_tax)
+			self.insert_salary_component(
+				"deductions", "annlevtax", self.annual_leave_tax
+			)
 
 	def update_final_settlement(self):
 		"""Update the total severance amount in the final settlement section."""
