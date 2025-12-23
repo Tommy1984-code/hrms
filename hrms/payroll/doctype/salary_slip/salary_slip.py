@@ -1283,21 +1283,20 @@ class SalarySlip(TransactionBase):
 	def get_termination_salary_component(self, employee_id, component_type=None):
 		"""Fetch salary components from Salary Detail table of Employee Termination for terminated employees."""
 
-		termination_id = frappe.get_value("Employee Termination", {"employee": employee_id}, "name")
-
-		if not termination_id:
-			return  # No termination found
-
-		termination_date = frappe.get_value("Employee Termination", termination_id, "termination_date")
-		if not termination_date:
-			return
-
-		# Compare only by Year-Month
-		termination_month = getdate(termination_date).strftime('%Y-%m')
+		# Payroll month from salary slip
 		slip_month = getdate(self.actual_start_date).strftime('%Y-%m')
 
-		if termination_month != slip_month:
-			return  # Skip if not in same month
+		termination_id = frappe.get_value(
+			"Employee Termination",
+			{
+				"employee": employee_id,
+				"payroll_month": ["like", f"{slip_month}%"]
+			},
+			"name"
+		)
+
+		if not termination_id:
+			return  # No termination found for this payroll month
 
 		# Fetch salary details from the Employee Termination's Salary Detail child table
 		salary_details = frappe.get_all(

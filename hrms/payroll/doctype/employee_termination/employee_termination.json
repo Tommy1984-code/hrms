@@ -15,6 +15,7 @@
   "date_of_employment",
   "posting_date",
   "termination_date",
+  "payroll_month",
   "section_break_pvpo",
   "basic_salary",
   "annual_leave",
@@ -232,11 +233,16 @@
    "fieldtype": "Table",
    "label": "Deductions",
    "options": "Salary Detail"
+  },
+  {
+   "fieldname": "payroll_month",
+   "fieldtype": "Date",
+   "label": "Payroll Month"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-07 15:06:06.731683",
+ "modified": "2025-12-23 08:06:13.498830",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Employee Termination",
