@@ -119,12 +119,23 @@
   </thead>
   <tbody>
     {%
+      var total_ot_150 = 0;
+      var total_ot_175 = 0;
+      var total_ot_200 = 0;
+      var total_ot_250 = 0;
+
       var total_amount_150 = 0;
       var total_amount_175 = 0;
       var total_amount_200 = 0;
       var total_amount_250 = 0;
 
       for (var i = 0; i < data.length; i++) {
+
+        total_ot_150 += data[i].ot_1_5 || 0;
+        total_ot_175 += data[i].ot_1_75 || 0;
+        total_ot_200 += data[i].ot_2_0 || 0;
+        total_ot_250 += data[i].ot_2_5 || 0;
+
         total_amount_150 += data[i].amount_1_5 || 0;
         total_amount_175 += data[i].amount_1_75 || 0;
         total_amount_200 += data[i].amount_2_0 || 0;
@@ -146,16 +157,18 @@
     </tr>
     {% } %}
   </tbody>
-  <tfoot>
-    <tr style="border-top: 2px solid #a5a3a3;">
-      <td colspan="5" style="text-align: right; font-weight: bold;">Total Amount</td>
-      <td style="text-align: center;">{{ total_amount_150.toFixed(2) }}</td>
-      <td></td>
-      <td style="text-align: center;">{{ total_amount_175.toFixed(2) }}</td>
-      <td></td>
-      <td style="text-align: center;">{{ total_amount_200.toFixed(2) }}</td>
-      <td></td>
-      <td style="text-align: center;">{{ total_amount_250.toFixed(2) }}</td>
-    </tr>
-  </tfoot>
+ <tfoot>
+  <tr style="border-top: 2px solid #a5a3a3; font-weight: bold;">
+    <td colspan="4" style="text-align: right;">Total</td>
+    <td style="text-align: center;">{{ total_ot_150.toFixed(2) }}</td>
+    <td style="text-align: center;">{{ total_amount_150.toFixed(2) }}</td>
+    <td style="text-align: center;">{{ total_ot_175.toFixed(2) }}</td>
+    <td style="text-align: center;">{{ total_amount_175.toFixed(2) }}</td>
+    <td style="text-align: center;">{{ total_ot_200.toFixed(2) }}</td>
+    <td style="text-align: center;">{{ total_amount_200.toFixed(2) }}</td>
+    <td style="text-align: center;">{{ total_ot_250.toFixed(2) }}</td>
+    <td style="text-align: center;">{{ total_amount_250.toFixed(2) }}</td>
+  </tr>
+</tfoot>
+
 </table>

@@ -67,6 +67,7 @@ def get_data(filters):
                     od.ot_200,
                     od.ot_250,
                     asl.amount AS total_amount,
+                    asl.base_salary,
                     asl.payroll_date,
                     DATE_FORMAT(asl.payroll_date, '%%Y-%%m') AS date
                 FROM `tabAdditional Salary` asl
@@ -140,6 +141,7 @@ def get_data(filters):
 
 
             for row in data:
+                base_salary = float(row.base_salary or 0)
                 if row.employee not in employee_data_map:
                     employee_data_map[row.employee] = {
                         "employee": row.employee,
@@ -147,29 +149,27 @@ def get_data(filters):
                         "date": row.date,
                         "designation": row.designation,
                         "ot_1_5": row.ot_150 or 0,
-                        "amount_1_5": row.total_amount if row.ot_150 else 0,
+                        "amount_1_5":((base_salary / 208) * (row.ot_150 or 0) * 1.5) if row.ot_150 else 0,
                         "ot_1_75": row.ot_175 or 0,
-                        "amount_1_75": row.total_amount if row.ot_175 else 0,
+                        "amount_1_75": ((base_salary / 208) * (row.ot_175 or 0) * 1.75) if row.ot_175 else 0,
                         "ot_2_0": row.ot_200 or 0,
-                        "amount_2_0": row.total_amount if row.ot_200 else 0,
+                        "amount_2_0": ((base_salary / 208) * (row.ot_200 or 0) * 2.0) if row.ot_200 else 0,
                         "ot_2_5": row.ot_250 or 0,
-                        "amount_2_5": row.total_amount if row.ot_250 else 0,
+                        "amount_2_5": ((base_salary / 208) * (row.ot_250 or 0) * 2.5) if row.ot_250 else 0,
                     }
-
-
            
             if rate == 1.5:
                 employee_data_map[row.employee]["ot_1_5"] += wh
-                employee_data_map[row.employee]["amount_1_5"] += amt
+                employee_data_map[row.employee]["amount_1_5"] += ((base_salary / 208) * (row.ot_150 or 0) * 1.5) if row.ot_150 else 0
             elif rate == 1.75:
                 employee_data_map[row.employee]["ot_1_75"] += wh
-                employee_data_map[row.employee]["amount_1_75"] += amt
+                employee_data_map[row.employee]["amount_1_75"] +=  ((base_salary / 208) * (row.ot_175 or 0) * 1.75) if row.ot_175 else 0
             elif rate == 2.0:
                 employee_data_map[row.employee]["ot_2_0"] += wh
-                employee_data_map[row.employee]["amount_2_0"] += amt
+                employee_data_map[row.employee]["amount_2_0"] += ((base_salary / 208) * (row.ot_200 or 0) * 2.0) if row.ot_200 else 0
             elif rate == 2.5:
                 employee_data_map[row.employee]["ot_2_5"] += wh
-                employee_data_map[row.employee]["amount_2_5"] += amt
+                employee_data_map[row.employee]["amount_2_5"] += ((base_salary / 208) * (row.ot_250 or 0) * 2.5) if row.ot_250 else 0
 
     final_data = list(employee_data_map.values())
     return final_data
