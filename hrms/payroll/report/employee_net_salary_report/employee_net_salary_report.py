@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 
 def execute(filters=None):
-	columns = get_columns()
+	columns = get_columns(filters)
 	data = get_data(filters)
 
 	company_filter = filters.get("company") if filters else None
@@ -23,13 +23,29 @@ def execute(filters=None):
 
 	return columns, data
 
-def get_columns():
-	return [
+def get_columns(filters=None):
+	payment_mode = filters.get("payment_mode") if filters else None
+
+	columns = [
 		{"label": "Employee Name", "fieldname": "employee_name", "fieldtype": "Data", "width": 200},
-		{"label": "Bank Branch", "fieldname": "bank", "fieldtype": "Data", "width": 220},
-		{"label": "Account Number", "fieldname": "bank_ac_no", "fieldtype": "Data", "width": 150},
-		{"label": "Amount", "fieldname": "amount", "fieldtype": "Currency", "width": 150},
 	]
+
+	if payment_mode == "Bank" or not payment_mode:
+		columns += [
+			{"label": "Bank Branch", "fieldname": "bank", "fieldtype": "Data", "width": 220},
+			{"label": "Account Number", "fieldname": "bank_ac_no", "fieldtype": "Data", "width": 150},
+		]
+	else:
+		columns.append(
+			{"label": "Payment Mode", "fieldname": "payment_mode", "fieldtype": "Data", "width": 150}
+		)
+
+	columns.append(
+		{"label": "Amount", "fieldname": "amount", "fieldtype": "Currency", "width": 150}
+	)
+
+	return columns
+
 
 def get_data(filters=None):
 	
@@ -43,6 +59,7 @@ def get_data(filters=None):
 	grade = filters.get("grade")
 	employee_type = filters.get("employee_type")
 	bank = filters.get("bank")
+	payment_mode = filters.get("payment_mode")
 
 	if not (from_date and to_date):
 		frappe.throw("Please set both From Date and To Date")
@@ -74,6 +91,9 @@ def get_data(filters=None):
 			clauses.append("e.employment_type = %(employee_type)s")
 		if bank:
 			clauses.append("ss.bank_name = %(bank)s")
+		if payment_mode:
+			clauses.append("ss.mode_of_payment = %(payment_mode)s")
+
 
 		where_clause = " AND " + " AND ".join(clauses) if clauses else ""
 
@@ -81,7 +101,7 @@ def get_data(filters=None):
 			SELECT 
 				ss.name as salary_slip, ss.employee, ss.net_pay, ss.posting_date,
 				e.employee_name, e.bank_name, e.bank_ac_no, e.department, e.designation,
-				e.branch, e.employment_type,
+				e.branch, e.employment_type,ss.mode_of_payment,
 				ss.payment_type
 			FROM `tabSalary Slip` ss
 			LEFT JOIN `tabEmployee` e ON ss.employee = e.name
@@ -111,6 +131,9 @@ def get_data(filters=None):
 			params["employee_type"] = employee_type
 		if bank:
 			params["bank"] = bank
+		if payment_mode:
+			params["payment_mode"] = payment_mode
+
 
 		results = frappe.db.sql(query, params, as_dict=True)
 
@@ -129,12 +152,22 @@ def get_data(filters=None):
 
 	data = []
 	for row in latest_slips.values():
-		data.append({
+		entry = {
 			"employee_name": row.employee_name,
-			"bank": row.bank_name,
-			"bank_ac_no": row.bank_ac_no,
 			"amount": row.net_pay
-		})
+		}
+
+		if payment_mode == "Bank" or not payment_mode:
+			entry.update({
+				"bank": row.bank_name,
+				"bank_ac_no": row.bank_ac_no
+			})
+		else:
+			entry.update({
+				"payment_mode": row.mode_of_payment
+			})
+
+		data.append(entry)
 
 	return data
 

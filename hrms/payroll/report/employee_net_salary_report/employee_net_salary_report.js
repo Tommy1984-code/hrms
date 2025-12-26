@@ -49,6 +49,12 @@ frappe.query_reports["Employee Net Salary Report"] = {
             "options": "\nFull-Time\nPart-Time\nContract\nTemporary"
         },
         {
+            "fieldname": "payment_mode",
+            "label": "Payment Mode",
+            "fieldtype": "Select",
+            "options": "\nBank\nCash\nCheque" 
+        },
+        {
             "fieldname": "bank",
             "label": "Bank",
             "fieldtype": "Link",
