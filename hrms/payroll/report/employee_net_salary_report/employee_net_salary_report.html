@@ -5,13 +5,13 @@
   table tfoot th {
     font-weight: 700 !important;  /* slightly bold */
     color: #111 !important;       /* solid for print */
-    text-align: center !important; /* center header and total text */
+    /* text-align: center !important; center header and total text */
   }
 
   /* Table data centered */
-  table tbody td {
+  /* table tbody td {
     text-align: center !important;
-  }
+  } */
 
   /* Optional: slightly larger font for headers and totals for visibility */
   table thead th,
@@ -86,14 +86,14 @@
 </div>
 
 <!-- ================= PRINT SETUP ================= -->
-<style>
+<!-- <style>
   @media print {
     @page {
       size: A4 landscape;
       margin: 20mm;
     }
   }
-</style>
+</style> -->
 
 <!-- ================= TABLE ================= -->
 <div class="w-full flex justify-center">
@@ -110,7 +110,7 @@
           <th class="w-[200px] text-[10px] font-bold text-left border">Payment Mode</th>
         {% } %}
 
-        <th class="w-[150px] text-[10px] font-bold text-right border">Amount</th>
+        <th class="w-[150px] text-[10px] font-bold text-left border">Amount</th>
       </tr>
     </thead>
 
@@ -131,7 +131,7 @@
           <td class="text-[12px] text-left border">{{ data[i].payment_mode }}</td>
         {% } %}
 
-        <td class="text-[12px] text-right border">
+        <td class="text-[12px] text-left border">
           {{ (data[i].amount || 0).toFixed(2) }}
         </td>
       </tr>

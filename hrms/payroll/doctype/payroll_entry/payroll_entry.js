@@ -12,6 +12,14 @@ frappe.ui.form.on("Payroll Entry", {
 		if (!frm.doc.posting_date) {
 			frm.doc.posting_date = frappe.datetime.nowdate();
 		}
+		// FIX: Handle default payroll frequency
+		if (
+			frm.doc.payroll_frequency &&
+			!frm.doc.salary_slip_based_on_timesheet &&
+			(!frm.doc.start_date || !frm.doc.end_date)
+		) {
+			frm.trigger("set_start_end_dates");
+		}
 		frm.toggle_reqd(["payroll_frequency"], !frm.doc.salary_slip_based_on_timesheet);
 
 		erpnext.accounts.dimensions.setup_dimension_filters(frm, frm.doctype);
