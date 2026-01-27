@@ -202,8 +202,8 @@ class EmployeeTermination(Document):
 
 		# Step 7: Save values
 		self.gross_annual_leave_payment = round(gross_annual_leave_payment, 2)
-		self.annual_leave_tax = round(annual_leave_tax, 2)
-		self.net_annual_leave_payment = round(net_annual_leave_payment, 2)
+		# self.annual_leave_tax = round(annual_leave_tax, 2)
+		# self.net_annual_leave_payment = round(net_annual_leave_payment, 2)
 
 		# Step 8: Insert salary components
 		if self.gross_annual_leave_payment:
@@ -211,10 +211,10 @@ class EmployeeTermination(Document):
 				"earnings", "annlev", self.gross_annual_leave_payment
 			)
 
-		if self.annual_leave_tax:
-			self.insert_salary_component(
-				"deductions", "annlevtax", self.annual_leave_tax
-			)
+		# if self.annual_leave_tax:
+		# 	self.insert_salary_component(
+		# 		"deductions", "annlevtax", self.annual_leave_tax
+		# 	)
 
 	def update_final_settlement(self):
 		"""Update the total severance amount in the final settlement section."""
