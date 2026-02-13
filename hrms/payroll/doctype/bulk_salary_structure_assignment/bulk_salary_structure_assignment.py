@@ -35,7 +35,9 @@ class BulkSalaryStructureAssignment(Document):
 			frappe.qb.from_(Assignment)
 			.select(Assignment.employee)
 			.distinct()
-			.where((Assignment.from_date == self.from_date) & (Assignment.docstatus == 1)&
+			.where(
+				# (Assignment.from_date == self.from_date) & 
+		     (Assignment.docstatus == 1)&
 		    (Assignment.payment_type == self.payment_type))#my code adding payment_type
 		)
 
@@ -49,7 +51,7 @@ class BulkSalaryStructureAssignment(Document):
 			)
 			.where(
 				(Employee.status == "Active")
-				& (Employee.date_of_joining <= self.from_date)
+				 & (Employee.date_of_joining <= self.from_date)
 				& ((Employee.relieving_date > self.from_date) | (Employee.relieving_date.isnull()))
 				& (Employee.employee.notin(employees_with_assignments))
 			)

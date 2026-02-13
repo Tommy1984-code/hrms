@@ -1,0 +1,105 @@
+{% for slip in data %}
+{% set doc = frappe.get_doc("Salary Slip", slip.name) %}
+
+<div class="payslip-wrapper" style="page-break-after: always; font-family: Arial, sans-serif; font-size:12px; width:280px; margin:auto; padding:10px; border:1px solid #000;">
+
+  <!-- Header -->
+  <div style="text-align:left; margin-bottom:5px;">
+    <img src="/files/company-logo.png" style="max-height:40px;" />
+  </div>
+
+  <div style="text-align:center; font-weight:bold;">{{ doc.company }}</div>
+  <div style="text-align:center; font-weight:bold;">Employee Pay Slip</div>
+  <div style="text-align:center;">For the month {{ formatdate(doc.start_date, "MMMM yyyy") }}</div>
+
+  <hr style="margin:5px 0;">
+
+  <!-- Employee Info -->
+  <div style="display:flex; justify-content:space-between;"><span>Employee ID:</span><span>{{ doc.employee }}</span></div>
+  <div style="display:flex; justify-content:space-between;"><span>Employee Name:</span><span>{{ doc.employee_name }}</span></div>
+  {% if doc.payment_type %}
+    <div style="display:flex; justify-content:space-between;"><span>Payment Type:</span><span>{{ doc.payment_type }}</span></div>
+  {% endif %}
+
+  <hr style="margin:5px 0;">
+
+  <!-- Earnings -->
+  <b>Earnings</b>
+  {% for row in doc.earnings %}
+    <div style="display:flex; justify-content:space-between;">
+      <span>{{ row.salary_component }}</span>
+      <span>{{ "{:,.2f}".format(row.amount) }}</span>
+    </div>
+  {% endfor %}
+
+  <div style="display:flex; justify-content:space-between; font-weight:bold;">
+    <span>Gross Pay</span>
+    <span>{{ "{:,.2f}".format(doc.gross_pay or 0) }}</span>
+  </div>
+
+  <hr style="margin:5px 0;">
+
+  <!-- Deductions -->
+  <b>Deductions</b>
+  {% for row in doc.deductions %}
+    <div style="display:flex; justify-content:space-between;">
+      <span>{{ row.salary_component }}</span>
+      <span>{{ "{:,.2f}".format(row.amount) }}</span>
+    </div>
+  {% endfor %}
+
+  <div style="display:flex; justify-content:space-between; font-weight:bold;">
+    <span>Total Deduction</span>
+    <span>{{ "{:,.2f}".format(doc.total_deduction or 0) }}</span>
+  </div>
+
+  <hr style="margin:5px 0;">
+
+  <!-- Net Pay -->
+  <div style="display:flex; justify-content:space-between; font-weight:bold;">
+    <span>Net Pay</span>
+    <span>{{ "{:,.2f}".format(doc.net_pay or 0) }}</span>
+  </div>
+
+  <hr style="margin:5px 0;">
+
+  <!-- Payment Summary -->
+  {% set month_start = frappe.utils.get_first_day(doc.start_date) %}
+  {% set month_end = frappe.utils.get_last_day(doc.start_date) %}
+  {% set payments = frappe.get_all(
+      "Salary Slip",
+      filters={
+          "employee": doc.employee,
+          "start_date": [">=", month_start],
+          "end_date": ["<=", month_end],
+          "docstatus": 1
+      },
+      fields=["payment_type", "net_pay"],
+      order_by="posting_date asc",
+      limit_page_length=0
+  ) %}
+  {% set payment_order = ["First Payment", "Second Payment", "Third Payment", "Fourth Payment", "Fifth Payment"] %}
+  {% set current_index = payment_order.index(doc.payment_type) if doc.payment_type in payment_order else -1 %}
+  {% if payments and current_index >= 0 %}
+    <b>Payment Summary</b>
+    {% for p in payments %}
+      {% set p_index = payment_order.index(p.payment_type) if p.payment_type in payment_order else -1 %}
+      {% if p_index >=0 and p_index <= current_index %}
+        <div style="display:flex; justify-content:space-between;">
+          <span>{{ p.payment_type }}</span>
+          <span>{{ "{:,.2f}".format(p.net_pay or 0) }}</span>
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  <!-- Signatures -->
+  <div style="margin-top:20px; font-size:11px;">
+    <div>Prepared By: ___________________________</div>
+    <div>Approved By: __________________________</div>
+    <div>Received By: __________________________</div>
+  </div>
+
+</div>
+
+{% endfor %}

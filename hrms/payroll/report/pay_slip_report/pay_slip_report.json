@@ -11,16 +11,17 @@
  "is_standard": "Yes",
  "letter_head": "Girum Hospital",
  "letterhead": null,
- "modified": "2025-12-19 11:34:18.804540",
+ "modified": "2026-01-27 10:37:37.983772",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Pay Slip Report",
  "owner": "Administrator",
  "prepared_report": 0,
+ "query": "SELECT\n    ss.name AS \"Salary Slip\",\n    ss.employee AS \"Employee ID\",\n    ss.employee_name AS \"Employee Name\",\n    ss.start_date AS \"Start Date\",\n    ss.end_date AS \"End Date\",\n    ss.payment_type AS \"Payment Type\",\n    ss.gross_pay AS \"Gross Pay\",\n    ss.total_deduction AS \"Total Deduction\",\n    ss.net_pay AS \"Net Pay\",\n\n    -- Flatten earnings\n    IFNULL(GROUP_CONCAT(CONCAT(se.salary_component, ':', se.amount) SEPARATOR ', '), '') AS \"Earnings\",\n\n    -- Flatten deductions\n    IFNULL(GROUP_CONCAT(CONCAT(sd.salary_component, ':', sd.amount) SEPARATOR ', '), '') AS \"Deductions\"\n\nFROM `tabSalary Slip` ss\nLEFT JOIN `tabSalary Detail` se ON se.parent = ss.name AND se.parentfield = 'earnings'\nLEFT JOIN `tabSalary Detail` sd ON sd.parent = ss.name AND sd.parentfield = 'deductions'\n\nWHERE ss.docstatus = 1\n{% if company %}\nAND ss.company = '{{ company }}'\n{% endif %}\n{% if from_date %}\nAND ss.start_date >= '{{ from_date }}'\n{% endif %}\n{% if to_date %}\nAND ss.end_date <= '{{ to_date }}'\n{% endif %}\n\nGROUP BY ss.name, ss.employee, ss.employee_name, ss.start_date, ss.end_date, ss.payment_type, ss.gross_pay, ss.total_deduction, ss.net_pay\n\nORDER BY ss.employee ASC, ss.start_date ASC\n",
  "ref_doctype": "Salary Slip",
  "reference_report": "",
  "report_name": "Pay Slip Report",
- "report_type": "Script Report",
+ "report_type": "Query Report",
  "roles": [
   {
    "role": "HR User"
